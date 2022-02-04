@@ -1,6 +1,9 @@
 
 
 const _capitalise = (s) => `${s[0].toUpperCase()}${s.slice(1)}`;
+const delay = async (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+
 /**
  * Twingate GraphQL API Client
  */
@@ -37,7 +40,7 @@ export class TwingateApiClient {
             fields: [
                 {name: "policy", type: "enum", typeName: "ProtocolPolicy", valueMap: {"ALLOW_ALL":"Allow All", "RESTRICTED":"Restricted"} },
                 {name: "ports", type: "Object", multiple: true, typeName: "PortRange",
-                    flattenStatementsFn: (path, fieldDef) => [`obj["${path.map( (e, i) => i == 0 ? e : _capitalise(e) ).join("")}"] = obj.${path.join(".")}.map(port => (port.start === port.end ? port.start : \`\${port.start}-\${port.end}\`)).join(", ");`]
+                    flattenStatementsFn: (path, fieldDef) => [`obj["${path.map( (e, i) => i === 0 ? e : _capitalise(e) ).join("")}"] = obj.${path.join(".")}.map(port => (port.start === port.end ? port.start : \`\${port.start}-\${port.end}\`)).join(", ");`]
                 }
             ]
         },
@@ -210,18 +213,34 @@ export class TwingateApiClient {
      * @returns {Promise<Object>} - The 'data' property of the result or the result of 'onApiError()' if defined.
      */
     async exec(query, variables = {}) {
-        const url = `https://${this.networkName}.${this.domain}/${this.endpoint}`;
-        let res = await fetch(url, {
-            ...this.defaultRequestOptions,
-            headers: {
-                ...this.defaultRequestHeaders,
-                'X-API-KEY': this.apiKey
-            },
-            body: JSON.stringify({query, variables})
-        });
-        let json = await res.json();
-        if ( Array.isArray(json.errors) && json.errors.length > 0 ) return await this.handleApiError(query, variables, json);
-        return json.data;
+        const url = `https://${this.networkName}.${this.domain}/${this.endpoint}`,
+              body = JSON.stringify({query, variables});
+        let doFetch = true, res = null;
+        while ( doFetch ) {
+            res = await fetch(url, {
+                ...this.defaultRequestOptions,
+                headers: {
+                    ...this.defaultRequestHeaders,
+                    'X-API-KEY': this.apiKey
+                },
+                body
+            });
+
+            if ( res.status === 429 ) {
+                let retryAfterSecs = parseInt(res.headers.get("retry-after")) || 60;
+                this.logger.warn(`Request is throttled (429), retrying in: ${retryAfterSecs} seconds. Query: ${body}`);
+                await delay(retryAfterSecs*1000);
+            }
+            else {
+                doFetch = false;
+            }
+        }
+
+        if ( res.status >= 200 && res.status < 300 ) {
+            let json = await res.json();
+            if ( Array.isArray(json.errors) && json.errors.length > 0 ) return await this.handleApiError(query, variables, json);
+            return json.data;
+        }
     }
 
     /**
@@ -492,20 +511,23 @@ export class TwingateApiClient {
 
 
     async createGroup(name, resourceIds, userIds) {
-        const createGroupQuery = "mutation CreateGroup($name:String!,$resourceIds:[ID],$userIds:[ID]){result:groupCreate(name:$name,resourceIds:$resourceIds,userIds:$userIds){entity{id}}}";
+        const createGroupQuery = "mutation CreateGroup($name:String!,$resourceIds:[ID],$userIds:[ID]){result:groupCreate(name:$name,resourceIds:$resourceIds,userIds:$userIds){error entity{id}}}";
         let groupsResponse = await this.exec(createGroupQuery, {name, resourceIds, userIds} );
+        if ( groupsResponse.result.error !== null ) throw new Error(`Error creating group: '${groupsResponse.response.error}'`)
         return groupsResponse.result.entity;
     }
 
     async createRemoteNetwork(name) {
-        const createRemoteNetworkQuery = "mutation CreateRemoteNetwork($name:String!){result:remoteNetworkCreate(name:$name){entity{id}}}";
+        const createRemoteNetworkQuery = "mutation CreateRemoteNetwork($name:String!){result:remoteNetworkCreate(name:$name){error entity{id}}}";
         let createRemoteNetworkResponse = await this.exec(createRemoteNetworkQuery, {name} );
+        if ( createRemoteNetworkResponse.result.error !== null ) throw new Error(`Error creating remote network: '${createRemoteNetworkResponse.response.error}'`)
         return createRemoteNetworkResponse.result.entity;
     }
 
     async createResource(name, address, remoteNetworkId, protocols = null, groupIds = []) {
-        const createResourceQuery = "mutation CreateResource($name:String!,$address:String!,$remoteNetworkId:ID!,$protocols:ProtocolsInput,$groupIds:[ID]){result:resourceCreate(address:$address,groupIds:$groupIds,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId){entity{id}}}";
+        const createResourceQuery = "mutation CreateResource($name:String!,$address:String!,$remoteNetworkId:ID!,$protocols:ProtocolsInput,$groupIds:[ID]){result:resourceCreate(address:$address,groupIds:$groupIds,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId){error entity{id}}}";
         let createResourceResponse = await this.exec(createResourceQuery, {name, address, remoteNetworkId, protocols, groupIds} );
+        if ( createResourceResponse.result.error !== null ) throw new Error(`Error creating resource: '${createResourceResponse.result.error}'`)
         return createResourceResponse.result.entity;
     }
 

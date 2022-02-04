@@ -1,7 +1,7 @@
 import {genFileNameFromNetworkName, loadNetworkAndApiKey} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
-import XLSX from "https://cdn.esm.sh/v58/xlsx@0.17.4/deno/xlsx.js";
+import XLSX from "https://cdn.esm.sh/xlsx";
 import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
 import {Confirm} from "https://deno.land/x/cliffy/prompt/mod.ts";
 
@@ -107,7 +107,7 @@ export const importCmd = new Command()
     .action(async (options) => {
         const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
         options.accountName = networkName;
-        let client = new TwingateApiClient(networkName, apiKey);
+        let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
         let fileData = await Deno.readFile(options.file);
         let wb = XLSX.read(fileData,{type:'array', cellDates: true});
@@ -211,6 +211,11 @@ export const importCmd = new Command()
                             resourceRow["importAction"] = "SKIP";
                             resourceRow["importId"] = existingRemoteNetwork.resources.filter(r => r.name === resourceRow.name)[0];
                             continue;
+                        }
+                        if ( typeof resourceRow["addressValue"] !== "string" || resourceRow["addressValue"].length > 255 ) {
+                            Log.error(`Resource will be skipped: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}' - Invalid address`);
+                            resourceRow["importAction"] = "SKIP";
+                            resourceRow["importId"] = null;
                         }
                         resourceRow["_protocol"] = tryResourceRowToProtocols(resourceRow);
 

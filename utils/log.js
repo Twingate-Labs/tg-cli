@@ -20,7 +20,7 @@ export class Logger {
         if ( log_level >= LOG_LEVELS.INFO ) console.info(`${Colors.blue("[INFO]   ")} ${msg}`);
     }
 
-    warn(msg) {
+    warn(msg, ...data) {
         if ( log_level >= LOG_LEVELS.WARN ) console.warn(`${Colors.yellow("[WARN]   ")} ${msg}`);
     }
 

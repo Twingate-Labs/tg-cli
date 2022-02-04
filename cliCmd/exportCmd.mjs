@@ -192,7 +192,7 @@ export const exportCmd = new Command()
     .action(async (options) => {
         const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
         options.accountName = networkName;
-        let client = new TwingateApiClient(networkName, apiKey);
+        let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
         let outputFn = outputFnMap[options.format];
         if (outputFn == null) {
             Log.error(`Unsupported option: '${options.format}'`);

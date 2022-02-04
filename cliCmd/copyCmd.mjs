@@ -13,7 +13,7 @@ export function getCopyCommand(name) {
             let apiKey = null;
             ({networkName, apiKey} = await loadNetworkAndApiKey(options.accountName));
             options.accountName = networkName;
-            let client = new TwingateApiClient(networkName, apiKey);
+            let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
             let res = await client.loadCompleteGroup(srcGroup);
             let res2 = await client.createGroup(destGroup, res.resourceIds, res.userIds);
             Log.success(`New group named '${destGroup}' created as a copy of '${srcGroup}'`);

@@ -13,7 +13,7 @@ export function getCreateCommand(name) {
                 .action(async (options, groupName) => {
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey);
+                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
                     let res = await client.createGroup(groupName);
                     Log.success(`New ${name} named '${groupName}' created with id '${res.id}'.`);
                 });
@@ -26,7 +26,7 @@ export function getCreateCommand(name) {
                 .action(async (options, remoteNetworkName) => {
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey);
+                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
                     let res = await client.createRemoteNetwork(remoteNetworkName);
                     Log.success(`New ${name} named '${remoteNetworkName}' created with id '${res.id}'.`);
                 });

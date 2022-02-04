@@ -41,7 +41,7 @@ export const removeAllCmd = new Command()
         Log.warn(`This action will ${Colors.red("BULK DELETE")} all ${assetNamesStr} in the account '${Colors.italic(networkName)}' and is ${Colors.red("NOT REVERSIBLE")}.`)
         if ( !(await Confirm.prompt(Colors.red(`Please confirm to continue?`))) ) return;
 
-        let client = new TwingateApiClient(networkName, apiKey);
+        let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
         if ( options.groups ) {
             let allGroups = await client.fetchAllGroups({fieldSet: [TwingateApiClient.FieldSet.ID], fieldOpts:{extraFields: ["type"]}});

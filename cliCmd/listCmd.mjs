@@ -16,6 +16,14 @@ const listCmdConfig = {
             }
         }
     },
+    "device": {
+        typeName: "Device",
+        fetchFn: "fetchAllDevices",
+        listFieldOpts: {
+            users: {ignore: true},
+            resources: {ignore: true}
+        }
+    },
     "group": {
         typeName: "Group",
         fetchFn: "fetchAllGroups",
@@ -69,10 +77,6 @@ export function getListCommand(name) {
             }
             let schema = TwingateApiClient.Schema[config.typeName];
             let records = await client[config.fetchFn](configForCli);
-            for ( let x = 0; x < 400; x++ ) {
-                records = await client[config.fetchFn](configForCli);
-
-            }
             if (schema.labelField != null) records = sortByTextField(records, schema.labelField);
             let ws = XLSX.utils.json_to_sheet(records);
             let [header, ...recordsArr] = XLSX.utils.sheet_to_json(ws, {raw: false, header: 1});

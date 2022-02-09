@@ -367,6 +367,7 @@ export const importCmd = new Command()
                         }
                     }
                     /*
+                    // -- Previous code below does one update query at a time
                     for ( let deviceRow of recordsToImport ) {
                         const idToUpdate = deviceRow.importId || deviceRow.id,
                               deviceUpdateResult = await client.setDeviceTrust(idToUpdate, deviceRow.isTrusted);

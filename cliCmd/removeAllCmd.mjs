@@ -35,7 +35,7 @@ export const removeAllCmd = new Command()
             assetNamesStr += assetNames[x].toUpperCase();
         }
 
-        const {networkName, apiKey} = await loadNetworkAndApiKey(options.netwaccountNameorkName);
+        const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
         options.accountName = networkName;
 
         Log.warn(`This action will ${Colors.red("BULK DELETE")} all ${assetNamesStr} in the account '${Colors.italic(networkName)}' and is ${Colors.red("NOT REVERSIBLE")}.`)

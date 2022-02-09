@@ -162,6 +162,7 @@ async function exportExcel(client, options) {
             flattenObjectFields: true
         }
     }
+    if ( options.typesToFetch.length > 0 ) configForExport.typesToFetch = options.typesToFetch;
     const allNodes = await client.fetchAll(configForExport);
 
     setLastConnectedOnUser(allNodes);
@@ -188,10 +189,22 @@ export const exportCmd = new Command()
     .type("exportFormat", new EnumType(Object.keys(outputFnMap)))
     .option("-f, --format [value:exportFormat]", "Export format", {default: "xlsx"})
     .option("-o, --output-file [value:string]", "Output filename")
+    .option("-n, --remote-networks [boolean]", "Include Remote Networks")
+    .option("-r, --resources [boolean]", "Include Resources")
+    .option("-g, --groups [boolean]", "Include Groups")
+    .option("-u, --users [boolean]", "Include Users")
+    .option("-d, --devices [boolean]", "Include Devices (trust)")
     .description("Export from account to various formats")
     .action(async (options) => {
         const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
         options.accountName = networkName;
+        options.typesToFetch = [];
+        if ( options.remoteNetworks === true ) options.typesToFetch.push("RemoteNetwork")
+        if ( options.resources === true ) options.typesToFetch.push("Resource")
+        if ( options.groups === true ) options.typesToFetch.push("Group")
+        if ( options.users === true ) options.typesToFetch.push("User")
+        if ( options.devices === true ) options.typesToFetch.push("Device")
+
         let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
         let outputFn = outputFnMap[options.format];
         if (outputFn == null) {

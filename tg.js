@@ -1,8 +1,8 @@
 #!/usr/bin/env -S deno run --allow-all --unstable
 
-import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
+import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 import {TwingateApiClient} from "./TwingateApiClient.mjs";
-import {Log} from "./utils/log.js";
+import {Log, LOG_LEVELS} from "./utils/log.js";
 import {
     exportCmd,
     removeAllCmd,
@@ -12,12 +12,20 @@ import {
 
 async function main(args) {
 
-    const topLevelCommands = ["resource", "group", "user", "network", "connector"/*, "device"*/];
+    const topLevelCommands = ["resource", "group", "user", "network", "connector", "device"];
+    const LogLevelType = new EnumType(Object.keys(LOG_LEVELS));
     let cmd = new Command()
         .name("tg")
         .version(TwingateApiClient.VERSION)
-        .option("-a, --account-name <string>", "Twingate account name", {global: true})
         .description("CLI for Twingate")
+        .type("LogLevel", LogLevelType)
+        .option("-a, --account-name <string>", "Twingate account name", {global: true})
+        .option("-l, --log-level [logLevel:LogLevel]", "Log level", {
+            global: true,
+            //hidden: true,
+            default: Deno.env.get("LOG_LEVEL") || "INFO",
+            action: (options) => Deno.env.set("LOG_LEVEL", options.logLevel)
+        })
         .command("export", exportCmd)
         .command("import", importCmd)
         .command("remove-all", removeAllCmd)

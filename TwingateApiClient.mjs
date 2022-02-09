@@ -509,6 +509,17 @@ export class TwingateApiClient {
         return group;
     }
 
+    async setDeviceTrust(id, isTrusted) {
+        const setDeviceTrustQuery = "mutation SetDeviceTrust($id:ID!,$isTrusted:Boolean!){result:deviceUpdate(id:$id,isTrusted:$isTrusted){ok error entity{id isTrusted}}}";
+        let deviceTrustResponse = await this.exec(setDeviceTrustQuery, {id, isTrusted} );
+        if ( deviceTrustResponse.result.error !== null ) throw new Error(`Error setting device trust: '${deviceTrustResponse.result.error}'`)
+        return deviceTrustResponse.result.entity;
+    }
+
+    // Full docs TBD but input should be array of objects with {...id: ID, isTrusted: boolean}
+    async setDeviceTrustBulk(devices) {
+        let q = "mutation($id1:ID!,$isTrusted1:Boolean!){result1:deviceUpdate(id:$id1,isTrusted:$isTrusted1){ok error entity{id isTrusted}}}";
+    }
 
     async createGroup(name, resourceIds, userIds) {
         const createGroupQuery = "mutation CreateGroup($name:String!,$resourceIds:[ID],$userIds:[ID]){result:groupCreate(name:$name,resourceIds:$resourceIds,userIds:$userIds){error entity{id}}}";

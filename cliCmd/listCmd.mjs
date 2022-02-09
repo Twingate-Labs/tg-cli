@@ -2,9 +2,9 @@ import {loadNetworkAndApiKey, sortByTextField} from "../utils/smallUtilFuncs.mjs
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import XLSX from "https://cdn.esm.sh/xlsx";
 import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
-import {Log} from "../utils/log.js";
+import {Log, LOG_LEVELS} from "../utils/log.js";
 
-import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
+import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 
 const listCmdConfig = {
     "resource": {
@@ -51,11 +51,17 @@ const listCmdConfig = {
     }
 }
 
+const OutputFormat = new EnumType(["table", "json", "csv"]);
+
 export function getListCommand(name) {
     let config = listCmdConfig[name];
+    const LogLevelType = new EnumType(Object.keys(LOG_LEVELS));
     return new Command()
         .arguments("")
         .description(`Get list of ${name}s`)
+        .type("format", OutputFormat)
+        .type("LogLevel", LogLevelType)
+        .option("-o, --output-format <format:format>", "Output format", {default: "table"})
         .action(async (options) => {
             const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
             options.accountName = networkName;
@@ -78,15 +84,25 @@ export function getListCommand(name) {
             let schema = TwingateApiClient.Schema[config.typeName];
             let records = await client[config.fetchFn](configForCli);
             if (schema.labelField != null) records = sortByTextField(records, schema.labelField);
-            let ws = XLSX.utils.json_to_sheet(records);
-            let [header, ...recordsArr] = XLSX.utils.sheet_to_json(ws, {raw: false, header: 1});
 
-            let table = new Table()
-                .header(header)
-                .body(recordsArr)
-                .border(true)
-                .render()
-            ;
+            switch (options.outputFormat) {
+                case "table":
+                    let ws = XLSX.utils.json_to_sheet(records);
+                    let [header, ...recordsArr] = XLSX.utils.sheet_to_json(ws, {raw: false, header: 1});
+                    let table = new Table()
+                        .header(header)
+                        .body(recordsArr)
+                        .border(true)
+                        .render()
+                    ;
+                    break;
+                case "json":
+                    console.dir(JSON.stringify(records));
+                    break;
+                default:
+                    Log.error(`Unhandled output format: ${options.outputFormat}`);
+                    break;
+            }
         });
 }
 

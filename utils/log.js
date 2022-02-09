@@ -1,7 +1,7 @@
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
 
 
-const LOG_LEVELS = {
+export const LOG_LEVELS = {
     "TRACE": 8,
     "DEBUG": 7,
     "INFO": 6,
@@ -13,31 +13,31 @@ const LOG_LEVELS = {
     "SILENT": 0
 }
 
-const log_level = LOG_LEVELS[Deno.env.get("LOG_LEVEL") || "INFO"];
+const getLogLevel = () => LOG_LEVELS[Deno.env.get("LOG_LEVEL") || "INFO"];
 
 export class Logger {
     info(msg) {
-        if ( log_level >= LOG_LEVELS.INFO ) console.info(`${Colors.blue("[INFO]   ")} ${msg}`);
+        if ( getLogLevel() >= LOG_LEVELS.INFO ) console.info(`${Colors.blue("[INFO]   ")} ${msg}`);
     }
 
     warn(msg, ...data) {
-        if ( log_level >= LOG_LEVELS.WARN ) console.warn(`${Colors.yellow("[WARN]   ")} ${msg}`);
+        if ( getLogLevel() >= LOG_LEVELS.WARN ) console.warn(`${Colors.yellow("[WARN]   ")} ${msg}`);
     }
 
     error(msg) {
-        if ( log_level >= LOG_LEVELS.ERROR ) console.error(`${Colors.red("[ERROR]  ")} ${msg}`);
+        if ( getLogLevel() >= LOG_LEVELS.ERROR ) console.error(`${Colors.red("[ERROR]  ")} ${msg}`);
     }
 
     exception(e) {
-        if ( log_level >= LOG_LEVELS.ERROR ) console.error(`${Colors.red("[ERROR]  ")} Exception: ${e.stack||e}`);
+        if ( getLogLevel() >= LOG_LEVELS.ERROR ) console.error(`${Colors.red("[ERROR]  ")} Exception: ${e.stack||e}`);
     }
 
     success(msg) {
-        if ( log_level >= LOG_LEVELS.QUIET ) console.log(`${Colors.green("[SUCCESS]")} ${msg}`);
+        if ( getLogLevel() >= LOG_LEVELS.QUIET ) console.log(`${Colors.green("[SUCCESS]")} ${msg}`);
     }
 
     failure(msg) {
-        if ( log_level >= LOG_LEVELS.QUIET ) console.error(`${Colors.red("[FAILURE]")} ${msg}`);
+        if ( getLogLevel() >= LOG_LEVELS.QUIET ) console.error(`${Colors.red("[FAILURE]")} ${msg}`);
     }
 
 }

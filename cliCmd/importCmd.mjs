@@ -4,31 +4,36 @@ import {Log} from "../utils/log.js";
 import XLSX from "https://cdn.esm.sh/xlsx";
 import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
 import {Confirm} from "https://deno.land/x/cliffy/prompt/mod.ts";
+import * as Colors from "https://deno.land/std/fmt/colors.ts";
 
 
 const optionToSheetMap = {
     groups: "Group",
     remoteNetworks: "RemoteNetwork",
-    resources: "Resource"
+    resources: "Resource",
+    devices: "Device"
 }
 
 async function fetchDataForImport(client, options, wb) {
     let typesToFetch = [],
-        sheetNames = wb.SheetNames;
+        sheetNames = wb.SheetNames,
+        // If no options are specified then import all
+        importAllByDefault = Object.keys(optionToSheetMap).map( optionName => options[optionName]).every(option => option === undefined)
+    ;
+    if ( importAllByDefault === true ) Log.info("Importing all types");
     for (const [optionName, schemaName ] of Object.entries(optionToSheetMap) ) {
-        // TODO: For now we import everything
-        options[optionName] = true;
+        options[optionName] = options[optionName] || importAllByDefault;
 
         if ( options[optionName] === true ) {
             if ( !sheetNames.includes(schemaName) ) {
-                throw new Error(`Cannot import remote networks because the Excel file is missing a sheet named '${schemaName}`);
+                throw new Error(`Cannot import because the Excel file is missing a sheet named '${schemaName}'`);
             }
             typesToFetch.push(schemaName);
         }
     }
 
     if ( typesToFetch.length === 0 ) {
-        throw new Error(`Cannot import remote networks because the Excel file is missing a sheet named '${schemaName}`);
+        throw new Error(`Cannot import because nothing to import`);
     }
 
     const allNodes = await client.fetchAll({
@@ -40,6 +45,7 @@ async function fetchDataForImport(client, options, wb) {
     allNodes.RemoteNetwork = allNodes.RemoteNetwork || [];
     allNodes.Resource = allNodes.Resource || [];
     allNodes.Group = allNodes.Group || [];
+    allNodes.Device = allNodes.Device || [];
 
     return {typesToFetch, allNodes};
 }
@@ -56,6 +62,7 @@ async function writeImportResults(data, outputFilename) {
 }
 
 const portTestRegEx = /^[0-9]+$/.compile();
+const AFFIRMATIVES = ["YES", "Y", "TRUE", "T"]
 function tryProcessPortRestrictionString(restrictions) {
     // 443, 8080-8090
     const validatePortNumber = (port) => {
@@ -79,7 +86,7 @@ function tryProcessPortRestrictionString(restrictions) {
 function tryResourceRowToProtocols(resourceRow) {
     if ( typeof resourceRow.protocolsAllowIcmp === "string") {
         resourceRow.protocolsAllowIcmp = resourceRow.protocolsAllowIcmp.trim().toUpperCase();
-        resourceRow.protocolsAllowIcmp = ["YES", "Y", "TRUE"].includes(resourceRow.protocolsAllowIcmp);
+        resourceRow.protocolsAllowIcmp = AFFIRMATIVES.includes(resourceRow.protocolsAllowIcmp);
     }
     if ( resourceRow.protocolsTcpPolicy === "ALLOW_ALL" && resourceRow.protocolsUdpPolicy === "ALLOW_ALL" && resourceRow.protocolsAllowIcmp === true) {
         return null;
@@ -99,17 +106,31 @@ function tryResourceRowToProtocols(resourceRow) {
     return protocols
 }
 export const importCmd = new Command()
-    .option("-f, --file <string>", "Path to Excel file to import from")
-    .option("-n, --remote-networks", "Include Remote Networks")
-    .option("-r, --resources", "Include Resources")
-    .option("-g, --groups", "Include Groups")
+    .option("-f, --file <string>", "Path to Excel file to import from", {
+        required: true
+    })
+    .option("-n, --remote-networks [boolean]", "Include Remote Networks")
+    .option("-r, --resources [boolean]", "Include Resources")
+    .option("-g, --groups [boolean]", "Include Groups")
+    //.option("-u, --users [boolean]", "Include Users")
+    .option("-d, --devices [boolean]", "Include Devices (trust)")
+    .option("-y, --assume-yes [boolean]", "Automatic yes to prompts; assume 'yes' as answer to all prompts")
     .description("Import from excel file to a Twingate account")
     .action(async (options) => {
         const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
         options.accountName = networkName;
         let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
-        let fileData = await Deno.readFile(options.file);
+        let fileData = null
+        try {
+            fileData = await Deno.readFile(options.file);
+            Log.info(`Importing from file: '${Colors.italic(options.file)}'`);
+        }
+        catch (e) {
+            Log.error(`Could not read file: ${options.file}`);
+            Log.exception(e);
+            return;
+        }
         let wb = XLSX.read(fileData,{type:'array', cellDates: true});
 
         const {typesToFetch, allNodes} = await fetchDataForImport(client, options, wb);
@@ -117,13 +138,15 @@ export const importCmd = new Command()
         let nodeLabelIdMap = {
             RemoteNetwork: {},
             Resource: {},
-            Group: {}
+            Group: {},
+            Device: {}
         }
 
         let nodeIdMap = Object.fromEntries([
             ...allNodes.RemoteNetwork,
             ...allNodes.Resource,
-            ...allNodes.Group
+            ...allNodes.Group,
+            ...allNodes.Device
         ].map(n => [n.id, n]));
 
         // Pre-process groups
@@ -151,7 +174,22 @@ export const importCmd = new Command()
 
         // Pre-process resources
         for ( let node of allNodes.Resource) {
-            node.remoteNetwork = nodeIdMap[node.remoteNetwork.id].name;
+            if ( options.remoteNetworks ) node.remoteNetwork = nodeIdMap[node.remoteNetwork.id].name;
+        }
+
+        // Pre-process devices
+        for ( let node of allNodes.Device) {
+            node.lastConnectedAt = new Date(node.lastConnectedAt);
+            if ( options.user ) node.user = nodeIdMap[node.user.id].email;
+            if ( node.serialNumber != null && node.serialNumber !== "None" ) {
+                if ( nodeLabelIdMap.Device[node.serialNumber] != null ) {
+                    let existingNode = nodeIdMap[ nodeLabelIdMap.Device[node.serialNumber] ];
+                    Log.warn(`Device with Id '${node.id}' has the same serial number ('${node.serialNumber}') as Device with Id '${existingNode.id}', will take most recently connected device.`);
+                    // Try to keep the most recently connected device
+                    if ( existingNode.lastConnectedAt >= node.lastConnectedAt ) continue;
+                }
+                nodeLabelIdMap.Device[node.serialNumber] = node.id;
+            }
         }
 
         // Map of old id to new id
@@ -225,6 +263,32 @@ export const importCmd = new Command()
                         importCount++;
                     }
                     break;
+                case "Device":
+                    for ( let deviceRow of sheetData ) {
+                        if ( deviceRow.serialNumber == null || deviceRow.serialNumber === "") {
+                            Log.info(`Will skip row with missing serial number: '${deviceRow}'`);
+                            deviceRow["importAction"] = "SKIP";
+                            continue;
+                        }
+                        let existingDevice = nodeIdMap[ nodeLabelIdMap.Device[deviceRow.serialNumber] ];
+                        if ( existingDevice == null ) {
+                            Log.info(`Device with serial number '${deviceRow.serialNumber}' not found, will skip.`);
+                            deviceRow["importAction"] = "SKIP";
+                            continue;
+                        }
+                        deviceRow.isTrusted = (deviceRow.isTrusted === true) || (typeof deviceRow.isTrusted === "string" && AFFIRMATIVES.includes(deviceRow.isTrusted.trim().toUpperCase()) );
+                        if ( existingDevice.isTrusted === deviceRow.isTrusted ) {
+                            Log.info(`Device be skipped: '${deviceRow.serialNumber}' - No change in trust`);
+                            deviceRow["importAction"] = "SKIP";
+                            continue;
+                        }
+                        Log.info(`Device trust will be set for device: '${existingDevice.id}' (${existingDevice.serialNumber}) to: ${deviceRow.isTrusted}`);
+                        if ( deviceRow.id == null ) deviceRow.id = existingDevice.id;
+                        deviceRow["importAction"] = "UPDATE_TRUST";
+                        deviceRow["importId"] = existingDevice.id;
+                        importCount++;
+                    }
+                    break;
                 default:
                     // NoOp
                     break;
@@ -235,11 +299,11 @@ export const importCmd = new Command()
             Log.info("No data to import.");
             return;
         }
-        if ( !(await Confirm.prompt("Please confirm to continue?")) ) return;
+        if ( options.assumeYes !== true && !(await Confirm.prompt("Please confirm to continue?")) ) return;
 
         // Pass through all records to import and import them
         for ( const [schemaName, importData] of Object.entries(mergeMap)) {
-            const recordsToImport = importData.filter(row => row.importAction === "CREATE");
+            const recordsToImport = importData.filter(row => row.importAction !== "SKIP");
             Log.info(`Importing ${recordsToImport.length} record(s) as ${schemaName}s`);
             switch (schemaName) {
                 case "Group":
@@ -279,6 +343,14 @@ export const importCmd = new Command()
                         delete resourceRow._protocol;
                         remoteNetwork.resourceNames.push(resourceRow.name);
                         remoteNetwork.resources.push({name: resourceRow.name, _imported: true});
+                    }
+                    break;
+                case "Device":
+                    for ( let deviceRow of recordsToImport ) {
+                        const idToUpdate = deviceRow.importId || deviceRow.id,
+                              deviceUpdateResult = await client.setDeviceTrust(idToUpdate, deviceRow.isTrusted);
+                        deviceRow.importId = deviceUpdateResult.id;
+                        deviceRow.isTrusted = deviceUpdateResult.isTrusted;
                     }
                     break;
                 default:

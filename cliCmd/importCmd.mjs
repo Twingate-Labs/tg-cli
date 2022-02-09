@@ -17,7 +17,8 @@ const optionToSheetMap = {
 const ImportAction = {
     IGNORE: "IGNORE",
     CREATE: "CREATE",
-    UPDATE_TRUST: "UPDATE_TRUST"
+    UPDATE_TRUST: "UPDATE_TRUST",
+    ERROR: "ERROR"
 }
 
 async function fetchDataForImport(client, options, wb) {
@@ -352,12 +353,26 @@ export const importCmd = new Command()
                     }
                     break;
                 case "Device":
+                    let results = await client.setDeviceTrustBulk(recordsToImport, (d) => d.importId || d.id);
+                    for ( let x = 0; x < recordsToImport.length; x++ ) {
+                        let result = results[x],
+                            record = recordsToImport[x];
+                        if ( result.ok !== true ) {
+                            record.importAction = ImportAction.ERROR;
+                            record.importId = result.error;
+                        }
+                        else {
+                            record.importId = results[x].entity.id;
+                            record.isTrusted = results[x].entity.isTrusted;
+                        }
+                    }
+                    /*
                     for ( let deviceRow of recordsToImport ) {
                         const idToUpdate = deviceRow.importId || deviceRow.id,
                               deviceUpdateResult = await client.setDeviceTrust(idToUpdate, deviceRow.isTrusted);
                         deviceRow.importId = deviceUpdateResult.id;
                         deviceRow.isTrusted = deviceUpdateResult.isTrusted;
-                    }
+                    }*/
                     break;
                 default:
                     // NoOp

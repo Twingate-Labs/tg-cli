@@ -231,16 +231,17 @@ export class TwingateApiClient {
                 this.logger.warn(`Request is throttled (429), retrying in: ${retryAfterSecs} seconds. Query: ${body}`);
                 await delay(retryAfterSecs*1000);
             }
+            else if ( res.status < 200 || res.status > 299 ) {
+                throw new Error(`API returned status: ${res.status}. Query: ${body}`)
+            }
             else {
                 doFetch = false;
             }
         }
 
-        if ( res.status >= 200 && res.status < 300 ) {
-            let json = await res.json();
-            if ( Array.isArray(json.errors) && json.errors.length > 0 ) return await this.handleApiError(query, variables, json);
-            return json.data;
-        }
+        let json = await res.json();
+        if ( Array.isArray(json.errors) && json.errors.length > 0 ) return await this.handleApiError(query, variables, json);
+        return json.data;
     }
 
     /**
@@ -517,8 +518,24 @@ export class TwingateApiClient {
     }
 
     // Full docs TBD but input should be array of objects with {...id: ID, isTrusted: boolean}
-    async setDeviceTrustBulk(devices) {
-        let q = "mutation($id1:ID!,$isTrusted1:Boolean!){result1:deviceUpdate(id:$id1,isTrusted:$isTrusted1){ok error entity{id isTrusted}}}";
+    async setDeviceTrustBulk(devices, idFieldFn = (d) => d.id, isTrustedFieldFn = (d) => d.isTrusted) {
+        if ( !Array.isArray(devices)  ) throw new Error(`setDeviceTrustBulk requires an array as input.`);
+        if ( devices.length === 0 ) return [];
+        if ( !devices.every( device => typeof device.id === "string" && typeof device.isTrusted === "boolean" ) ) throw new Error(`setDeviceTrustBulk requires every item to have an 'id' (string) and 'isTrusted' (boolean) value`);
+
+        const gqlParams = devices.map( (_, i) => `$id${i}:ID!,$isTrusted${i}:Boolean!`).join(",");
+        const gqlMutationParts = devices.map( (_, i) => `result${i}:deviceUpdate(id:$id${i},isTrusted:$isTrusted${i}){ok error entity{id isTrusted}}`).join(" ");
+        const gqlVariables = Object.fromEntries(devices.flatMap( (d, i) => [[`id${i}`, idFieldFn(d)], [`isTrusted${i}`, isTrustedFieldFn(d) ]]));
+        let bulkSetTrustQuery = `mutation BulkSetDeviceTrust${devices.length}(${gqlParams}){${gqlMutationParts}}`;
+        let bulkDeviceTrustResponse = await this.exec(bulkSetTrustQuery, gqlVariables );
+
+        let results = [];
+        for ( let x = 0; x < devices.length; x++ ) {
+            results.push(bulkDeviceTrustResponse[`result${x}`]);
+        }
+        //if ( deviceTrustResponse.result.error !== null ) throw new Error(`Error setting device trust: '${deviceTrustResponse.result.error}'`)
+        //return deviceTrustResponse.result.entity;]
+        return results;
     }
 
     async createGroup(name, resourceIds, userIds) {

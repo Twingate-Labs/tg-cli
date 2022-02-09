@@ -14,6 +14,12 @@ const optionToSheetMap = {
     devices: "Device"
 }
 
+const ImportAction = {
+    IGNORE: "IGNORE",
+    CREATE: "CREATE",
+    UPDATE_TRUST: "UPDATE_TRUST"
+}
+
 async function fetchDataForImport(client, options, wb) {
     let typesToFetch = [],
         sheetNames = wb.SheetNames,
@@ -204,7 +210,7 @@ export const importCmd = new Command()
                         // 1. Skip non-manual groups
                         if ( groupRow.type !== "Manual" ) {
                             Log.info(`Group '${groupRow.name}' will be skipped because it is of type '${groupRow.type}'`);
-                            groupRow["importAction"] = "SKIP";
+                            groupRow["importAction"] = ImportAction.IGNORE;
                             groupRow["importId"] = "";
                             continue;
                         }
@@ -213,13 +219,13 @@ export const importCmd = new Command()
                         let existingId = nodeLabelIdMap.Group[groupRow.name];
                         if ( existingId != null ) {
                             Log.info(`Group with same name already exists, will skip: '${groupRow.name}'`);
-                            groupRow["importAction"] = "SKIP";
+                            groupRow["importAction"] = ImportAction.IGNORE;
                             groupRow["importId"] = existingId;
                             continue;
                         }
 
                         Log.info(`Group will be created: '${groupRow.name}'`);
-                        groupRow["importAction"] = "CREATE";
+                        groupRow["importAction"] = ImportAction.CREATE;
                         groupRow["importId"] = null;
                         importCount++;
                     }
@@ -230,13 +236,13 @@ export const importCmd = new Command()
                         let existingId = nodeLabelIdMap.RemoteNetwork[remoteNetworkRow.name];
                         if ( existingId != null ) {
                             Log.info(`Remote Network with same name already exists, will skip: '${remoteNetworkRow.name}'`);
-                            remoteNetworkRow["importAction"] = "SKIP";
+                            remoteNetworkRow["importAction"] = ImportAction.IGNORE;
                             remoteNetworkRow["importId"] = existingId;
                             continue;
                         }
 
                         Log.info(`Remote Network will be created: '${remoteNetworkRow.name}'`);
-                        remoteNetworkRow["importAction"] = "CREATE";
+                        remoteNetworkRow["importAction"] = ImportAction.CREATE;
                         remoteNetworkRow["importId"] = null;
                         importCount++;
                     }
@@ -246,19 +252,19 @@ export const importCmd = new Command()
                         let existingRemoteNetwork = nodeIdMap[nodeLabelIdMap.RemoteNetwork[resourceRow.remoteNetworkLabel]];
                         if ( existingRemoteNetwork != null && existingRemoteNetwork.resourceNames.includes(resourceRow.name) ) {
                             Log.info(`Resource with same name exists, will skip: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}'`);
-                            resourceRow["importAction"] = "SKIP";
+                            resourceRow["importAction"] = ImportAction.IGNORE;
                             resourceRow["importId"] = existingRemoteNetwork.resources.filter(r => r.name === resourceRow.name)[0];
                             continue;
                         }
                         if ( typeof resourceRow["addressValue"] !== "string" || resourceRow["addressValue"].length > 255 ) {
                             Log.error(`Resource will be skipped: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}' - Invalid address`);
-                            resourceRow["importAction"] = "SKIP";
+                            resourceRow["importAction"] = ImportAction.IGNORE;
                             resourceRow["importId"] = null;
                         }
                         resourceRow["_protocol"] = tryResourceRowToProtocols(resourceRow);
 
                         Log.info(`Resource will be created: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}'`);
-                        resourceRow["importAction"] = "CREATE";
+                        resourceRow["importAction"] = ImportAction.CREATE;
                         resourceRow["importId"] = null;
                         importCount++;
                     }
@@ -266,25 +272,25 @@ export const importCmd = new Command()
                 case "Device":
                     for ( let deviceRow of sheetData ) {
                         if ( deviceRow.serialNumber == null || deviceRow.serialNumber === "") {
-                            Log.info(`Will skip row with missing serial number: '${deviceRow}'`);
-                            deviceRow["importAction"] = "SKIP";
+                            Log.info(`IGNORE - Row with missing serial number: '${deviceRow}'.`);
+                            deviceRow["importAction"] = ImportAction.IGNORE;
                             continue;
                         }
                         let existingDevice = nodeIdMap[ nodeLabelIdMap.Device[deviceRow.serialNumber] ];
                         if ( existingDevice == null ) {
-                            Log.info(`Device with serial number '${deviceRow.serialNumber}' not found, will skip.`);
-                            deviceRow["importAction"] = "SKIP";
+                            Log.info(`IGNORE - Device with serial number '${deviceRow.serialNumber}' - not found.`);
+                            deviceRow["importAction"] = ImportAction.IGNORE;
                             continue;
                         }
                         deviceRow.isTrusted = (deviceRow.isTrusted === true) || (typeof deviceRow.isTrusted === "string" && AFFIRMATIVES.includes(deviceRow.isTrusted.trim().toUpperCase()) );
                         if ( existingDevice.isTrusted === deviceRow.isTrusted ) {
-                            Log.info(`Device be skipped: '${deviceRow.serialNumber}' - No change in trust`);
-                            deviceRow["importAction"] = "SKIP";
+                            Log.info(`IGNORE - Device with serial number '${deviceRow.serialNumber}' (${existingDevice.id}) - No change in trust`);
+                            deviceRow["importAction"] = ImportAction.IGNORE;
                             continue;
                         }
-                        Log.info(`Device trust will be set for device: '${existingDevice.id}' (${existingDevice.serialNumber}) to: ${deviceRow.isTrusted}`);
+                        Log.info(`UPDATE - Device with serial number '${existingDevice.serialNumber}' (${existingDevice.id}) - Change trust to: ${Colors.italic(deviceRow.isTrusted+"")}`);
                         if ( deviceRow.id == null ) deviceRow.id = existingDevice.id;
-                        deviceRow["importAction"] = "UPDATE_TRUST";
+                        deviceRow["importAction"] = ImportAction.UPDATE_TRUST;
                         deviceRow["importId"] = existingDevice.id;
                         importCount++;
                     }
@@ -303,7 +309,7 @@ export const importCmd = new Command()
 
         // Pass through all records to import and import them
         for ( const [schemaName, importData] of Object.entries(mergeMap)) {
-            const recordsToImport = importData.filter(row => row.importAction !== "SKIP");
+            const recordsToImport = importData.filter(row => row.importAction !== ImportAction.IGNORE);
             Log.info(`Importing ${recordsToImport.length} record(s) as ${schemaName}s`);
             switch (schemaName) {
                 case "Group":

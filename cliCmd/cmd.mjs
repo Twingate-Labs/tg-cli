@@ -23,6 +23,9 @@ export function getTopLevelCommand(name) {
         case "group":
             cmd = cmd.command("copy", getCopyCommand(name))
             break;
+        case "connector":
+
+            break;
         default:
             // NoOp
             break;

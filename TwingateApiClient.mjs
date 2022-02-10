@@ -18,6 +18,11 @@ export class TwingateApiClient {
         ALL: "ALL"
     }
 
+    static IdPrefixes = {
+        // Really not ideal since identifiers are meant to be opaque
+        RemoteNetwork: btoa("RemoteNetwork:").replace(/=$/, "")
+    }
+
     static Schema = {
         // BEGIN types
         "ResourceAddress": {
@@ -393,6 +398,7 @@ export class TwingateApiClient {
         for ( let x = 0; x < nodeNames.length; x++ ) rtnVal[nodeNames[x]] = results[x];
         return rtnVal
     }
+
     async fetchAllConnectors(opts) {
         return this._fetchAllNodesOfType("Connector", opts);
     }
@@ -510,6 +516,15 @@ export class TwingateApiClient {
         return group;
     }
 
+    async lookupRemoteNetworkByName(name) {
+        const query = "query RemoteNetworkByName($name:String){remoteNetworks(filter:{name:{eq:$name}}){edges{node{id}}}}";
+        let response = await this.exec(query, {name: ""+name.trim()});
+        let result = response.remoteNetworks;
+        if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
+        return result.edges[0].node.id;
+    }
+
+
     async setDeviceTrust(id, isTrusted) {
         const setDeviceTrustQuery = "mutation SetDeviceTrust($id:ID!,$isTrusted:Boolean!){result:deviceUpdate(id:$id,isTrusted:$isTrusted){ok error entity{id isTrusted}}}";
         let deviceTrustResponse = await this.exec(setDeviceTrustQuery, {id, isTrusted} );
@@ -541,15 +556,37 @@ export class TwingateApiClient {
     async createGroup(name, resourceIds, userIds) {
         const createGroupQuery = "mutation CreateGroup($name:String!,$resourceIds:[ID],$userIds:[ID]){result:groupCreate(name:$name,resourceIds:$resourceIds,userIds:$userIds){error entity{id}}}";
         let groupsResponse = await this.exec(createGroupQuery, {name, resourceIds, userIds} );
-        if ( groupsResponse.result.error !== null ) throw new Error(`Error creating group: '${groupsResponse.response.error}'`)
+        if ( groupsResponse.result.error !== null ) throw new Error(`Error creating group: '${groupsResponse.result.error}'`)
         return groupsResponse.result.entity;
     }
 
     async createRemoteNetwork(name) {
         const createRemoteNetworkQuery = "mutation CreateRemoteNetwork($name:String!){result:remoteNetworkCreate(name:$name){error entity{id}}}";
         let createRemoteNetworkResponse = await this.exec(createRemoteNetworkQuery, {name} );
-        if ( createRemoteNetworkResponse.result.error !== null ) throw new Error(`Error creating remote network: '${createRemoteNetworkResponse.response.error}'`)
+        if ( createRemoteNetworkResponse.result.error !== null ) throw new Error(`Error creating remote network: '${createRemoteNetworkResponse.result.error}'`)
         return createRemoteNetworkResponse.result.entity;
+    }
+
+    async createConnector(remoteNetworkId) {
+        const createConnectorQuery = "mutation CreateConnector($remoteNetworkId:ID!){result:connectorCreate(remoteNetworkId:$remoteNetworkId){error entity{id name}}}";
+        let createConnectorResponse = await this.exec(createConnectorQuery, {remoteNetworkId} );
+        if ( createConnectorResponse.result.error !== null ) throw new Error(`Error creating connector: '${createConnectorResponse.result.error}'`)
+        return createConnectorResponse.result.entity;
+    }
+
+    async setConnectorName(id, name) {
+        const setConnectorNameQuery = "mutation SetConnectorName($id:ID!,$name:String){result:connectorUpdate(id:$id,name:$name){error entity{id name}}}";
+        let setConnectorNameResponse = await this.exec(setConnectorNameQuery, {id, name} );
+        if ( setConnectorNameResponse.result.error !== null ) throw new Error(`Error setting connector name: '${setConnectorNameResponse.result.error}'`)
+        return setConnectorNameResponse.result.entity;
+    }
+
+
+    async generateConnectorTokens(connectorId) {
+        const query = "mutation GenerateTokens($connectorId:ID!){result:connectorGenerateTokens(connectorId:$connectorId){error ok connectorTokens{accessToken refreshToken}}}";
+        let response = await this.exec(query, {connectorId} );
+        if ( response.result.error !== null ) throw new Error(`Error setting connector name: '${response.result.error}'`)
+        return response.result.connectorTokens;
     }
 
     async createResource(name, address, remoteNetworkId, protocols = null, groupIds = []) {

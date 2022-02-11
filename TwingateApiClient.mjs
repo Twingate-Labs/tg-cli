@@ -20,7 +20,8 @@ export class TwingateApiClient {
 
     static IdPrefixes = {
         // Really not ideal since identifiers are meant to be opaque
-        RemoteNetwork: btoa("RemoteNetwork:").replace(/=$/, "")
+        RemoteNetwork: btoa("RemoteNetwork:").replace(/=$/, ""),
+        Group: btoa("Group:").replace(/=$/, "")
     }
 
     static Schema = {
@@ -280,7 +281,7 @@ export class TwingateApiClient {
         const firstResults = pageSize>0 ? `first:${pageSize},` : "";
         fieldAlias = (fieldAlias != null && fieldAlias != field) ? `${fieldAlias}:` : "";
         if ( Array.isArray(nodeFields) ) nodeFields = nodeFields.join(" ");
-        return `query ${queryName}($id:ID!,$endCursor:String!){${fieldAlias}${field}(id:$id){${connectionField}(${firstResults},after:$endCursor){pageInfo{hasNextPage endCursor}edges{node{${nodeFields}}}}}}`;
+        return `query ${queryName}($id:ID!,$endCursor:String!){${fieldAlias}${field}(id:$id){${connectionField}(${firstResults}after:$endCursor){pageInfo{hasNextPage endCursor}edges{node{${nodeFields}}}}}}`;
     }
 
     /**
@@ -332,12 +333,12 @@ export class TwingateApiClient {
         return rtnVal;
     }
 
-    async _fetchAllNodesOfType(nodeType, opts) {
+    async _fetchAllNodesOfType(nodeType, options) {
         const nodeSchema = TwingateApiClient.Schema[nodeType];
         if ( nodeSchema == null) throw new Error(`Cannot find schema for type: ${nodeType}`);
-        opts = opts || {};
+        let opts = Object.assign({}, options);
         opts.fieldSet = opts.fieldSet || [TwingateApiClient.FieldSet.ALL];
-        const fieldOpts = opts.fieldOpts || {};
+        const fieldOpts = Object.assign({}, opts.fieldOpts );
 
         // Todo: some of this can be moved into pre-process step
         for ( const connField of [...nodeSchema.connectionFields, ...nodeSchema.nodeFields] ) {
@@ -377,7 +378,7 @@ export class TwingateApiClient {
                     pageResults.push(...await this.fetchAllPages(options.nodeQuery, {id: record.id, pageInfo, getResultObjFn: options.getResultObjFn}));
                 }
                 record[connectionField] = pageResults.map(options.nodeFieldMapFn);
-                if ( options.joinConnectionFields != null ) record[connectionField] = record[connectionField].join(options.joinConnectionFields);
+                if ( typeof options.joinConnectionFields === "function" ) record[connectionField] = options.joinConnectionFields(record[connectionField]);
             }
         }
         return records;

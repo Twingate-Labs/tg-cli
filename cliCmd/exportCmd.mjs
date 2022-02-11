@@ -148,13 +148,42 @@ async function exportImage(client, options) {
     return await renderDot(dot, `./${options.outputFile}`, {format: options.format});
 }
 
+
+async function exportJson(client, options) {
+    const configForExport = {
+        //defaultConnectionFields: "LABEL_FIELD",
+        fieldOpts: {
+            defaultObjectFieldSet: [TwingateApiClient.FieldSet.ID]
+        },
+        joinConnectionFields: (connections) => {
+            return connections.join(", ");
+        },
+        recordTransformOpts: {
+            mapDateFields: true,
+            mapNodeToId: true,
+            mapEnumToDisplay: true,
+            flattenObjectFields: true
+        }
+    }
+    if ( options.typesToFetch.length > 0 ) configForExport.typesToFetch = options.typesToFetch;
+    const allNodes = await client.fetchAll(configForExport);
+
+    setLastConnectedOnUser(allNodes);
+    options.outputFile = options.outputFile || genFileNameFromNetworkName(options.accountName, "json");
+    await Deno.writeTextFile(`./${options.outputFile}`, JSON.stringify(allNodes));
+}
+
+
 async function exportExcel(client, options) {
     const configForExport = {
         defaultConnectionFields: "LABEL_FIELD",
         fieldOpts: {
             defaultObjectFieldSet: [TwingateApiClient.FieldSet.LABEL]
         },
-        joinConnectionFields: ", ",
+        joinConnectionFields: (connections) => {
+            let s = connections.join(", ");
+            return s.length > 32767 ? s.substr(0, 32764) + "..." : s;
+        },
         recordTransformOpts: {
             mapDateFields: true,
             mapNodeToLabel: true,
@@ -180,6 +209,7 @@ async function exportExcel(client, options) {
 
 const outputFnMap = {
     "xlsx": exportExcel,
+    "json": exportJson,
     "dot": exportDot,
     "png": exportImage,
     "svg": exportImage

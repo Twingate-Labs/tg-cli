@@ -1,4 +1,4 @@
-import {genFileNameFromNetworkName, loadNetworkAndApiKey} from "../utils/smallUtilFuncs.mjs";
+import {genFileNameFromNetworkName, loadNetworkAndApiKey, AFFIRMATIVES, tryProcessPortRestrictionString} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
 import XLSX from "https://cdn.esm.sh/xlsx";
@@ -68,28 +68,6 @@ async function writeImportResults(data, outputFilename) {
     await Deno.writeFile(`./${outputFilename}`, new Uint8Array(XLSX.write(ImportResultsWb, {type: "array"})));
 }
 
-const portTestRegEx = /^[0-9]+$/.compile();
-const AFFIRMATIVES = ["YES", "Y", "TRUE", "T"]
-function tryProcessPortRestrictionString(restrictions) {
-    // 443, 8080-8090
-    const validatePortNumber = (port) => {
-        if ( !portTestRegEx.test(port) ) throw new Error(`Invalid port: ${port}`);
-        let portNum = Number(port);
-        if ( portNum < 1 || portNum > 65535 ) throw new Error(`Invalid port range: ${portNum}`);
-        return portNum;
-    }
-    const singleRestrictionToObj = (restriction) => {
-        restriction = restriction.trim();
-        let ports = restriction.split('-');
-        if ( ports.length > 2 ) throw new Error(`Invalid port restriction: ${restriction}`);
-        let start = validatePortNumber(ports[0]);
-        let end = ports.length === 2 ? validatePortNumber(ports[1]) : start;
-        if ( start > end ) throw new Error(`Invalid port restriction - end greater than start: ${restriction}`);
-        return {start,end};
-    };
-    return restrictions.split(",").map(singleRestrictionToObj);
-}
-
 function tryResourceRowToProtocols(resourceRow) {
     if ( typeof resourceRow.protocolsAllowIcmp === "string") {
         resourceRow.protocolsAllowIcmp = resourceRow.protocolsAllowIcmp.trim().toUpperCase();
@@ -112,6 +90,7 @@ function tryResourceRowToProtocols(resourceRow) {
     }
     return protocols
 }
+
 export const importCmd = new Command()
     .option("-f, --file <string>", "Path to Excel file to import from", {
         required: true

@@ -73,7 +73,10 @@ export function getListCommand(name) {
                     defaultObjectFieldSet: [TwingateApiClient.FieldSet.LABEL],
                     ...config.listFieldOpts
                 },
-                joinConnectionFields: ", ",
+                joinConnectionFields: (connections) => {
+                    let s = connections.join(", ");
+                    return s.length > 50 ? s.substr(0, 50) + "..." : s;
+                },
                 recordTransformOpts: {
                     mapDateFields: true,
                     mapNodeToLabel: true,

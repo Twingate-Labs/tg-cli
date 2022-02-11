@@ -113,3 +113,27 @@ export function setLastConnectedOnUser(nodeObj) {
 
     for (const user of nodeObj.User) user.lastConnectedAt = lastConnectedMap.get(user.email);
 }
+
+
+const portTestRegEx = /^[0-9]+$/.compile();
+export const AFFIRMATIVES = ["YES", "Y", "TRUE", "T"]
+export function tryProcessPortRestrictionString(restrictions) {
+    // 443, 8080-8090
+    const validatePortNumber = (port) => {
+        if ( !portTestRegEx.test(port) ) throw new Error(`Invalid port: ${port}`);
+        let portNum = Number(port);
+        if ( portNum < 1 || portNum > 65535 ) throw new Error(`Invalid port range: ${portNum}`);
+        return portNum;
+    }
+    const singleRestrictionToObj = (restriction) => {
+        restriction = restriction.trim();
+        let ports = restriction.split('-');
+        if ( ports.length > 2 ) throw new Error(`Invalid port restriction: ${restriction}`);
+        let start = validatePortNumber(ports[0]);
+        let end = ports.length === 2 ? validatePortNumber(ports[1]) : start;
+        if ( start > end ) throw new Error(`Invalid port restriction - end greater than start: ${restriction}`);
+        return {start,end};
+    };
+    return restrictions.split(",").map(singleRestrictionToObj);
+}
+

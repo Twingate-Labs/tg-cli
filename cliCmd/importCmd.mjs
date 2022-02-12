@@ -25,9 +25,21 @@ async function fetchDataForImport(client, options, wb) {
     let typesToFetch = [],
         sheetNames = wb.SheetNames,
         // If no options are specified then import all
-        importAllByDefault = Object.keys(optionToSheetMap).map( optionName => options[optionName]).every(option => option === undefined)
+        typesToImport = Object.keys(optionToSheetMap).filter( optionName => options[optionName] != null),
+        importAllByDefault = typesToImport.length === 0
     ;
     if ( importAllByDefault === true ) Log.info("Importing all types");
+
+    if ( typesToImport.length === 1 && sheetNames.length === 1 ) {
+        // Coerce sheetname in case of CSV format
+        const typeToImport = typesToImport[0],
+              currentSheetName = sheetNames[0],
+              expectedSheetName = optionToSheetMap[typeToImport];
+        wb.SheetNames.splice(0, 1, expectedSheetName);
+        wb.Sheets[expectedSheetName] = wb.Sheets[currentSheetName];
+        delete wb.Sheets[currentSheetName];
+
+    }
     for (const [optionName, schemaName ] of Object.entries(optionToSheetMap) ) {
         options[optionName] = options[optionName] || importAllByDefault;
 

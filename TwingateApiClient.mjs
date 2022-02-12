@@ -533,26 +533,6 @@ export class TwingateApiClient {
         return deviceTrustResponse.result.entity;
     }
 
-    // Full docs TBD but input should be array of objects with {...id: ID, isTrusted: boolean}
-    async setDeviceTrustBulk(devices, idFieldFn = (d) => d.id, isTrustedFieldFn = (d) => d.isTrusted) {
-        if ( !Array.isArray(devices)  ) throw new Error(`setDeviceTrustBulk requires an array as input.`);
-        if ( devices.length === 0 ) return [];
-        if ( !devices.every( device => typeof device.id === "string" && typeof device.isTrusted === "boolean" ) ) throw new Error(`setDeviceTrustBulk requires every item to have an 'id' (string) and 'isTrusted' (boolean) value`);
-
-        const gqlParams = devices.map( (_, i) => `$id${i}:ID!,$isTrusted${i}:Boolean!`).join(",");
-        const gqlMutationParts = devices.map( (_, i) => `result${i}:deviceUpdate(id:$id${i},isTrusted:$isTrusted${i}){ok error entity{id isTrusted}}`).join(" ");
-        const gqlVariables = Object.fromEntries(devices.flatMap( (d, i) => [[`id${i}`, idFieldFn(d)], [`isTrusted${i}`, isTrustedFieldFn(d) ]]));
-        let bulkSetTrustQuery = `mutation BulkSetDeviceTrust${devices.length}(${gqlParams}){${gqlMutationParts}}`;
-        let bulkDeviceTrustResponse = await this.exec(bulkSetTrustQuery, gqlVariables );
-
-        let results = [];
-        for ( let x = 0; x < devices.length; x++ ) {
-            results.push(bulkDeviceTrustResponse[`result${x}`]);
-        }
-        //if ( deviceTrustResponse.result.error !== null ) throw new Error(`Error setting device trust: '${deviceTrustResponse.result.error}'`)
-        //return deviceTrustResponse.result.entity;]
-        return results;
-    }
 
     async createGroup(name, resourceIds, userIds) {
         const createGroupQuery = "mutation CreateGroup($name:String!,$resourceIds:[ID],$userIds:[ID]){result:groupCreate(name:$name,resourceIds:$resourceIds,userIds:$userIds){error entity{id}}}";
@@ -617,6 +597,74 @@ export class TwingateApiClient {
         if ( !removeResourceResponse.result.ok ) throw new Error(`Error removing resource '${id}' ${removeResourceResponse.result.error}`);
         return true;
     }
+
+
+
+    //<editor-fold desc="Bulk APIs (very experimental)">
+
+    // Full docs TBD but input should be array of objects with {...id: ID, isTrusted: boolean}
+    // Caller must check for errors!
+    async setDeviceTrustBulk(devices, idFieldFn = (d) => d.id, isTrustedFieldFn = (d) => d.isTrusted) {
+        if ( !Array.isArray(devices)  ) throw new Error(`setDeviceTrustBulk requires an array as input.`);
+        if ( devices.length === 0 ) return [];
+        if ( !devices.every( device => typeof device.id === "string" && typeof device.isTrusted === "boolean" ) ) throw new Error(`setDeviceTrustBulk requires every item to have an 'id' (string) and 'isTrusted' (boolean) value`);
+
+        const gqlParams = devices.map( (_, i) => `$id${i}:ID!,$isTrusted${i}:Boolean!`).join(",");
+        const gqlMutationParts = devices.map( (_, i) => `result${i}:deviceUpdate(id:$id${i},isTrusted:$isTrusted${i}){ok error entity{id isTrusted}}`).join(" ");
+        const gqlVariables = Object.fromEntries(devices.flatMap( (d, i) => [[`id${i}`, idFieldFn(d)], [`isTrusted${i}`, isTrustedFieldFn(d) ]]));
+        let bulkSetTrustQuery = `mutation BulkSetDeviceTrust${devices.length}(${gqlParams}){${gqlMutationParts}}`;
+        let bulkDeviceTrustResponse = await this.exec(bulkSetTrustQuery, gqlVariables );
+
+        let results = [];
+        for ( let x = 0; x < devices.length; x++ ) {
+            results.push(bulkDeviceTrustResponse[`result${x}`]);
+        }
+        return results;
+    }
+
+
+    async removeGroupsBulk(ids) {
+        if ( !Array.isArray(ids)  ) throw new Error(`removeGroupsBulk requires an array as input.`);
+        if ( ids.length === 0 ) return [];
+        if ( !ids.every( id => typeof id === "string" && id.startsWith(TwingateApiClient.IdPrefixes.Group) ) ) throw new Error(`removeGroupsBulk requires every value to be a Group Id`);
+
+        const gqlParams = ids.map( (_, i) => `$id${i}:ID!`).join(",");
+        const gqlMutationParts = devices.map( (_, i) => `result${i}:groupDelete(id:$id${i}){ok error}`).join(" ");
+        const gqlVariables = Object.fromEntries(ids.flatMap( (id, i) => [[`id${i}`, id]]));
+        let query = `mutation BulkRemoveGroup_${ids.length}(${gqlParams}){${gqlMutationParts}}`;
+        let response = await this.exec(query, gqlVariables );
+
+        let results = [];
+        for ( let x = 0; x < ids.length; x++ ) {
+            results.push(response[`result${x}`]);
+        }
+        //if ( deviceTrustResponse.result.error !== null ) throw new Error(`Error setting device trust: '${deviceTrustResponse.result.error}'`)
+        //return deviceTrustResponse.result.entity;]
+        return results;
+
+
+        const removeGroupQuery = "mutation RemoveGroup($id:ID!){result:groupDelete(id:$id){ok, error}}";
+        let removeGroupResponse = await this.exec(removeGroupQuery, {id});
+        if ( !removeGroupResponse.result.ok ) throw new Error(`Error removing group '${id}' ${removeGroupResponse.result.error}`);
+        return true;
+    }
+
+    async removeRemoteNetworksBulk(ids) {
+        const removeRemoteNetworkQuery = "mutation RemoveRemoteNetwork($id:ID!){result:remoteNetworkDelete(id:$id){ok, error}}";
+        let removeRemoteNetworkResponse = await this.exec(removeRemoteNetworkQuery, {id});
+        if ( !removeRemoteNetworkResponse.result.ok ) throw new Error(`Error removing remote network '${id}' ${removeRemoteNetworkResponse.result.error}`);
+        return true;
+    }
+
+    async removeResourcesBulk(ids) {
+        const removeResourceQuery = "mutation RemoveResource($id:ID!){result:resourceDelete(id:$id){ok, error}}";
+        let removeResourceResponse = await this.exec(removeResourceQuery, {id});
+        if ( !removeResourceResponse.result.ok ) throw new Error(`Error removing resource '${id}' ${removeResourceResponse.result.error}`);
+        return true;
+    }
+
+
+    //</editor-fold>
 
     /**
      * Test whether a network name appears valid

@@ -1,7 +1,7 @@
 import {genFileNameFromNetworkName, loadNetworkAndApiKey, setLastConnectedOnUser} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
-import XLSX from "https://cdn.esm.sh/v66/xlsx@0.18.2/es2021/xlsx.js";
+import XLSX from "https://cdn.esm.sh/v58/xlsx@0.17.4/deno/xlsx.js";
 import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 import {
     attribute,

@@ -1,7 +1,7 @@
 import {genFileNameFromNetworkName, loadNetworkAndApiKey, AFFIRMATIVES, tryProcessPortRestrictionString} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
-import XLSX from "https://cdn.esm.sh/xlsx";
+import XLSX from "https://cdn.esm.sh/v66/xlsx@0.18.2/es2021/xlsx.js";
 import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
 import {Confirm} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";

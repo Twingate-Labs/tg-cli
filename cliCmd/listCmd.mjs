@@ -1,6 +1,6 @@
 import {loadNetworkAndApiKey, sortByTextField} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
-import XLSX from "https://cdn.esm.sh/xlsx";
+import XLSX from "https://cdn.esm.sh/v66/xlsx@0.18.2/es2021/xlsx.js";
 import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
 import {Log, LOG_LEVELS} from "../utils/log.js";
 

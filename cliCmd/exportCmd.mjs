@@ -20,6 +20,7 @@ async function outputDot(client, options) {
             mapNodeToId: true
         }
     }
+    if ( Array.isArray( options.typesToFetch ) && options.typesToFetch.length > 0 ) configForGraph.typesToFetch = options.typesToFetch;
     const allNodes = await client.fetchAll(configForGraph);
 
     let nodeCache = {};

@@ -13,10 +13,7 @@ This is a command line application demonstrating various usages of the Twingate 
 
 **Compilation**
 
-*Note, waiting on the [following](https://github.com/denoland/deno/issues/12086) GitHub issue to be fixed and released before compilation will work - affecting versions up until 1.16.4.*
-
-
-This script can be compiled to a native executable binary using `deno compile --allow-net --allow-read --allow-write --allow-run --allow-env --unstable ./tg.js`
+This script can be compiled to a native executable binary using `deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js`
 
 Thereafter you can execute the binary without deno: ``./tg --help``
 
@@ -25,6 +22,8 @@ Thereafter you can execute the binary without deno: ``./tg --help``
 ``./tg.js --help``
 
 ``./tg.js group --help``
+
+``./tg.js export --help``
 
 **Example - Export Excel file**
 

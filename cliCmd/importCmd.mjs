@@ -17,9 +17,12 @@ const optionToSheetMap = {
 const ImportAction = {
     IGNORE: "IGNORE",
     CREATE: "CREATE",
+    UPDATE: "UPDATE",
     UPDATE_TRUST: "UPDATE_TRUST",
     ERROR: "ERROR"
 }
+
+const primitiveInOrderArrayEquals = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
 
 async function fetchDataForImport(client, options, wb) {
     let typesToFetch = [],
@@ -28,6 +31,7 @@ async function fetchDataForImport(client, options, wb) {
         typesToImport = Object.keys(optionToSheetMap).filter( optionName => options[optionName] != null),
         importAllByDefault = typesToImport.length === 0
     ;
+    options.importAllByDefault = importAllByDefault;
     if ( importAllByDefault === true ) Log.info("Importing all types");
 
     if ( typesToImport.length === 1 && sheetNames.length === 1 ) {
@@ -40,7 +44,7 @@ async function fetchDataForImport(client, options, wb) {
         delete wb.Sheets[currentSheetName];
 
     }
-    for (const [optionName, schemaName ] of Object.entries(optionToSheetMap) ) {
+    for (const [optionName, schemaName] of Object.entries(optionToSheetMap) ) {
         options[optionName] = options[optionName] || importAllByDefault;
 
         if ( options[optionName] === true ) {
@@ -53,6 +57,17 @@ async function fetchDataForImport(client, options, wb) {
 
     if ( typesToFetch.length === 0 ) {
         throw new Error(`Cannot import because nothing to import`);
+    }
+
+    if ( typesToFetch.includes("Resource") ) {
+        // If we're importing resources we prob need Groups and Remote Networks too
+        if ( !typesToFetch.includes("Group") ) typesToFetch.push("Group");
+        if ( !typesToFetch.includes("RemoteNetwork") ) typesToFetch.push("RemoteNetwork");
+    }
+    else if ( typesToFetch.includes("Group") ) { // note 'else' is intentional
+        // If we're importing groups we prob need Resources and Users too
+        if ( !typesToFetch.includes("Resource") ) typesToFetch.push("Resource");
+        if ( !typesToFetch.includes("User") ) typesToFetch.push("User");
     }
 
     const allNodes = await client.fetchAll({
@@ -103,6 +118,19 @@ function tryResourceRowToProtocols(resourceRow) {
     return protocols
 }
 
+// Poor-mans cache
+let nodeLabelIdMap = {
+    RemoteNetwork: {},
+    Resource: {},
+    Group: {},
+    Device: {},
+    User: {}
+}
+
+const groupIdByName = (name) => nodeLabelIdMap.Group[name];
+const userIdByEmail = (email) => nodeLabelIdMap.User[email];
+const resourceIdByName = (resourceName) => nodeLabelIdMap.Resource[resourceName];
+
 export const importCmd = new Command()
     .option("-f, --file <string>", "Path to Excel file to import from", {
         required: true
@@ -112,6 +140,7 @@ export const importCmd = new Command()
     .option("-g, --groups [boolean]", "Include Groups")
     //.option("-u, --users [boolean]", "Include Users")
     .option("-d, --devices [boolean]", "Include Devices (trust)")
+    .option("-s, --sync [boolean]", "Attempt to synchronise entities with the same natural identifier")
     .option("-y, --assume-yes [boolean]", "Automatic yes to prompts; assume 'yes' as answer to all prompts")
     .description("Import from excel file to a Twingate account")
     .action(async (options) => {
@@ -133,24 +162,31 @@ export const importCmd = new Command()
 
         const {typesToFetch, allNodes} = await fetchDataForImport(client, options, wb);
 
-        let nodeLabelIdMap = {
+        nodeLabelIdMap = {
             RemoteNetwork: {},
             Resource: {},
             Group: {},
-            Device: {}
-        }
+            Device: {},
+            User: {}
+        };
 
         let nodeIdMap = Object.fromEntries([
             ...allNodes.RemoteNetwork,
             ...allNodes.Resource,
             ...allNodes.Group,
-            ...allNodes.Device
+            ...allNodes.Device,
+            ...allNodes.User
         ].map(n => [n.id, n]));
+
+        // Pre-process users
+        for ( let node of allNodes.User) {
+            nodeLabelIdMap.User[node.email.toLowerCase()] = node.id;
+        }
 
         // Pre-process groups
         for ( let node of allNodes.Group) {
-            if ( nodeLabelIdMap.Group[node.name] != null ) {
-                throw new Error(`Group with duplicate name found: '${node.name}' - Ids: ['${nodeLabelIdMap.Group[node.name]}', '${node.id}']`);
+            if ( groupIdByName(node.name) != null ) {
+                throw new Error(`Group with duplicate name found: '${node.name}' - Ids: ['${groupIdByName(node.name)}', '${node.id}']`);
             }
             nodeLabelIdMap.Group[node.name] = node.id;
         }
@@ -172,7 +208,11 @@ export const importCmd = new Command()
 
         // Pre-process resources
         for ( let node of allNodes.Resource) {
-            if ( options.remoteNetworks ) node.remoteNetwork = nodeIdMap[node.remoteNetwork.id].name;
+            if ( resourceIdByName(node.name) != null ) {
+                Log.warn(`Resource with duplicate name found: '${node.name}' - Ids: ['${resourceIdByName(node.name)}', '${node.id}'].`);
+                if ( options.sync && options.resources) throw new Error(`Sync will not work.`);
+            }
+            nodeLabelIdMap.Resource[node.name.toLowerCase()] = node.id;
         }
 
         // Pre-process devices
@@ -193,27 +233,87 @@ export const importCmd = new Command()
         // Map of old id to new id
         let mergeMap = {};
         let importCount = 0;
-        for ( let schemaName of typesToFetch ) {
+        for (const [optionName, schemaName] of Object.entries(optionToSheetMap) ) {
+            if ( options[optionName] !== true && options.importAllByDefault === false ) continue;
             let sheetData = XLSX.utils.sheet_to_json(wb.Sheets[schemaName]);
             mergeMap[schemaName] = sheetData;
             switch (schemaName) {
                 case "Group":
                     for ( let groupRow of sheetData) {
                         // 1. Skip non-manual groups
+                        /*
                         if ( groupRow.type !== "Manual" ) {
                             Log.info(`Group '${groupRow.name}' will be skipped because it is of type '${groupRow.type}'`);
                             groupRow["importAction"] = ImportAction.IGNORE;
                             groupRow["importId"] = "";
                             continue;
                         }
+                         */
 
                         // 2. Check if Group exists
-                        let existingId = nodeLabelIdMap.Group[groupRow.name];
+                        let existingId = groupIdByName(groupRow.name);
                         if ( existingId != null ) {
-                            Log.info(`Group with same name already exists, will skip: '${groupRow.name}'`);
-                            groupRow["importAction"] = ImportAction.IGNORE;
-                            groupRow["importId"] = existingId;
-                            continue;
+                            let existingGroup = nodeIdMap[existingId];
+                            if ( existingGroup == null ) throw new Error(`Unable to resolve group from Id: ${existingId}`);
+                            if ( options.sync ) {
+                                let importAction = ImportAction.IGNORE;
+                                let importId = "";
+                                // For groups we check resources and users
+                                if ( groupRow.users && existingGroup.type !== "SYNCED") {
+                                    let users = [];
+                                    existingGroup.users.sort();
+                                    groupRow.users.split(",").forEach( email => {
+                                        email = email.trim().toLowerCase();
+                                        let userId = userIdByEmail(email);
+                                        if ( userId == null) {
+                                            Log.warn(`Not able to map user '${email}' in group '${groupRow.name}'.`);
+                                        }
+                                        else {
+                                            users.push(userId);
+                                        }
+                                    });
+                                    users.sort();
+                                    if ( !primitiveInOrderArrayEquals(users, existingGroup.users) ) {
+                                        groupRow._userIds = users;
+                                        Log.info(`Will sync user memberships for group: '${groupRow.name}'(${existingId})`)
+                                        importAction = ImportAction.UPDATE;
+                                        importId = existingId;
+                                    }
+                                }
+
+                                if ( groupRow.resources ) {
+                                    let resources = [];
+                                    existingGroup.resources.sort();
+                                    groupRow.resources.split(",").forEach( resourceName => {
+                                        resourceName = resourceName.trim().toLowerCase();
+                                        let resourceId = resourceIdByName(resourceName);
+                                        if ( resourceId == null) {
+                                            Log.warn(`Not able to map resource '${resourceName}' in group '${groupRow.name}'.`);
+                                        }
+                                        else {
+                                            resources.push(resourceId);
+                                        }
+                                    });
+                                    resources.sort();
+                                    if ( !primitiveInOrderArrayEquals(resources, existingGroup.resources) ) {
+                                        groupRow._resourceIds = resources;
+                                        Log.info(`Will sync resources for group: '${groupRow.name}'(${existingId})`);
+                                        importAction = ImportAction.UPDATE;
+                                        importId = existingId;
+                                    }
+                                }
+
+                                groupRow["importAction"] = importAction;
+                                if ( importAction !== ImportAction.IGNORE ) importCount++;
+                                groupRow["importId"] = importId;
+                                continue;
+                            }
+                            else {
+                                Log.info(`Group with same name already exists, will skip: '${groupRow.name}'`);
+                                groupRow["importAction"] = ImportAction.IGNORE;
+                                groupRow["importId"] = existingId;
+                                continue;
+                            }
                         }
 
                         Log.info(`Group will be created: '${groupRow.name}'`);
@@ -306,11 +406,25 @@ export const importCmd = new Command()
             switch (schemaName) {
                 case "Group":
                     for ( let groupRow of recordsToImport ) {
-                        let newGroup = await client.createGroup(groupRow.name);
-                        groupRow.importId = newGroup.id;
-                        nodeIdMap[newGroup.id] = {...newGroup, _imported: true};
-                        allNodes.Group.push(nodeIdMap[newGroup.id]);
-                        nodeLabelIdMap.Group[groupRow.name] = newGroup.id;
+                        switch ( groupRow.importAction ) {
+                            case ImportAction.CREATE:
+                                let newGroup = await client.createGroup(groupRow.name);
+                                groupRow.importId = newGroup.id;
+                                nodeIdMap[newGroup.id] = {...newGroup, _imported: true};
+                                allNodes.Group.push(nodeIdMap[newGroup.id]);
+                                nodeLabelIdMap.Group[groupRow.name] = newGroup.id;
+                                break;
+                            case ImportAction.UPDATE:
+                                let result = await client.setGroupUsersAndResources(groupRow.importId, groupRow._userIds, groupRow._resourceIds);
+                                if ( result.ok !== true || result.error != null ) {
+                                    Log.error(`Error syncing group: '${groupRow.name}'(${groupRow.importId}): ${result.error}`);
+                                }
+                                break;
+                            default:
+                                // NoOp
+                                break;
+                        }
+
                     }
                     break;
                 case "RemoteNetwork":
@@ -325,11 +439,17 @@ export const importCmd = new Command()
                 case "Resource":
                     for ( let resourceRow of recordsToImport ) {
                         let remoteNetwork = nodeIdMap[nodeLabelIdMap.RemoteNetwork[resourceRow.remoteNetworkLabel]];
-                        let groupIds = resourceRow.groups
+                        if ( remoteNetwork == null ) {
+                            // TODO
+                            Log.warn(`Remote network not matched '${resourceRow.remoteNetworkLabel}' in resource '${resourceRow.name}' not matched, will skip.`);
+                            continue;
+                        }
+                        let groups = resourceRow.groups || "";
+                        let groupIds = groups
                             .split(",")
                             .map(r => r.trim())
                             .map(groupName => {
-                                let groupId = nodeLabelIdMap.Group[groupName];
+                                let groupId = groupIdByName(groupName);
                                 if ( groupId == null ) {
                                     Log.warn(`Group with name '${groupName}' in resource '${resourceRow.name}' not matched, will skip.`);
                                 }

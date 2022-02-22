@@ -134,6 +134,9 @@ export function tryProcessPortRestrictionString(restrictions) {
         if ( start > end ) throw new Error(`Invalid port restriction - end greater than start: ${restriction}`);
         return {start,end};
     };
+    if ( typeof restrictions !== "string" || restrictions.trim() === "") {
+        return [];
+    }
     return restrictions.split(",").map(singleRestrictionToObj);
 }
 

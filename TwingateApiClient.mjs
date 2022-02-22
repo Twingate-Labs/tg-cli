@@ -486,6 +486,28 @@ export class TwingateApiClient {
     }
 
 
+    /**
+     * @param {string} groupId - Twingate Group Id
+     * @param {string[]} userIds - userIds to remove
+     * @param {string[]} resourceIds - resourceIds to remove
+     * @returns {Promise<*>} - GraphQL entity
+     */
+    async setGroupUsersAndResources(groupId, userIds, resourceIds) {
+        let variables = ["$groupId:ID!"];
+        let params = ["id:$groupId"];
+        if ( userIds != null ) {
+            variables.push("$userIds:[ID]");
+            params.push("userIds:$userIds");
+        }
+        if ( resourceIds != null ) {
+            variables.push("$resourceIds:[ID]");
+            params.push("resourceIds:$resourceIds");
+        }
+        const query = `mutation SetGroupUsersAndResources(${variables.join(",")}){result:groupUpdate(${params.join(",")}){ok error}}`;
+        let response = await this.exec(query, {groupId, userIds, resourceIds} );
+        return response.result;
+    }
+
     async loadCompleteGroup(name) {
         let networkName = this.networkName, apiKey = this.apiKey;
         const groupsQuery = "query Groups($name:String){groups(filter:{name:{eq:$name}}){edges{node{id name users{pageInfo{hasNextPage endCursor}edges{node{id}}}resources{pageInfo{hasNextPage endCursor}edges{node{id}}}}}}}";

@@ -20,8 +20,8 @@ export class TwingateApiClient {
 
     static IdPrefixes = {
         // Really not ideal since identifiers are meant to be opaque
-        RemoteNetwork: btoa("RemoteNetwork:").replace(/=$/, ""),
-        Group: btoa("Group:").replace(/=$/, "")
+        RemoteNetwork: "UmVtb3RlTmV0d29yazo",// btoa("RemoteNetwork:").replace(/=$/, ""),
+        Group: "R3JvdXA6"// btoa("Group:").replace(/=$/, "")
     }
 
     static Schema = {
@@ -285,6 +285,20 @@ export class TwingateApiClient {
     }
 
     /**
+     * Returns a GraphQL query to return a single object
+     * @param {string} queryName - Name of the query
+     * @param {string} field - Name of the top level query field
+     * @param {string|Array} nodeFields - Fields to query
+     * @param {string} fieldAlias - Field alias (default: 'result')
+     * @returns {string} - Query string
+     */
+    getRootNodeQuery(queryName, field, nodeFields, fieldAlias="result") {
+        fieldAlias = (fieldAlias != null && fieldAlias != field) ? `${fieldAlias}:` : "";
+        if ( Array.isArray(nodeFields) ) nodeFields = nodeFields.join(" ");
+        return `query ${queryName}($id:ID!){${fieldAlias}${field}(id:$id){${nodeFields}}}`;
+    }
+
+    /**
      * Returns a top-level GraphQL query for use in a Key-Value transformation
      * @param {string} queryName - Name of the query
      * @param {string} field - Name of the top level query field
@@ -333,7 +347,7 @@ export class TwingateApiClient {
         return rtnVal;
     }
 
-    async _fetchAllNodesOfType(nodeType, options) {
+    _processFetchOptions(nodeType, options, source) {
         const nodeSchema = TwingateApiClient.Schema[nodeType];
         if ( nodeSchema == null) throw new Error(`Cannot find schema for type: ${nodeType}`);
         let opts = Object.assign({}, options);
@@ -360,6 +374,25 @@ export class TwingateApiClient {
             }
             fieldOpts[connField].getResultObjFn = fieldOpts[connField].getResultObjFn || new Function("response", `return response.result.${connField}`);
         }
+        return {opts, fieldOpts, nodeSchema};
+    }
+
+    async _processFetchConnections(nodeSchema, fieldOpts, record) {
+        for ( const connectionField of nodeSchema.connectionFields ) {
+            let options = fieldOpts[connectionField];
+            if ( record[connectionField] == null ) continue;
+            let pageInfo = record[connectionField].pageInfo;
+            let pageResults = record[connectionField].edges.map(e=>e.node);
+            if ( pageInfo != null && pageInfo.hasNextPage === true ) {
+                pageResults.push(...await this.fetchAllPages(options.nodeQuery, {id: record.id, pageInfo, getResultObjFn: options.getResultObjFn}));
+            }
+            record[connectionField] = pageResults.map(options.nodeFieldMapFn);
+            if ( typeof options.joinConnectionFields === "function" ) record[connectionField] = options.joinConnectionFields(record[connectionField]);
+        }
+    }
+
+    async _fetchAllNodesOfType(nodeType, options) {
+        let {opts, fieldOpts, nodeSchema} = this._processFetchOptions(nodeType, options, "All");
 
         const nodeFields = this._getFields(nodeType, opts.fieldSet, fieldOpts);
         const recordTransformFn = nodeSchema.recordTransformFn;
@@ -369,21 +402,26 @@ export class TwingateApiClient {
 
 
         for ( const record of records ) {
-            for ( const connectionField of nodeSchema.connectionFields ) {
-                let options = fieldOpts[connectionField];
-                if ( record[connectionField] == null ) continue;
-                let pageInfo = record[connectionField].pageInfo;
-                let pageResults = record[connectionField].edges.map(e=>e.node);
-                if ( pageInfo != null && pageInfo.hasNextPage === true ) {
-                    pageResults.push(...await this.fetchAllPages(options.nodeQuery, {id: record.id, pageInfo, getResultObjFn: options.getResultObjFn}));
-                }
-                record[connectionField] = pageResults.map(options.nodeFieldMapFn);
-                if ( typeof options.joinConnectionFields === "function" ) record[connectionField] = options.joinConnectionFields(record[connectionField]);
-            }
+            await this._processFetchConnections(nodeSchema, fieldOpts, record);
         }
         return records;
     }
 
+    async _fetchNodesOfTypeById(nodeType, id, options) {
+        let {opts, fieldOpts, nodeSchema} = this._processFetchOptions(nodeType, options, "All");
+        const nodeFields = this._getFields(nodeType, opts.fieldSet, fieldOpts);
+        const recordTransformFn = nodeSchema.recordTransformFn;
+        const recordTransformOpts = opts.recordTransformOpts || {};
+        const nextPageFn = () => ({hasNextPage: false});
+        const pageTransformFn = (response, rtnVal, recordTransformFn, recordTransformOpts) => Object.assign(rtnVal, recordTransformFn(response.result, recordTransformOpts));
+        const query = this.getRootNodeQuery(`${nodeType}ById`, nodeSchema.queryNodeField, nodeFields, "result");
+        let record = await this.fetchAllPages(query, {initialValue: {}, recordTransformFn, recordTransformOpts, nextPageFn, pageTransformFn, id});
+        await this._processFetchConnections(nodeSchema, fieldOpts, record);
+        return record;
+    }
+
+
+    //<editor-fold desc="Fetch All">
     async fetchAll(opts) {
         let rtnVal = {};
         opts = opts || {};
@@ -423,7 +461,33 @@ export class TwingateApiClient {
     async fetchAllGroups(opts) {
         return this._fetchAllNodesOfType("Group", opts);
     }
+    //</editor-fold>
 
+    //<editor-fold desc="Fetch by Id">
+    async fetchConnectorById(id, opts) {
+        return this._fetchNodesOfTypeById("Connector", id, opts);
+    }
+
+    async fetchDeviceById(id, opts) {
+        return this._fetchNodesOfTypeById("Device", id, opts);
+    }
+
+    async fetchUserById(id, opts) {
+        return this._fetchNodesOfTypeById("User", id, opts);
+    }
+
+    async fetchResourceById(id, opts) {
+        return this._fetchNodesOfTypeById("Resource", id, opts);
+    }
+
+    async fetchRemoteNetworkById(id, opts) {
+        return this._fetchNodesOfTypeById("RemoteNetwork", id, opts);
+    }
+
+    async fetchGroupById(id, opts) {
+        return this._fetchNodesOfTypeById("Group", id, opts);
+    }
+    //</editor-fold>
 
     _getFields(schemaName, fieldSet=[TwingateApiClient.FieldSet.ALL], fieldOptions={}) {
         const schema = TwingateApiClient.Schema[schemaName];
@@ -570,6 +634,28 @@ export class TwingateApiClient {
         return createRemoteNetworkResponse.result.entity;
     }
 
+    async updateRemoteNetwork(id, isActive=null, name=null) {
+        let variables = {id},
+            gqlParams = ["$id:ID"],
+            gqlArgs = ["id:$id"]
+        ;
+        if ( isActive === true || isActive === false ) {
+            variables.isActive = isActive;
+            gqlParams.push("$isActive:Boolean");
+            gqlArgs.push("isActive:$isActive");
+        }
+        if ( typeof name === "string" ) {
+            variables.name = name;
+            gqlParams.push("$name:String");
+            gqlArgs.push("name:$name");
+        }
+
+        const query = `mutation UpdateRemoteNetwork(${gqlParams.join(",")}){result:remoteNetworkUpdate(${gqlArgs.join(",")}){ok error entity{id}}}`;
+        let response = await this.exec(query, variables);
+        if ( response.result.error !== null ) throw new Error(`Error updating remote network: '${response.result.error}'`)
+        return response.result.entity;
+    }
+
     async createConnector(remoteNetworkId) {
         const createConnectorQuery = "mutation CreateConnector($remoteNetworkId:ID!){result:connectorCreate(remoteNetworkId:$remoteNetworkId){error entity{id name}}}";
         let createConnectorResponse = await this.exec(createConnectorQuery, {remoteNetworkId} );
@@ -660,8 +746,6 @@ export class TwingateApiClient {
         for ( let x = 0; x < ids.length; x++ ) {
             results.push(response[`result${x}`]);
         }
-        //if ( deviceTrustResponse.result.error !== null ) throw new Error(`Error setting device trust: '${deviceTrustResponse.result.error}'`)
-        //return deviceTrustResponse.result.entity;]
         return results;
 
 
@@ -709,6 +793,7 @@ export class TwingateApiClient {
         return rsp.status !== 401;
     }
 }
+
 
 (function preProcessSchema() {
     try {

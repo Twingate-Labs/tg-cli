@@ -80,6 +80,7 @@ async function fetchDataForImport(client, options, wb) {
     allNodes.Resource = allNodes.Resource || [];
     allNodes.Group = allNodes.Group || [];
     allNodes.Device = allNodes.Device || [];
+    allNodes.User = allNodes.User || [];
 
     return {typesToFetch, allNodes};
 }

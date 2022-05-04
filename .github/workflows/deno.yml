@@ -45,6 +45,9 @@ jobs:
         
       - name: Compile
         run: deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
+
+      - name: Compress
+        run: zip tg-cli-mac.zip ./tg
         
       - name: test 4
         run: ls -l
@@ -67,9 +70,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: tg
-          asset_name: tg
-          # asset_content_type: application/zip
+          asset_path: tg-cli-mac.zip
+          asset_name: tg-cli-mac.zip
+          asset_content_type: application/zip
 
       # Uncomment this step to verify the use of 'deno fmt' on each commit.
 

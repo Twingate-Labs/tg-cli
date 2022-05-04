@@ -91,4 +91,3 @@ jobs:
             deno_builds/x86_64-apple-darwin
             deno_builds/x86_64-pc-windows-msvc.exe
           token: ${{ secrets.GITHUB_TOKEN }}
-

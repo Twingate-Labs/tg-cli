@@ -9,12 +9,11 @@
 name: Deno
 
 on:
+  # push:
+  #   tags:
+  #     - v*.*.*
   push:
-    # branches: [main]
-    tags:
-      - v*.*.*
-  # pull_request:
-  #   branches: [main]
+    branches: [chenbishop-patch-1]
     
 
 # permissions:
@@ -93,4 +92,3 @@ jobs:
             deno_builds/x86_64-pc-windows-msvc.exe
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      

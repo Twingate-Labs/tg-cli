@@ -9,11 +9,11 @@
 name: Deno
 
 on:
-  # push:
-  #   tags:
-  #     - v*.*.*
   push:
-    branches: [chenbishop-patch-1]
+    tags:
+      - v*.*.*
+  # push:
+  #   branches: [chenbishop-patch-1]
     
 
 # permissions:

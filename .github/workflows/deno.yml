@@ -43,10 +43,8 @@ jobs:
       # - name: Execute
       #   uses: ./tg.js@v1
         
-      # - name: Compile
-      #   uses: deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
-      #   with:
-      #     deno-version: v1.x
+      - name: Compile
+        uses: deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
 
       # Uncomment this step to verify the use of 'deno fmt' on each commit.
 

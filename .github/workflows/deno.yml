@@ -31,6 +31,9 @@ jobs:
         with:
           deno-version: v1.x
           
+      - name: Test Deno
+        run: deno run https://deno.land/std/examples/welcome.ts
+          
       # - name: Execute
       #   uses: ./tg.js@v1
         
@@ -40,11 +43,14 @@ jobs:
       #     deno-version: v1.x
 
       # Uncomment this step to verify the use of 'deno fmt' on each commit.
-      - name: Verify formatting
-        run: deno fmt --check
 
-      - name: Run linter
-        run: deno lint
 
-      - name: Run tests
-        run: deno test -A --unstable
+
+      # - name: Verify formatting
+      #   run: deno fmt --check
+
+      # - name: Run linter
+      #   run: deno lint
+
+      # - name: Run tests
+      #   run: deno test -A --unstable

@@ -30,9 +30,12 @@ jobs:
         uses: denoland/setup-deno@004814556e37c54a2f6e31384c9e18e983317366
         with:
           deno-version: v1.x
-          
+
       - name: Test Deno
         run: deno run https://deno.land/std/examples/welcome.ts
+
+      - name: test 2
+        run: pwd
           
       # - name: Execute
       #   uses: ./tg.js@v1

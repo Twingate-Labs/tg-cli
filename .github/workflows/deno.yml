@@ -36,6 +36,9 @@ jobs:
 
       - name: test 2
         run: pwd
+
+      - name: test 3
+        run: ls -l
           
       # - name: Execute
       #   uses: ./tg.js@v1

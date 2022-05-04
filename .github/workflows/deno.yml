@@ -74,23 +74,12 @@ jobs:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       #   with:
       #     upload_url: ${{ github.event.release.upload_url }}
-      - name: Upload binaries to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: ./tg-cli-mac.zip
-        asset_name: tg-cli-mac.zip
-        tag: ${{ github.ref }}
-          
-      # Uncomment this step to verify the use of 'deno fmt' on each commit.
-
-
-
-      # - name: Verify formatting
-      #   run: deno fmt --check
-
-      # - name: Run linter
-      #   run: deno lint
-
-      # - name: Run tests
-      #   run: deno test -A --unstable
+      - name: upload file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./tg-cli-mac.zip
+          asset_name: tg-cli-mac.zip
+          asset_content_type: application/zip

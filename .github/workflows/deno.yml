@@ -46,6 +46,10 @@ jobs:
       - name: Compile
         run: deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
 
+
+      - name: test 4
+        run: ls -l
+
       # Uncomment this step to verify the use of 'deno fmt' on each commit.
 
 

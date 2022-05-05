@@ -49,7 +49,7 @@ jobs:
       - name: Compress cli_win_x86_64
         uses: papeloto/action-zip@v1
         with:
-          files: ./dist/win/x86_64/tg
+          files: ./dist/win/x86_64/tg.exe
           dest: ./cli_win_x86_64.zip
 
       - name: Compress cli_macos_x86_64

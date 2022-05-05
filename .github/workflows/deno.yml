@@ -37,7 +37,6 @@ jobs:
       - name: Compile
         run: deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
 
-      - uses: actions/checkout@v2
       - uses: papeloto/action-zip@v1
         with:
           files: ./tg

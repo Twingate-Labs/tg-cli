@@ -31,16 +31,25 @@ jobs:
         with:
           deno-version: v1.x
 
-      - name: Test Deno
-        run: deno run https://deno.land/std/examples/welcome.ts
+      # - name: Test Deno
+      #   run: deno run https://deno.land/std/examples/welcome.ts
         
       - name: Compile
         run: deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
 
+      - name: Compress
       - uses: papeloto/action-zip@v1
+        if: startsWith(${{ matrix.os }}, 'windows')
+        with:
+          files: ./tg.exe
+          dest: tg_cli-${{ matrix.os }}.zip
+        run: dir
+        if: startsWith(${{ matrix.os }}, 'ubuntu') || startsWith(${{ matrix.os }}, 'mac')
         with:
           files: ./tg
           dest: tg_cli-${{ matrix.os }}.zip
+        run: ls -l
+
 
       # - name: Compress
       #   run: zip tg-cli-mac.zip ./tg

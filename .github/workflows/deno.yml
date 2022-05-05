@@ -14,21 +14,19 @@ on:
   #     - v*.*.*
   push:
     branches: [chenbishop-patch-1]
-    
-
-# permissions:
-#  contents: read
 
 jobs:
-  test:
-    runs-on: macos-latest
+  os_matrix:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]      
 
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Setup repo
         uses: actions/checkout@v1
 
       - name: Setup Deno
-        # uses: denoland/setup-deno@v1
         uses: denoland/setup-deno@004814556e37c54a2f6e31384c9e18e983317366
         with:
           deno-version: v1.x
@@ -41,9 +39,6 @@ jobs:
 
       - name: test 3
         run: ls -l
-          
-      # - name: Execute
-      #   uses: ./tg.js@v1
         
       - name: Compile
         run: deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
@@ -54,27 +49,29 @@ jobs:
       - name: test 4
         run: ls -l
         
+      - name: test 5
+        run: echo ${{ matrix.os }} 
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          # draft: false
-          # prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset 
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./tg-cli-mac.zip
-          asset_name: tg-cli-mac.zip
-          asset_content_type: application/zip
+      # - name: Create Release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: ${{ github.ref }}
+      #     release_name: Release ${{ github.ref }}
+      #     # draft: false
+      #     # prerelease: false
+      # - name: Upload Release Asset
+      #   id: upload-release-asset 
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+      #     asset_path: ./tg-cli-mac.zip
+      #     asset_name: tg-cli-mac.zip
+      #     asset_content_type: application/zip
 
       # - name: Install denoc
       #   run: pip install denoc

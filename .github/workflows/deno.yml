@@ -58,7 +58,7 @@ jobs:
           files: ./dist/macos/x86_64/tg
           dest: ./cli_macos_x86_64.zip
 
-      - name: Compress cli_macos_x86_64
+      - name: Compress cli_macos_aarch64
         uses: papeloto/action-zip@v1
         with:
           files: ./dist/macos/aarch64/tg

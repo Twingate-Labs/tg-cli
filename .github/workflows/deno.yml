@@ -39,19 +39,13 @@ jobs:
           deno compile --allow-all --unstable --target x86_64-pc-windows-msvc --output ./dist/win/x86_64/tg ./tg.bundle.js &
           deno compile --allow-all --unstable --target x86_64-apple-darwin --output ./dist/macos/x86_64/tg ./tg.bundle.js &
           deno compile --allow-all --unstable --target aarch64-apple-darwin --output ./dist/macos/aarch64/tg ./tg.bundle.js &
-          ll ./dist/linux/x86_64/
-          ll ./dist/macos/aarch64
-          zip ./cli_linux_x86_64.zip ./dist/linux/x86_64/tg
-          zip ./cli_win_x86_64.zip ./dist/win/x86_64/tg
-          zip ./cli_macos_x86_64.zip ./dist/macos/x86_64/tg
-          zip ./cli_macos_aarch64.zip ./dist/macos/aarch64/tg
-
         
       - name: Compress
         uses: papeloto/action-zip@v1
         with:
-          files: ./tg
-          dest: tg_cli.zip
+          files: ./dist/linux/x86_64/tg
+          dest: ./cli_linux_x86_64.zip
+
 
       - name: Get release
         id: get_release
@@ -69,33 +63,33 @@ jobs:
           asset_name: cli_linux_x86_64.zip
           asset_content_type: application/zip
 
-      - name: Upload cli_win_x86_64
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.get_release.outputs.upload_url }}
-          asset_path: cli_win_x86_64.zip
-          asset_name: cli_win_x86_64.zip
-          asset_content_type: application/zip
+      # - name: Upload cli_win_x86_64
+      #   uses: actions/upload-release-asset@v1.0.2
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
+      #   with:
+      #     upload_url: ${{ steps.get_release.outputs.upload_url }}
+      #     asset_path: cli_win_x86_64.zip
+      #     asset_name: cli_win_x86_64.zip
+      #     asset_content_type: application/zip
 
-      - name: Upload cli_macos_x86_64
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.get_release.outputs.upload_url }}
-          asset_path: cli_macos_x86_64.zip
-          asset_name: cli_macos_x86_64.zip
-          asset_content_type: application/zip
+      # - name: Upload cli_macos_x86_64
+      #   uses: actions/upload-release-asset@v1.0.2
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
+      #   with:
+      #     upload_url: ${{ steps.get_release.outputs.upload_url }}
+      #     asset_path: cli_macos_x86_64.zip
+      #     asset_name: cli_macos_x86_64.zip
+      #     asset_content_type: application/zip
 
-      - name: Upload cli_macos_aarch64
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.get_release.outputs.upload_url }}
-          asset_path: cli_macos_aarch64.zip
-          asset_name: cli_macos_aarch64.zip
-          asset_content_type: application/zip
+      # - name: Upload cli_macos_aarch64
+      #   uses: actions/upload-release-asset@v1.0.2
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
+      #   with:
+      #     upload_url: ${{ steps.get_release.outputs.upload_url }}
+      #     asset_path: cli_macos_aarch64.zip
+      #     asset_name: cli_macos_aarch64.zip
+      #     asset_content_type: application/zip
   

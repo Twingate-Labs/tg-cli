@@ -40,7 +40,7 @@ jobs:
     steps:
       - name: Setup repo
         uses: actions/checkout@v1
-        
+
       - name: Setup Deno
         uses: denoland/setup-deno@004814556e37c54a2f6e31384c9e18e983317366
         with:
@@ -72,7 +72,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          upload_url: ${{ release.steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
           asset_path: ./tg_cli-${{ matrix.os }}.zip
           asset_name: tg_cli-${{ matrix.os }}.zip
           asset_content_type: application/zip

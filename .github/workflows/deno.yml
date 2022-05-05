@@ -19,7 +19,7 @@ jobs:
   os_matrix:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]      
+        os: [ubuntu-latest,  macos-latest, windows-latest]      
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -33,24 +33,21 @@ jobs:
 
       - name: Test Deno
         run: deno run https://deno.land/std/examples/welcome.ts
-
-      - name: test 2
-        run: pwd
-
-      - name: test 3
-        run: ls -l
         
       - name: Compile
         run: deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
 
-      - name: Compress
-        run: zip tg-cli-mac.zip ./tg
+      - uses: actions/checkout@v2
+      - uses: papeloto/action-zip@v1
+        with:
+          files: ./tg
+          dest: tg_cli-${{ matrix.os }}.zip
+
+      # - name: Compress
+      #   run: zip tg-cli-mac.zip ./tg
         
-      - name: test 4
-        run: ls -l
-        
-      - name: test 5
-        run: echo ${{ matrix.os }} 
+      # - name: test 5
+      #   run: echo ${{ matrix.os }} 
 
       # - name: Create Release
       #   id: create_release

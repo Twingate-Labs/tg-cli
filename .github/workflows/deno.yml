@@ -52,45 +52,23 @@ jobs:
           dest: tg_cli-${{ matrix.os }}.zip
 
 
-      # - name: Compress
-      #   run: zip tg-cli-mac.zip ./tg
-        
-      # - name: test 5
-      #   run: echo ${{ matrix.os }} 
-
-      # - name: Create Release
-      #   id: create_release
-      #   uses: actions/create-release@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     tag_name: ${{ github.ref }}
-      #     release_name: Release ${{ github.ref }}
-      #     # draft: false
-      #     # prerelease: false
-      # - name: Upload Release Asset
-      #   id: upload-release-asset 
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-      #     asset_path: ./tg-cli-mac.zip
-      #     asset_name: tg-cli-mac.zip
-      #     asset_content_type: application/zip
-
-      # - name: Install denoc
-      #   run: pip install denoc
-
-      # - name: Build for all platforms
-      #   run: denoc tg.js
-
-      # - name: Release
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     files: |
-      #       deno_builds/x86_64-unknown-linux-gnu
-      #       deno_builds/aarch64-apple-darwin 
-      #       deno_builds/x86_64-apple-darwin
-      #       deno_builds/x86_64-pc-windows-msvc.exe
-      #     token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          # draft: false
+          # prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./tg_cli-${{ matrix.os }}.zip
+          asset_name: tg_cli-${{ matrix.os }}.zip
+          asset_content_type: application/zip

@@ -52,20 +52,15 @@ jobs:
       - name: Compile
         run: deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
 
-      -name: test
-        run: |
-          echo startsWith(${{ matrix.os }}, 'windows')
-          echo startsWith(${{ matrix.os }}, 'ubuntu') || startsWith(${{ matrix.os }}, 'mac')
-
       - name: Compress_windows
-        if: startsWith(${{ matrix.os }}, 'windows')
+        if: startsWith(matrix.os, 'windows')
         uses: papeloto/action-zip@v1
         with:
           files: tg.exe
           dest: tg_cli-${{ matrix.os }}.zip
         
       - name: Compress_unix
-        if: startsWith(${{ matrix.os }}, 'ubuntu') || startsWith(${{ matrix.os }}, 'mac')
+        if: startsWith(matrix.os, 'ubuntu') || startsWith( matrix.os, 'mac')
         uses: papeloto/action-zip@v1
         with:
           files: ./tg

@@ -39,7 +39,8 @@ jobs:
           deno compile --allow-all --unstable --target x86_64-pc-windows-msvc --output ./dist/win/x86_64/tg ./tg.bundle.js &
           deno compile --allow-all --unstable --target x86_64-apple-darwin --output ./dist/macos/x86_64/tg ./tg.bundle.js &
           deno compile --allow-all --unstable --target aarch64-apple-darwin --output ./dist/macos/aarch64/tg ./tg.bundle.js &
-          ll 
+          ll ./dist/linux/x86_64/
+          ll ./dist/macos/aarch64
           zip ./cli_linux_x86_64.zip ./dist/linux/x86_64/tg
           zip ./cli_win_x86_64.zip ./dist/win/x86_64/tg
           zip ./cli_macos_x86_64.zip ./dist/macos/x86_64/tg

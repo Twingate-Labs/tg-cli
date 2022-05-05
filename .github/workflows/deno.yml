@@ -56,7 +56,7 @@ jobs:
         uses: papeloto/action-zip@v1
         if: startsWith(${{ matrix.os }}, 'windows')
         with:
-          files: ./tg.exe
+          files: tg.exe
           dest: tg_cli-${{ matrix.os }}.zip
         
       - name: Compress

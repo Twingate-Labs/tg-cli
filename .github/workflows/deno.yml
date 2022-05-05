@@ -16,10 +16,10 @@ on:
     branches: [chenbishop-patch-1]
 
 jobs:
-  os_matrix:
+  compile:
     strategy:
       matrix:
-        os: [ubuntu-latest,  macos-latest, windows-latest]      
+        os: [ubuntu-latest,  macos-latest, ]      
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -37,19 +37,29 @@ jobs:
       - name: Compile
         run: deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
 
-      - name: Compress
+
+
+
+      - name: Compress-Windows
+      if: startsWith(${{ matrix.os }}, 'windows')
       - uses: papeloto/action-zip@v1
-        if: startsWith(${{ matrix.os }}, 'windows')
         with:
           files: ./tg.exe
           dest: tg_cli-${{ matrix.os }}.zip
         run: dir
-        if: startsWith(${{ matrix.os }}, 'ubuntu') || startsWith(${{ matrix.os }}, 'mac')
+
+      -name: Compress-Unix
+      if: startsWith(${{ matrix.os }}, 'ubuntu') || startsWith(${{ matrix.os }}, 'mac')
+      - uses: papeloto/action-zip@v1
         with:
           files: ./tg
           dest: tg_cli-${{ matrix.os }}.zip
         run: ls -l
 
+
+
+
+  
 
       # - name: Compress
       #   run: zip tg-cli-mac.zip ./tg

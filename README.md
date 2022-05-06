@@ -1,5 +1,25 @@
 
-***tg***
+
+Twingate CLI Tool
+===========================
+This is a command line application demonstrating various usages of the Twingate API.
+
+
+Mac (x86) Installation
+-------------------------------
+
+
+Mac (Apple Silicon) Installation
+-------------------------------
+
+
+Windows (x86) Installation
+-------------------------------
+
+
+Linux (x86) Installation
+-------------------------------
+
 
 [!Work In Progress!]
 

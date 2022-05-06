@@ -4,26 +4,15 @@ Twingate CLI Tool
 ===========================
 This is a command line application demonstrating various usages of the Twingate API.
 
+Setup
+===========================
+* Download the lastest release cli-{version}-{os}-{cpu architecture}.zip from https://github.com/Twingate-Labs/tg-cli/releases/latest<br />
+* Unzip the downloaded zip file
 
-Mac (x86) Installation
--------------------------------
-
-
-Mac (Apple Silicon) Installation
--------------------------------
-
-
-Windows (x86) Installation
--------------------------------
-
-
-Linux (x86) Installation
--------------------------------
-
-
-[!Work In Progress!]
-
-This is a command line application demonstrating various usages of the Twingate API.
+Windows
+===========================
+* Open Command Prompt
+* ```\path\to\tg.exe --help``` e.g. ```G:\tg.exe --help```
 
 
 **Setup**

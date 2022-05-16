@@ -37,27 +37,27 @@ Example Commands
 ===========================
 **Show command usage**
 
-``./tg.js --help``
+``./tg --help``
 
-``./tg.js group --help``
+``./tg group --help``
 
-``./tg.js export --help``
+``./tg export --help``
 
 **Export Excel file**
 
-``./tg.js export``
+``./tg export``
 
 **Export PNG image**
 
-``./tg.js export --format png``
+``./tg export --format png``
 
 *Note: Requires the [GraphViz](https://graphviz.gitlab.io) package to be [installed](https://graphviz.gitlab.io/download/#executable-packages) and available on your path.*
 
 **List resources**
 
-``./tg.js resource list``
+``./tg resource list``
 
 
 **Import Groups, Remote Networks and resources into a new account**
 
-``./tg.js import -a [new account name] -nrg -f [path to file to import from (format must be as outputted by the export command)]``
+``./tg import -a [new account name] -nrg -f [path to file to import from (format must be as outputted by the export command)]``

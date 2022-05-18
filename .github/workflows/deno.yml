@@ -14,80 +14,100 @@ on:
       - v*.*.*
   # push:
   #   branches: [chenbishop-patch-1]
-    
-
-# permissions:
-#  contents: read
 
 jobs:
-  test:
+  build_release:
     runs-on: ubuntu-latest
-
     steps:
       - name: Setup repo
         uses: actions/checkout@v1
 
       - name: Setup Deno
-        # uses: denoland/setup-deno@v1
         uses: denoland/setup-deno@004814556e37c54a2f6e31384c9e18e983317366
         with:
           deno-version: v1.x
 
-      - name: Test Deno
-        run: deno run https://deno.land/std/examples/welcome.ts
-
-      - name: test 2
-        run: pwd
-
-      - name: test 3
-        run: ls -l
-          
-      # - name: Execute
-      #   uses: ./tg.js@v1
+      # - name: Test Deno
+      #   run: deno run https://deno.land/std/examples/welcome.ts
         
       - name: Compile
-        run: deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
-
-      - name: Compress
-        run: zip tg-cli-mac.zip ./tg
+        run: |
+          deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
+          mkdir -p dist/linux/x86_64 dist/win/x86_64 dist/macos/x86_64 dist/macos/aarch64
+          deno bundle --unstable --import-map ./import_map.json ./tg.js ./tg.bundle.js
+          deno compile --allow-all --unstable --target x86_64-unknown-linux-gnu --output ./dist/linux/x86_64/tg ./tg.bundle.js &
+          deno compile --allow-all --unstable --target x86_64-pc-windows-msvc --output ./dist/win/x86_64/tg ./tg.bundle.js &
+          deno compile --allow-all --unstable --target x86_64-apple-darwin --output ./dist/macos/x86_64/tg ./tg.bundle.js &
+          deno compile --allow-all --unstable --target aarch64-apple-darwin --output ./dist/macos/aarch64/tg ./tg.bundle.js &
         
-      - name: test 4
-        run: ls -l
-        
-
-      # - name: Create Release
-      #   id: create_release
-      #   uses: actions/create-release@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     tag_name: ${{ github.ref }}
-      #     release_name: Release ${{ github.ref }}
-      #     # draft: false
-      #     # prerelease: false
-      # - name: Upload Release Asset
-      #   id: upload-release-asset 
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-      #     asset_path: ./tg-cli-mac.zip
-      #     asset_name: tg-cli-mac.zip
-      #     asset_content_type: application/zip
-
-      - name: Install denoc
-        run: pip install denoc
-
-      - name: Build for all platforms
-        run: denoc tg.js
-
-      - name: Release
-        uses: softprops/action-gh-release@v1
+      - name: Compress cli_linux_x86_64
+        uses: papeloto/action-zip@v1
         with:
-          files: |
-            deno_builds/x86_64-unknown-linux-gnu
-            deno_builds/aarch64-apple-darwin 
-            deno_builds/x86_64-apple-darwin
-            deno_builds/x86_64-pc-windows-msvc.exe
-          token: ${{ secrets.GITHUB_TOKEN }}
+          files: ./dist/linux/x86_64/tg
+          dest: ./cli_linux_x86_64.zip
+
+      - name: Compress cli_win_x86_64
+        uses: papeloto/action-zip@v1
+        with:
+          files: ./dist/win/x86_64/tg.exe
+          dest: ./cli_win_x86_64.zip
+
+      - name: Compress cli_macos_x86_64
+        uses: papeloto/action-zip@v1
+        with:
+          files: ./dist/macos/x86_64/tg
+          dest: ./cli_macos_x86_64.zip
+
+      - name: Compress cli_macos_aarch64
+        uses: papeloto/action-zip@v1
+        with:
+          files: ./dist/macos/aarch64/tg
+          dest: ./cli_macos_aarch64.zip
+
+
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Upload linux_x86_64
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: cli_linux_x86_64.zip
+          asset_name: cli_linux_x86_64.zip
+          asset_content_type: application/zip
+
+      - name: Upload cli_win_x86_64
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: cli_win_x86_64.zip
+          asset_name: cli_win_x86_64.zip
+          asset_content_type: application/zip
+
+      - name: Upload cli_macos_x86_64
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: cli_macos_x86_64.zip
+          asset_name: cli_macos_x86_64.zip
+          asset_content_type: application/zip
+
+      - name: Upload cli_macos_aarch64
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: cli_macos_aarch64.zip
+          asset_name: cli_macos_aarch64.zip
+          asset_content_type: application/zip
+  

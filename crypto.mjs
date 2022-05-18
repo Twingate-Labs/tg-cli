@@ -58,7 +58,7 @@ async function machineId() {
     return guid;
 }
 
-async function exec(cmd) {
+export async function exec(cmd) {
     const p = Deno.run({
         cmd,
         stdout: "piped",

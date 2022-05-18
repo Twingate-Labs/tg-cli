@@ -7,7 +7,7 @@ import {
     exportCmd,
     removeAllCmd,
     importCmd,
-    getTopLevelCommand
+    getTopLevelCommand, scriptCmd
 } from "./cliCmd/cmd.mjs";
 
 async function main(args) {
@@ -29,6 +29,7 @@ async function main(args) {
         .command("export", exportCmd)
         .command("import", importCmd)
         .command("remove-all", removeAllCmd)
+        .command("script", scriptCmd)
 
     ;
     for ( const command of topLevelCommands ) cmd = cmd.command(command, getTopLevelCommand(command));

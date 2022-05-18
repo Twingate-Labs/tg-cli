@@ -85,7 +85,7 @@ export const scriptCmd = new Command()
 
                 try {
                     let output = await exec(
-                        ["ssh", sshParam, `curl "https://binaries.twingate.com/connector/setup.sh" | sudo TWINGATE_ACCESS_TOKEN="${row["Access Token"]}" TWINGATE_REFRESH_TOKEN="${row["Refresh Token"]}" TWINGATE_LOG_ANALYTICS="v1" TWINGATE_URL="https://${networkName}.twingate.com" bash`],
+                        ["ssh", "-o StrictHostKeychecking=no", sshParam, `curl "https://binaries.twingate.com/connector/setup.sh" | sudo TWINGATE_ACCESS_TOKEN="${row["Access Token"]}" TWINGATE_REFRESH_TOKEN="${row["Refresh Token"]}" TWINGATE_LOG_ANALYTICS="v1" TWINGATE_URL="https://${networkName}.twingate.com" bash`],
                     );
                     row["SSH Output"] = output;
                 }

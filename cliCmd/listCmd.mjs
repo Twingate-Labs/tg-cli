@@ -48,6 +48,11 @@ const listCmdConfig = {
         typeName: "Connector",
         fetchFn: "fetchAllConnectors",
         listFieldOpts: {}
+    },
+    "service_account": {
+        typeName: "ServiceAccount",
+        fetchFn: "fetchAllServiceAccounts",
+        listFieldOpts: {}
     }
 }
 

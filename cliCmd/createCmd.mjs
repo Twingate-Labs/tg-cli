@@ -169,6 +169,29 @@ export function getCreateCommand(name) {
 
                 });
             break;
+        case "service_account":
+            cmd = new Command()
+                .arguments("<name:string>")
+                .option("-o, --output-format <format:format>", "Output format", {default: "text"})
+                .description(`Create a ${name}`)
+                .action(async (options, serviceAccountName) => {
+                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    options.accountName = networkName;
+                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
+                    let res = await client.createServiceAccount(serviceAccountName);
+                    res.name = serviceAccountName;
+
+                    switch (options.outputFormat) {
+                        case OutputFormat.JSON:
+                            console.log(JSON.stringify(res));
+                            break;
+                        default:
+                            Log.success(`New ${name} named '${res.name}' created with id '${res.id}'.`);
+                            break;
+                    }
+
+                });
+            break
     }
     return cmd;
 }

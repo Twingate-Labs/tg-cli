@@ -12,7 +12,7 @@ import {
 
 async function main(args) {
 
-    const topLevelCommands = ["resource", "group", "user", "network", "connector", "device"];
+    const topLevelCommands = ["resource", "group", "user", "network", "connector", "device", "service_account"];
     const LogLevelType = new EnumType(Object.keys(LOG_LEVELS));
     let cmd = new Command()
         .name("tg")

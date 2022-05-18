@@ -6,7 +6,9 @@ export * from "./removeAllCmd.mjs";
 import {getCopyCommand} from "./copyCmd.mjs";
 import {getCreateCommand} from "./createCmd.mjs";
 import {getListCommand} from "./listCmd.mjs";
-
+import {getRemoveCommands} from "./removeCmd.mjs";
+import {getAddUserToGroupCommands} from "./cmdAddUserToGroup.mjs";
+import {getAddResourceToSericeAccountCommands} from "./cmdAddResourceToServiceAccount.mjs";
 
 export function getTopLevelCommand(name) {
 
@@ -18,6 +20,16 @@ export function getTopLevelCommand(name) {
 
     let createCmd = getCreateCommand(name);
     if ( createCmd !== null ) cmd = cmd.command("create", createCmd);
+
+    let removeCmd = getRemoveCommands(name)
+    if ( removeCmd !== null ) cmd = cmd.command("remove", removeCmd);
+
+    let addUserToGroupCmd = getAddUserToGroupCommands(name)
+    if ( addUserToGroupCmd !== null ) cmd = cmd.command("add_user_to_group", addUserToGroupCmd)
+
+    let addResourceToServiceAccount = getAddResourceToSericeAccountCommands(name)
+    if ( addResourceToServiceAccount !== null ) cmd = cmd.command("add_resource_to_service_account", addResourceToServiceAccount)
+
 
     switch (name) {
         case "group":

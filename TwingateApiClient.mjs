@@ -57,6 +57,13 @@ export class TwingateApiClient {
                 {name: "end", type: "integer"}
             ]
         },
+        "Key": {
+            isNode: false,
+            fields: [
+                {name: "totalCount", type: "integer"},
+            ]
+        },
+
         // END types
         // BEGIN nodes
         "User": {
@@ -143,6 +150,18 @@ export class TwingateApiClient {
                 {name: "username", type: "string"},
                 {name: "serialNumber", type: "string"},
                 {name: "manufacturerName", type: "string"}
+            ]
+        },
+        "ServiceAccount": {
+            isNode: true,
+            queryNodeField: "serviceAccount",
+            queryConnectionField: "serviceAccounts",
+            fields: [
+                {name: "name", type: "string", isLabel: true},
+                {name: "createdAt", type: "datetime"},
+                {name: "updatedAt", type: "datetime"},
+                {name: "resources", type: "Connection", typeName: "Resource"},
+                {name: "keys", type: "Object", typeName: "Key"}
             ]
         }
         // END nodes
@@ -393,7 +412,6 @@ export class TwingateApiClient {
 
     async _fetchAllNodesOfType(nodeType, options) {
         let {opts, fieldOpts, nodeSchema} = this._processFetchOptions(nodeType, options, "All");
-
         const nodeFields = this._getFields(nodeType, opts.fieldSet, fieldOpts);
         const recordTransformFn = nodeSchema.recordTransformFn;
         const recordTransformOpts = opts.recordTransformOpts || {};
@@ -444,6 +462,10 @@ export class TwingateApiClient {
 
     async fetchAllDevices(opts) {
         return this._fetchAllNodesOfType("Device", opts);
+    }
+
+    async fetchAllServiceAccounts(opts) {
+        return this._fetchAllNodesOfType("ServiceAccount", opts);
     }
 
     async fetchAllUsers(opts) {
@@ -528,6 +550,7 @@ export class TwingateApiClient {
      * @param {string} groupId - Twingate Group Id
      * @param {string|string[]} userId - userId or userIds to add
      * @returns {Promise<*>} - GraphQL entity
+     * Todo: check if the group or users exist
      */
     async addUserToGroup(groupId, userId) {
         let userIds = ( Array.isArray(userId) ? userId : [userId]);
@@ -535,6 +558,15 @@ export class TwingateApiClient {
         let groupsResponse = await this.exec(groupQuery, {groupId, userIds} );
         return groupsResponse.entity;
     }
+
+
+    async addResourceToServiceAccount(serviceAccountId, resourceId) {
+        let resourceIds = ( Array.isArray(resourceId) ? resourceId : [resourceId]);
+        const serviceAccountQuery = "mutation AddResourceToServiceAccount($serviceAccountId:ID!,$resourceIds:[ID]){serviceAccountUpdate(id:$serviceAccountId,addedResourceIds:$resourceIds){ok error}}";
+        let serviceAccountResponse = await this.exec(serviceAccountQuery, {serviceAccountId, resourceIds} );
+        return serviceAccountResponse.entity;
+    }
+
 
     /**
      * Removes a userId or list of userIds from a Group
@@ -634,6 +666,13 @@ export class TwingateApiClient {
         return createRemoteNetworkResponse.result.entity;
     }
 
+    async createServiceAccount(name, resourceIds) {
+        const createServiceAccountQuery = "mutation CreateServiceAccount($name:String!,$resourceIds:[ID]){result:serviceAccountCreate(name:$name,resourceIds:$resourceIds){error entity{id}}}";
+        let serviceAccountResponse = await this.exec(createServiceAccountQuery, {name, resourceIds} );
+        if ( serviceAccountResponse.result.error !== null ) throw new Error(`Error creating service account: '${serviceAccountResponse.result.error}'`)
+        return serviceAccountResponse.result.entity;
+    }
+
     async updateRemoteNetwork(id, isActive=null, name=null) {
         let variables = {id},
             gqlParams = ["$id:ID"],
@@ -706,7 +745,12 @@ export class TwingateApiClient {
         return true;
     }
 
-
+    async removeServiceAccount(id) {
+        const removeServiceAccountQuery = "mutation RemoveServiceAccount($id:ID!){result:serviceAccountDelete(id:$id){ok, error}}";
+        let removeServiceAccountResponse = await this.exec(removeServiceAccountQuery, {id});
+        if ( !removeServiceAccountResponse.result.ok ) throw new Error(`Error removing group '${id}' ${removeServiceAccountResponse.result.error}`);
+        return true;
+    }
 
     //<editor-fold desc="Bulk APIs (very experimental)">
 

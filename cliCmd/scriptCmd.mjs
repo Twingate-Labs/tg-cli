@@ -84,9 +84,14 @@ export const scriptCmd = new Command()
                 let sshParam = `${row["SSH User"]}@${row["SSH Host"]}`;
 
                 try {
+                    let call = `curl "https://binaries.twingate.com/connector/setup.sh" | sudo TWINGATE_ACCESS_TOKEN="${row["Access Token"]}" TWINGATE_REFRESH_TOKEN="${row["Refresh Token"]}" TWINGATE_LOG_ANALYTICS="v1" TWINGATE_URL="https://${networkName}.twingate.com" bash`
+                    if (isNotEmpty(row["Sudo Password"])){
+                        let sudoPassword = row["Sudo Password"].toString()
+                        call = `curl "https://binaries.twingate.com/connector/setup.sh" > setup.sh && export HISTIGNORE='*sudo -S*' && echo ${sudoPassword} | sudo -S sh setup.sh TWINGATE_ACCESS_TOKEN=${row["Access Token"]} TWINGATE_REFRESH_TOKEN=${row["Refresh Token"]} TWINGATE_LOG_ANALYTICS="v1" TWINGATE_URL="https://${networkName}.twingate.com" bash && rm setup.sh`
+                    }
                     let output = await exec(
-                        ["ssh", "-o StrictHostKeychecking=no", sshParam, `curl "https://binaries.twingate.com/connector/setup.sh" | sudo TWINGATE_ACCESS_TOKEN="${row["Access Token"]}" TWINGATE_REFRESH_TOKEN="${row["Refresh Token"]}" TWINGATE_LOG_ANALYTICS="v1" TWINGATE_URL="https://${networkName}.twingate.com" bash`],
-                    );
+                        ["ssh", "-o StrictHostKeychecking=no", sshParam, call],
+                        );
                     row["SSH Output"] = output;
                 }
                 catch (e) {

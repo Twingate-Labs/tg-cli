@@ -2,7 +2,7 @@ import {loadNetworkAndApiKey} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
 import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
-import {Confirm} from "https://deno.land/x/cliffy/prompt/mod.ts";
+import {Confirm, prompt, Secret as SecretPrompt} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
 import XLSX from "https://cdn.esm.sh/v58/xlsx@0.17.4/deno/xlsx.js";
 import {exec} from "../crypto.mjs";
@@ -52,7 +52,12 @@ export const scriptCmd = new Command()
             x = 0,
             remoteNetworkMap = {}
         ;
+        let sudoPassword = null;
+        ({sudoPassword} = await prompt([{name: "sudoPassword", message: `Enter sudo password:`, type: SecretPrompt}]));
+
         for ( let row of sheetData ) {
+            if ( row["COMPLETED"] === true ) continue;
+
             let remoteNetworkName = (row["Remote Network"] || "").trim();
             if ( isNotEmpty(remoteNetworkName) && isEmpty(row["Remote Network Id"]) ) {
                 if ( remoteNetworkMap[remoteNetworkName] == null ) {
@@ -100,12 +105,13 @@ export const scriptCmd = new Command()
                 let sshParam = `${row["SSH User"]}@${row["SSH Host"]}`;
 
                 try {
-                    let call = `curl "https://binaries.twingate.com/connector/setup.sh" | sudo TWINGATE_ACCESS_TOKEN="${row["Access Token"]}" TWINGATE_REFRESH_TOKEN="${row["Refresh Token"]}" TWINGATE_LOG_ANALYTICS="v1" TWINGATE_URL="https://${networkName}.twingate.com" bash`
-                    if (isNotEmpty(row["Sudo Password"])){
-                        let sudoPassword = row["Sudo Password"].toString()
-                        call = `curl "https://binaries.twingate.com/connector/setup.sh" > setup.sh && export HISTIGNORE='*sudo -S*' && echo ${sudoPassword} | sudo -S sh setup.sh TWINGATE_ACCESS_TOKEN=${row["Access Token"]} TWINGATE_REFRESH_TOKEN=${row["Refresh Token"]} TWINGATE_LOG_ANALYTICS="v1" TWINGATE_URL="https://${networkName}.twingate.com" bash && rm setup.sh`
-                    }
+                    //let call = `curl "https://binaries.twingate.com/connector/setup.sh" | sudo TWINGATE_ACCESS_TOKEN="${row["Access Token"]}" TWINGATE_REFRESH_TOKEN="${row["Refresh Token"]}" TWINGATE_LOG_ANALYTICS="v1" TWINGATE_URL="https://${networkName}.twingate.com" bash`
+                    //if (isNotEmpty(row["Sudo Password"])){
+                        //let sudoPassword = row["Sudo Password"].toString()
+                    let call = `curl "https://binaries.twingate.com/connector/setup.sh" > setup.sh && export HISTIGNORE='*sudo -S*' && echo ${sudoPassword} | sudo -S TWINGATE_ACCESS_TOKEN=${row["Access Token"]} TWINGATE_REFRESH_TOKEN=${row["Refresh Token"]} TWINGATE_LOG_ANALYTICS="v1" TWINGATE_URL="https://${networkName}.twingate.com" bash setup.sh && rm setup.sh`
+                    //}
                     let output = await exec(["ssh", "-o StrictHostKeychecking=no", sshParam, call]);
+                    Log.success(`Deployed connector to '${remoteNetworkName}'`);
                     row["SSH Output"] = output;
                 }
                 catch (e) {
@@ -114,17 +120,20 @@ export const scriptCmd = new Command()
 
                 try {
                     let call = `docker run -d --sysctl net.ipv4.ping_group_range="0 2147483647" --env TENANT_URL="https://${networkName}.twingate.com" --env ACCESS_TOKEN="${row["Docker Access Token"]}" --env REFRESH_TOKEN="${row["Docker Refresh Token"]}"  --env TWINGATE_LABEL_HOSTNAME="${row["Docker Connector Name"]}-docker" --name "twingate-${row["Docker Connector Name"]}" --restart=unless-stopped twingate/connector:1`
-                    if (isNotEmpty(row["Sudo Password"])){
-                        let sudoPassword = row["Sudo Password"].toString()
+                    //if (isNotEmpty(row["Sudo Password"])){
+                        //let sudoPassword = row["Sudo Password"].toString()
                         call = `export HISTIGNORE='*sudo -S*' && echo ${sudoPassword} | sudo -S ${call}`
-                    }
+                    //}
                     let output = await exec(["ssh", "-o StrictHostKeychecking=no", sshParam, call]);
+                    Log.success(`Deployed Docker connector to '${remoteNetworkName}'`);
 
                 }
                 catch (e) {
                     Log.warn(`Problem deploying docker container on Remote Network '${remoteNetworkName}': ${e}`);
                 }
             }
+
+            row["COMPLETED"] = true;
         }
 
         let outputFilename = `scriptResults-${genFileNameFromNetworkName(networkName)}`;

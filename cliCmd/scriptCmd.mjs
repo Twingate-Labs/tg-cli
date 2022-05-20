@@ -141,7 +141,7 @@ export const scriptCmd = new Command()
         let ws = XLSX.utils.json_to_sheet(sheetData);
         ws['!autofilter'] = {ref: ws["!ref"]};
         XLSX.utils.book_append_sheet(scriptResultsWb, ws, "ScriptResults");
-        await Deno.writeFile(`./${outputFilename}`, new Uint8Array(XLSX.write(scriptResultsWb, {type: "array", bookType: "csv"})));
+        await Deno.writeFile(`${outputFilename}`, new Uint8Array(XLSX.write(scriptResultsWb, {type: "array", bookType: "csv"})));
 
         Log.success(`Script all completed.`);
     });

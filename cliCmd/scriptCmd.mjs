@@ -79,6 +79,22 @@ export const scriptCmd = new Command()
                 row["Refresh Token"] = tokens.refreshToken;
             }
 
+
+            if ( isEmpty(row["Docker Connector Id"]) ) {
+                // Create connector
+                let newConnector = await client.createConnector(remoteNetworkId);
+                row["Docker Connector Name"] = newConnector.name;
+                row["Docker Connector Id"] = newConnector.id;
+            }
+
+            if ( isEmpty(row["Docker Access Token"]) || isEmpty(row["Docker Refresh Token"]) ) {
+                // Create tokens
+                let tokens = await client.generateConnectorTokens(row["Docker Connector Id"]);
+                row["Docker Access Token"] = tokens.accessToken;
+                row["Docker Refresh Token"] = tokens.refreshToken;
+            }
+
+
             if ( isNotEmpty(row["SSH User"]) && isNotEmpty(row["SSH Host"]) ) {
                 // Deploy connector
                 let sshParam = `${row["SSH User"]}@${row["SSH Host"]}`;
@@ -89,13 +105,24 @@ export const scriptCmd = new Command()
                         let sudoPassword = row["Sudo Password"].toString()
                         call = `curl "https://binaries.twingate.com/connector/setup.sh" > setup.sh && export HISTIGNORE='*sudo -S*' && echo ${sudoPassword} | sudo -S sh setup.sh TWINGATE_ACCESS_TOKEN=${row["Access Token"]} TWINGATE_REFRESH_TOKEN=${row["Refresh Token"]} TWINGATE_LOG_ANALYTICS="v1" TWINGATE_URL="https://${networkName}.twingate.com" bash && rm setup.sh`
                     }
-                    let output = await exec(
-                        ["ssh", "-o StrictHostKeychecking=no", sshParam, call],
-                        );
+                    let output = await exec(["ssh", "-o StrictHostKeychecking=no", sshParam, call]);
                     row["SSH Output"] = output;
                 }
                 catch (e) {
                     row["SSH Exception"] = e;
+                }
+
+                try {
+                    let call = `docker run -d --sysctl net.ipv4.ping_group_range="0 2147483647" --env TENANT_URL="https://${networkName}.twingate.com" --env ACCESS_TOKEN="${row["Docker Access Token"]}" --env REFRESH_TOKEN="${row["Docker Refresh Token"]}"  --env TWINGATE_LABEL_HOSTNAME="${row["Docker Connector Name"]}-docker" --name "twingate-${row["Docker Connector Name"]}" --restart=unless-stopped twingate/connector:1`
+                    if (isNotEmpty(row["Sudo Password"])){
+                        let sudoPassword = row["Sudo Password"].toString()
+                        call = `export HISTIGNORE='*sudo -S*' && echo ${sudoPassword} | sudo -S ${call}`
+                    }
+                    let output = await exec(["ssh", "-o StrictHostKeychecking=no", sshParam, call]);
+
+                }
+                catch (e) {
+                    Log.warn(`Problem deploying docker container on Remote Network '${remoteNetworkName}': ${e}`);
                 }
             }
         }

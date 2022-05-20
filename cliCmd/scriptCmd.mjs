@@ -136,12 +136,12 @@ export const scriptCmd = new Command()
             row["COMPLETED"] = true;
         }
 
-        let outputFilename = `scriptResults-${genFileNameFromNetworkName(networkName)}`;
+        let outputFilename = options.file;
         let scriptResultsWb = XLSX.utils.book_new();
         let ws = XLSX.utils.json_to_sheet(sheetData);
         ws['!autofilter'] = {ref: ws["!ref"]};
         XLSX.utils.book_append_sheet(scriptResultsWb, ws, "ScriptResults");
-        await Deno.writeFile(`./${outputFilename}`, new Uint8Array(XLSX.write(scriptResultsWb, {type: "array"})));
+        await Deno.writeFile(`./${outputFilename}`, new Uint8Array(XLSX.write(scriptResultsWb, {type: "csv"})));
 
         Log.success(`Script all completed.`);
     });

@@ -72,3 +72,6 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 !/.tgkeys
+!/example-ssh.csv
+
+!/.tgkeys

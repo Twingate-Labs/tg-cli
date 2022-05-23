@@ -56,8 +56,31 @@ export function getRemoveCommands(name) {
                     }
 
                 });
+            break;
+        case "resource":
+            cmd = new Command()
+                .arguments("<id:string>")
+                .option("-o, --output-format <format:format>", "Output format", {default: "text"})
+                .description(`Remove a ${name}`)
+                .action(async (options, resourceId) => {
+                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    options.accountName = networkName;
+                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
+                    let res = await client.removeResource(resourceId);
+
+                    switch (options.outputFormat) {
+                        case OutputFormat.JSON:
+                            console.log(JSON.stringify(res));
+                            break;
+                        default:
+                            Log.success(`Removed ${name} with id '${resourceId}'.`);
+                            break;
+                    }
+
+                });
             break
     }
+
     return cmd;
 }
 

@@ -807,9 +807,9 @@ export class TwingateApiClient {
     }
 
     async removeResourcesBulk(ids) {
-        const removeResourceQuery = "mutation RemoveResource($id:ID!){result:resourceDelete(id:$id){ok, error}}";
-        let removeResourceResponse = await this.exec(removeResourceQuery, {id});
-        if ( !removeResourceResponse.result.ok ) throw new Error(`Error removing resource '${id}' ${removeResourceResponse.result.error}`);
+        const removeResourceQuery = "mutation RemoveResource($ids:ID!){result:resourceDelete(id:$ids){ok, error}}";
+        let removeResourceResponse = await this.exec(removeResourceQuery, {ids});
+        if ( !removeResourceResponse.result.ok ) throw new Error(`Error removing resource '${ids}' ${removeResourceResponse.result.error}`);
         return true;
     }
 

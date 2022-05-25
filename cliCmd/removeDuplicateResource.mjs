@@ -14,6 +14,9 @@ function countOccurrence(array, searchValue){
     return array.filter(c => c === searchValue).length
 }
 
+function objectSearch(array, key){
+    return array.find(x => x.id === key)
+}
 
 export const removeDuplicateResourceCmd = new Command()
     .option("-f, --file <string>", "Path to Excel file to find from", {
@@ -55,13 +58,11 @@ export const removeDuplicateResourceCmd = new Command()
             let protocolsUdpPolicy = data[key]["protocolsUdpPolicy"]
             let hash = `${remoteNetworkLabel}-${addressValue}-${protocolsAllowIcmp}-${protocolsTcpPolicy}-${protocolsTcpPorts}-${remoteNetworkLabel}-${protocolsUdpPolicy}`
             initialDict[resourceId] = hash
-            console.log(hash)
         }
         let hashArray = Object.values(initialDict)
         let processedDict = {}
         for (let key in initialDict){
             let occurrence = countOccurrence(hashArray, initialDict[key])
-            console.log(occurrence)
             if (occurrence > 1){
                 if (processedDict[initialDict[key]] !== undefined){
                     processedDict[initialDict[key]].push(key)
@@ -80,9 +81,14 @@ export const removeDuplicateResourceCmd = new Command()
         console.log("The resources above will be removed.")
         if ( options.assumeYes !== true && !(await Confirm.prompt("Please confirm to continue?")) ) return;
 
+        let output = []
         for ( let x = 0; x < toRemove.length; x++ ) {
+            let row = objectSearch(data, toRemove[x])
             try {
                 let res = await client.removeResource(toRemove[x]);
+                row["Delete Status"] = "Deleted"
+                row["Error"] = "None"
+                output.push(row)
                 switch (options.outputFormat) {
                     case OutputFormat.JSON:
                         console.log(JSON.stringify(res));
@@ -93,11 +99,17 @@ export const removeDuplicateResourceCmd = new Command()
                 }
             } catch (e) {
                 console.error(e);
+                row["Delete Status"] = "Error"
+                row["Error"] = e
+                output.push(row)
             }
         }
-
         let outputFilename = `remove_duplicate_resources_result-${genFileNameFromNetworkName(options.accountName)}`;
-
+        let scriptResultsWb = XLSX.utils.book_new();
+        let ws = XLSX.utils.json_to_sheet(output);
+        ws['!autofilter'] = {ref: ws["!ref"]};
+        XLSX.utils.book_append_sheet(scriptResultsWb, ws, "Resource");
+        await Deno.writeFile(`${outputFilename}`, new Uint8Array(XLSX.write(scriptResultsWb, {type: "array"})));
 
 
         // Log completion

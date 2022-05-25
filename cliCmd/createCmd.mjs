@@ -23,6 +23,7 @@ export function getCreateCommand(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
                 .action(async (options, remoteNetworkNameOrId, resourceName, resourceAddress, groupNamesOrIds) => {
+
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});

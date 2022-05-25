@@ -1,3 +1,4 @@
+import {Log} from "./utils/log.js";
 
 
 const _capitalise = (s) => `${s[0].toUpperCase()}${s.slice(1)}`;
@@ -779,23 +780,13 @@ export class TwingateApiClient {
         if ( !Array.isArray(ids)  ) throw new Error(`removeGroupsBulk requires an array as input.`);
         if ( ids.length === 0 ) return [];
         if ( !ids.every( id => typeof id === "string" && id.startsWith(TwingateApiClient.IdPrefixes.Group) ) ) throw new Error(`removeGroupsBulk requires every value to be a Group Id`);
-
-        const gqlParams = ids.map( (_, i) => `$id${i}:ID!`).join(",");
-        const gqlMutationParts = devices.map( (_, i) => `result${i}:groupDelete(id:$id${i}){ok error}`).join(" ");
-        const gqlVariables = Object.fromEntries(ids.flatMap( (id, i) => [[`id${i}`, id]]));
-        let query = `mutation BulkRemoveGroup_${ids.length}(${gqlParams}){${gqlMutationParts}}`;
-        let response = await this.exec(query, gqlVariables );
-
-        let results = [];
         for ( let x = 0; x < ids.length; x++ ) {
-            results.push(response[`result${x}`]);
+            try {
+                await this.removeGroup(ids[x]);
+            } catch (e) {
+                console.error(e);
+            }
         }
-        return results;
-
-
-        const removeGroupQuery = "mutation RemoveGroup($id:ID!){result:groupDelete(id:$id){ok, error}}";
-        let removeGroupResponse = await this.exec(removeGroupQuery, {id});
-        if ( !removeGroupResponse.result.ok ) throw new Error(`Error removing group '${id}' ${removeGroupResponse.result.error}`);
         return true;
     }
 

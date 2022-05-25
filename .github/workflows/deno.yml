@@ -27,9 +27,9 @@ jobs:
         with:
           deno-version: v1.x
 
-      # - name: Test Deno
-      #   run: deno run https://deno.land/std/examples/welcome.ts
-        
+        # - name: Test Deno
+        #   run: deno run https://deno.land/std/examples/welcome.ts
+
       - name: Compile
         run: |
           deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
@@ -39,7 +39,7 @@ jobs:
           deno compile --allow-all --unstable --target x86_64-pc-windows-msvc --output ./dist/win/x86_64/tg ./tg.bundle.js &
           deno compile --allow-all --unstable --target x86_64-apple-darwin --output ./dist/macos/x86_64/tg ./tg.bundle.js &
           deno compile --allow-all --unstable --target aarch64-apple-darwin --output ./dist/macos/aarch64/tg ./tg.bundle.js &
-        
+
       - name: Compress cli_linux_x86_64
         uses: papeloto/action-zip@v1
         with:
@@ -78,7 +78,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_linux_x86_64.zip
-          asset_name: cli_linux_x86_64.zip
+          asset_name: cli-${{github.ref_name}}-linux-x86-64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_win_x86_64
@@ -88,7 +88,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_win_x86_64.zip
-          asset_name: cli_win_x86_64.zip
+          asset_name: cli-${{github.ref_name}}-win-x86-64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_macos_x86_64
@@ -98,7 +98,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_macos_x86_64.zip
-          asset_name: cli_macos_x86_64.zip
+          asset_name: cli-${{github.ref_name}}-macos-x86-64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_macos_aarch64
@@ -108,6 +108,5 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_macos_aarch64.zip
-          asset_name: cli_macos_aarch64.zip
+          asset_name: cli-${{github.ref_name}}-macos-aarch64.zip
           asset_content_type: application/zip
-  

@@ -7,6 +7,7 @@ import {
     exportCmd,
     removeAllCmd,
     importCmd,
+    removeDuplicateResourceCmd,
     getTopLevelCommand
 } from "./cliCmd/cmd.mjs";
 
@@ -28,6 +29,7 @@ async function main(args) {
         })
         .command("export", exportCmd)
         .command("import", importCmd)
+        .command("remove-duplicate-resource", removeDuplicateResourceCmd)
         .command("remove-all", removeAllCmd)
 
     ;

@@ -26,6 +26,7 @@ export const removeDuplicateResourceCmd = new Command()
     // .option("-n, --remote-networks [boolean]", "Include Remote Networks")
     // .option("-r, --resources [boolean]", "Include Resources")
     // .option("-g, --groups [boolean]", "Include Groups")
+    .option("-o, --output-file [value:string]", "Output filename")
     .option("-s, --sync [boolean]", "Attempt to synchronise entities with the same natural identifier")
     .option("-y, --assume-yes [boolean]", "Automatic yes to prompts; assume 'yes' as answer to all prompts")
     .description("Import from excel file to a Twingate account")
@@ -78,7 +79,7 @@ export const removeDuplicateResourceCmd = new Command()
             console.log(`connector hash: ${key}, connector ids: ${processedDict[key]}`)
         }
         let toRemove = Object.values(processedDict).flat()
-        console.log("The resources above will be removed.")
+        console.log(`The ${toRemove.length} resources above will be removed.`)
         if ( options.assumeYes !== true && !(await Confirm.prompt("Please confirm to continue?")) ) return;
 
         let output = []
@@ -100,11 +101,11 @@ export const removeDuplicateResourceCmd = new Command()
             } catch (e) {
                 console.error(e);
                 row["Delete Status"] = "Error"
-                row["Error"] = e
+                row["Error"] = e.message
                 output.push(row)
             }
         }
-        let outputFilename = `remove_duplicate_resources_result-${genFileNameFromNetworkName(options.accountName)}`;
+        let outputFilename = "outputFile" in options ? options.outputFile : `remove_duplicate_resources_result-${genFileNameFromNetworkName(options.accountName)}` ;
         let scriptResultsWb = XLSX.utils.book_new();
         let ws = XLSX.utils.json_to_sheet(output);
         ws['!autofilter'] = {ref: ws["!ref"]};

@@ -133,6 +133,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
-          asset_path: tgcli_${{ github.ref }}_amd64.deb
-          asset_name: tgcli_${{ github.ref }}_amd64.deb
+          asset_path: tgcli_${{github.ref_name}}_amd64.deb
+          asset_name: tgcli_${{github.ref_name}}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package

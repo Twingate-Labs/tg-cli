@@ -43,13 +43,13 @@ jobs:
       - name: create package directory amd64
         run: |
           mkdir -p .debpkg/usr/bin
-          cp ./dist/linux/x86_64/tg .debpkg/usr/bin/
-          chmod +x .debpkg/usr/bin/tg
+          cp ./dist/linux/x86_64/tg .debpkg/usr/bin/tgcli
+          chmod +x .debpkg/usr/bin/tgcli
       - uses: jiro4989/build-deb-action@v1
         with:
           package: tgcli
           package_root: .debpkg
-          maintainer: twingate
+          maintainer: twingate_lab
           version: ${{ github.ref }} # refs/tags/v*.*.*
           arch: 'amd64'
           desc: 'This is a command line application demonstrating various usages of the Twingate API.'

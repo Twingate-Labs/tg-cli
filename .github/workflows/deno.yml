@@ -43,7 +43,7 @@ jobs:
       - name: create package directory amd64
         run: |
           mkdir -p .debpkg/usr/bin
-          cp ./dist/linux/x86_64/tg ./debpkg/usr/bin/
+          cp ./dist/linux/x86_64/tg .debpkg/usr/bin/
           chmod +x .debpkg/usr/bin/tg
       - uses: jiro4989/build-deb-action@v1
         with:

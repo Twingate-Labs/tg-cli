@@ -27,9 +27,11 @@ jobs:
         with:
           deno-version: v1.x
 
-      # - name: Test Deno
-      #   run: deno run https://deno.land/std/examples/welcome.ts
-        
+      - id: get_version
+        uses: battila7/get-version-action@v2
+
+        # - name: Test Deno
+        #   run: deno run https://deno.land/std/examples/welcome.ts
       - name: Compile
         run: |
           deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
@@ -39,7 +41,23 @@ jobs:
           deno compile --allow-all --unstable --target x86_64-pc-windows-msvc --output ./dist/win/x86_64/tg ./tg.bundle.js &
           deno compile --allow-all --unstable --target x86_64-apple-darwin --output ./dist/macos/x86_64/tg ./tg.bundle.js &
           deno compile --allow-all --unstable --target aarch64-apple-darwin --output ./dist/macos/aarch64/tg ./tg.bundle.js &
-        
+
+      - name: create package directory amd64
+        run: |
+          mkdir -p .debpkg/usr/bin
+          cp ./dist/linux/x86_64/tg .debpkg/usr/bin/tgcli
+          ls -l .debpkg/usr/bin/tgcli
+          chmod 755 .debpkg/usr/bin/tgcli
+      - uses: jiro4989/build-deb-action@v2
+        with:
+          package: tgcli
+          package_root: .debpkg
+          maintainer: twingate_lab
+          version: ${{ github.ref }} # refs/tags/v*.*.*
+          arch: 'amd64'
+          desc: 'This is a command line application demonstrating various usages of the Twingate API.'
+
+
       - name: Compress cli_linux_x86_64
         uses: papeloto/action-zip@v1
         with:
@@ -78,7 +96,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_linux_x86_64.zip
-          asset_name: cli-${{github.ref_name}}-linux-x86-64.zip
+          asset_name: cli_${{ steps.get_version.outputs.version-without-v }}_linux_x86_64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_win_x86_64
@@ -88,7 +106,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_win_x86_64.zip
-          asset_name: cli-${{github.ref_name}}-win-x86-64.zip
+          asset_name: cli_${{ steps.get_version.outputs.version-without-v }}_win_x86_64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_macos_x86_64
@@ -98,7 +116,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_macos_x86_64.zip
-          asset_name: cli-${{github.ref_name}}-macos-x86-64.zip
+          asset_name: cli_${{ steps.get_version.outputs.version-without-v }}_macos_x86_64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_macos_aarch64
@@ -108,6 +126,15 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_macos_aarch64.zip
-          asset_name: cli-${{github.ref_name}}-macos-aarch64.zip
+          asset_name: cli_${{ steps.get_version.outputs.version-without-v }}_macos_aarch64.zip
           asset_content_type: application/zip
-  
+
+      - name: Upload tgcli_debian
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: tgcli_${{ steps.get_version.outputs.version-without-v }}_amd64.deb
+          asset_name: tgcli_${{ steps.get_version.outputs.version-without-v }}_amd64.deb
+          asset_content_type: application/vnd.debian.binary-package

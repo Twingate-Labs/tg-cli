@@ -27,7 +27,7 @@ jobs:
         with:
           deno-version: v1.x
 
-      -name: Setup Version
+      - name: Setup Version
         run: |
           VERSION=${{ github.event.release.tag_name }}
           echo "VERSION=${VERSION:1}" >> $GITHUB_ENV

@@ -44,7 +44,8 @@ jobs:
         run: |
           mkdir -p .debpkg/usr/bin
           cp ./dist/linux/x86_64/tg .debpkg/usr/bin/tgcli
-          chmod +x .debpkg/usr/bin/tgcli
+          ls -l .debpkg/usr/bin/tgcli
+          chmod 755 .debpkg/usr/bin/tgcli
       - uses: jiro4989/build-deb-action@v1
         with:
           package: tgcli

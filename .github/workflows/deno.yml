@@ -27,13 +27,16 @@ jobs:
         with:
           deno-version: v1.x
 
-      - name: Setup Version
-        run: |
-          VERSION=${{ github.event.release.tag_name }}
-          echo "VERSION=${VERSION:1}" >> $GITHUB_ENV
+      - name: Set Versions
+        uses: actions/github-script@v4
+        id: set_version
+        with:
+          script: |
+            const tag = ${{github.ref_name}}
+            const no_v = tag.replace('v', '')
+            core.setOutput('no-v', no_v)
 
-
-# - name: Test Deno
+        # - name: Test Deno
         #   run: deno run https://deno.land/std/examples/welcome.ts
 
       - name: Compile
@@ -100,7 +103,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_linux_x86_64.zip
-          asset_name: cli-${{VERSION}}-linux-x86-64.zip
+          asset_name: cli-${{steps.set_version.outputs.no_v}}-linux-x86-64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_win_x86_64
@@ -110,7 +113,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_win_x86_64.zip
-          asset_name: cli-${{VERSION}}-win-x86-64.zip
+          asset_name: cli-${{steps.set_version.outputs.no_v}}-win-x86-64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_macos_x86_64
@@ -120,7 +123,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_macos_x86_64.zip
-          asset_name: cli-${{VERSION}}-macos-x86-64.zip
+          asset_name: cli-${{steps.set_version.outputs.no_v}}-macos-x86-64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_macos_aarch64
@@ -130,7 +133,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_macos_aarch64.zip
-          asset_name: cli-${{VERSION}}-macos-aarch64.zip
+          asset_name: cli-${{steps.set_version.outputs.no_v}}-macos-aarch64.zip
           asset_content_type: application/zip
 
       - name: Upload tgcli_debian
@@ -139,6 +142,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
-          asset_path: tgcli_${{VERSION}}_amd64.deb
-          asset_name: tgcli_${{VERSION}}_amd64.deb
+          asset_path: tgcli_${{steps.set_version.outputs.no_v}}_amd64.deb
+          asset_name: tgcli_${{steps.set_version.outputs.no_v}}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package

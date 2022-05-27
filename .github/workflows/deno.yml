@@ -56,12 +56,6 @@ jobs:
           desc: 'This is a command line application demonstrating various usages of the Twingate API.'
 
 
-      - name: create package directory amd64
-        run: |
-          ls -l
-          ls -l ./dist/
-
-
       - name: Compress cli_linux_x86_64
         uses: papeloto/action-zip@v1
         with:
@@ -132,3 +126,13 @@ jobs:
           asset_path: cli_macos_aarch64.zip
           asset_name: cli-${{github.ref_name}}-macos-aarch64.zip
           asset_content_type: application/zip
+
+      - name: Upload tgcli_debian
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: tgcli_${{ github.ref }}_amd64.deb
+          asset_name: tgcli_${{ github.ref }}_amd64.deb
+          asset_content_type: application/vnd.debian.binary-package

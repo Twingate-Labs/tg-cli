@@ -568,8 +568,10 @@ export class TwingateApiClient {
         return serviceAccountResponse.entity;
     }
 
-    async addGroupToResource(){
-        return null
+    async addGroupToResource(resourceId, groupIds){
+        const addGrouptoResourceQuery = "mutation AddGroupToResource($resourceId:ID!,$groupIds:[ID]){resourceUpdate(id:$resourceId,addedGroupIds:$groupIds){ok error}}";
+        let groupsResponse = await this.exec(addGrouptoResourceQuery, {resourceId, groupIds} );
+        return groupsResponse.entity;
     }
 
     /**

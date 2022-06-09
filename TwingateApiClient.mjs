@@ -22,7 +22,8 @@ export class TwingateApiClient {
     static IdPrefixes = {
         // Really not ideal since identifiers are meant to be opaque
         RemoteNetwork: "UmVtb3RlTmV0d29yazo",// btoa("RemoteNetwork:").replace(/=$/, ""),
-        Group: "R3JvdXA6"// btoa("Group:").replace(/=$/, "")
+        Group: "R3JvdXA6", // btoa("Group:").replace(/=$/, "")
+        Resource: "UmVzb3Vy"
     }
 
     static Schema = {
@@ -653,6 +654,14 @@ export class TwingateApiClient {
         const query = "query GroupByName($name:String){groups(filter:{name:{eq:$name}}){edges{node{id}}}}";
         let response = await this.exec(query, {name: ""+name.trim()});
         let result = response.groups;
+        if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
+        return result.edges[0].node.id;
+    }
+
+    async lookupResourceByName(name) {
+        const query = "query ResourceByName($name:String){resource(filter:{name:{eq:$name}}){edges{node{id}}}}";
+        let response = await this.exec(query, {name: ""+name.trim()});
+        let result = response.resource;
         if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
         return result.edges[0].node.id;
     }

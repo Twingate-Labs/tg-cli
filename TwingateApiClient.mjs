@@ -568,6 +568,9 @@ export class TwingateApiClient {
         return serviceAccountResponse.entity;
     }
 
+    async addGroupToResource(){
+        return null
+    }
 
     /**
      * Removes a userId or list of userIds from a Group

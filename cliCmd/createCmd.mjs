@@ -51,13 +51,19 @@ export function getCreateCommand(name) {
                     if ( options.protocolRestrictions ) ports = tryProcessPortRestrictionString(options.protocolRestrictions);
                     const policy = ports == null ? "ALLOW_ALL" : "RESTRICTED";
                     let protocols = {
-                        allowIcmp: options.allowIcmp,
-                        tcp: { policy, ports },
-                        udp: { policy, ports }
+                        allowIcmp: options.allowIcmp || true,
+                        tcp: { policy, ports},
+                        udp: { policy, ports}
                     };
+                    if (ports == null){
+                        protocols = {
+                            allowIcmp: options.allowIcmp || true,
+                            tcp: { policy },
+                            udp: { policy }
+                    }}
 
                     // Create resource
-                    let res = await client.createResource(resourceName, resourceAddress, remoteNetworkId, protocols=null, groupIds)
+                    let res = await client.createResource(resourceName, resourceAddress, remoteNetworkId, protocols, groupIds)
 
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:

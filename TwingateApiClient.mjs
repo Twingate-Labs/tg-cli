@@ -659,9 +659,9 @@ export class TwingateApiClient {
     }
 
     async lookupResourceByName(name) {
-        const query = "query ResourceByName($name:String){resource(filter:{name:{eq:$name}}){edges{node{id}}}}";
+        const query = "query ResourceByName($name:String){resources(filter:{name:{eq:$name}}){edges{node{id}}}}";
         let response = await this.exec(query, {name: ""+name.trim()});
-        let result = response.resource;
+        let result = response.resources;
         if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
         return result.edges[0].node.id;
     }

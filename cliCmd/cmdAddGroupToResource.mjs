@@ -19,13 +19,13 @@ export function getAddGroupToResourceCommands(name) {
                 .arguments("<resourceId:string> [groupNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add groups to a resource`)
-                .action(async (options, resourceId, groupNamesOrId) => {
+                .action(async (options, resourceId, groupNameOrId) => {
 
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
-                    let groupIds = ( Array.isArray(groupNamesOrId) ? groupNamesOrId.join("").replace("[", "").replace("]", "").split(",") : [groupNamesOrId])
+                    let groupIds = ( Array.isArray(groupNameOrId) ? groupNameOrId.join("").replace("[", "").replace("]", "").split(",") : [groupNameOrId])
                     for ( let x = 0; x < groupIds.length; x++ ) {
                         let groupId = groupIds[x]
                         if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
@@ -46,7 +46,7 @@ export function getAddGroupToResourceCommands(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `Added groups ${groupNamesOrId} to resource ${resourceId}`;
+                            let msg = `Added groups ${groupNameOrId} to resource ${resourceId}`;
                             Log.success(msg);
                             break;
                     }
@@ -57,13 +57,13 @@ export function getAddGroupToResourceCommands(name) {
                 .arguments("<resourceId:string> [groupNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add groups to a resource`)
-                .action(async (options, resourceId, groupNamesOrId) => {
+                .action(async (options, resourceId, groupNameOrId) => {
 
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
-                    let groupIds = ( Array.isArray(groupNamesOrId) ? groupNamesOrId.join("").replace("[", "").replace("]", "").split(",") : [groupNamesOrId])
+                    let groupIds = ( Array.isArray(groupNameOrId) ? groupNameOrId.join("").replace("[", "").replace("]", "").split(",") : [groupNameOrId])
                     for ( let x = 0; x < groupIds.length; x++ ) {
                         let groupId = groupIds[x]
                         if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
@@ -84,7 +84,7 @@ export function getAddGroupToResourceCommands(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `Added groups ${groupNamesOrId} to resource ${resourceId}`;
+                            let msg = `Added groups ${groupNameOrId} to resource ${resourceId}`;
                             Log.success(msg);
                             break;
                     }

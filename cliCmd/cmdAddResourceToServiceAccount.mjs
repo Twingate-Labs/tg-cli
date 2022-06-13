@@ -19,10 +19,11 @@ export function getAddResourceToSericeAccountCommands(name) {
                 .arguments("<serviceAccountId:string> [resourceId...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add resources to service account`)
-                .action(async (options, serviceAccountId, resourceIds) => {
+                .action(async (options, serviceAccountId, resourceId) => {
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
+                    let resourceIds = ( Array.isArray(resourceId) ? resourceId.join("").replace("[", "").replace("]", "").split(",") : [resourceId])
                     let res = await client.addResourceToServiceAccount(serviceAccountId, resourceIds);
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:

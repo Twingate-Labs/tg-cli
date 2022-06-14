@@ -105,12 +105,10 @@ export function getCreateCommand(name) {
 
                     // Create connector
                     let res = await client.createConnector(remoteNetworkId);
-                    res.remoteNetwork = remoteNetworkNameOrId;
-
                     // If name was specified, update the connector
                     if (typeof connectorName == "string" && connectorName.length > 0) {
                         try {
-                            res = await client.setConnectorName(res.id, connectorName);
+                            res.setName = await client.setConnectorName(res.id, connectorName);
                         } catch (e) {
                             Log.error(e);
                         }
@@ -131,7 +129,7 @@ export function getCreateCommand(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `New ${name} named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork}'`;
+                            let msg = `New ${name} named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork.name}'`;
                             if (res.tokens) msg += ` with tokens:`
                             Log.success(msg);
                             if (res.tokens) {

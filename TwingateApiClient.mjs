@@ -675,9 +675,9 @@ export class TwingateApiClient {
     }
 
 
-    async createGroup(name, resourceIds, userIds) {
-        const createGroupQuery = "mutation CreateGroup($name:String!,$resourceIds:[ID],$userIds:[ID]){result:resourceCreate(name:$name,address:$address,remoteNetworkId:$remoteNetworkId,protocols:$protocols,groupIds:$groupIds)}{error entity{id}}}";
-        let groupsResponse = await this.exec(createGroupQuery, {name, resourceIds, userIds} );
+    async createGroup(name, userIds) {
+        const createGroupQuery = "mutation CreateGroup($name:String!,$userIds:[ID]){result:groupCreate(name:$name,userIds:$userIds){error entity{id}}}";
+        let groupsResponse = await this.exec(createGroupQuery, {name, userIds})
         if ( groupsResponse.result.error !== null ) throw new Error(`Error creating group: '${groupsResponse.result.error}'`)
         return groupsResponse.result.entity;
     }

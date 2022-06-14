@@ -719,7 +719,7 @@ export class TwingateApiClient {
     }
 
     async createConnector(remoteNetworkId) {
-        const createConnectorQuery = "mutation CreateConnector($remoteNetworkId:ID!){result:connectorCreate(remoteNetworkId:$remoteNetworkId){error entity{id name}}}";
+        const createConnectorQuery = "mutation CreateConnector($remoteNetworkId:ID!){result:connectorCreate(remoteNetworkId:$remoteNetworkId){error entity{id name remoteNetwork{name}}}}";
         let createConnectorResponse = await this.exec(createConnectorQuery, {remoteNetworkId} );
         if ( createConnectorResponse.result.error !== null ) throw new Error(`Error creating connector: '${createConnectorResponse.result.error}'`)
         return createConnectorResponse.result.entity;

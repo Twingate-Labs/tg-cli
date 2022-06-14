@@ -85,7 +85,7 @@ export function getCreateCommand(name) {
         case "connector":
             cmd = new Command()
                 .type("format", OutputFormat)
-                .arguments("<remoteNetworkNameOrId:string> [name:string]")
+                .arguments("<remoteNetworkNameOrId:string> <name:string>")
                 .option("-t, --generate-tokens [boolean]", "Generate tokens", {
                     default: true
                 })
@@ -131,7 +131,7 @@ export function getCreateCommand(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `New ${res.name} named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork}'`;
+                            let msg = `New ${name} named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork}'`;
                             if (res.tokens) msg += ` with tokens:`
                             Log.success(msg);
                             if (res.tokens) {

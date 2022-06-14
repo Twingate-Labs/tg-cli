@@ -47,8 +47,6 @@ export function getCreateCommand(name) {
                                 }
                             }
                         }
-                    } else {
-                        groupIds = []
                     }
 
 
@@ -70,6 +68,15 @@ export function getCreateCommand(name) {
                     // Create resource
                     let res = await client.createResource(resourceName, resourceAddress, remoteNetworkId, protocols, groupIds)
 
+                    let groupStr = ``
+                    if (groupIds){
+                        for (const element of res.groups.edges) {
+                            groupStr += `named '${element.node.name}' with ID '${element.node.id}' and `
+                        }
+                        groupStr = groupStr.substring(0, groupStr.length - 5)
+                    }
+
+
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:
                             //console.dir(res, {'maxArrayLength': null});
@@ -77,12 +84,8 @@ export function getCreateCommand(name) {
                             break;
                         default:
                             let msg = `New ${name} named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork.name}'`;
-                            if (groupIds) msg += ` with added groups: ${JSON.stringify(groupIds)}`
+                            if (groupIds) msg += ` with added groups ${groupStr}`
                             Log.success(msg);
-                            if (res.tokens) {
-                                console.log(`ACCESS_TOKEN=${res.tokens.accessToken}`);
-                                console.log(`REFRESH_TOKEN=${res.tokens.refreshToken}`);
-                            }
                             break;
                     }
                 });
@@ -148,14 +151,14 @@ export function getCreateCommand(name) {
 
         case "group":
             cmd = new Command()
-                .arguments("<name:string>")
+                .arguments("<name:string> [userIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
-                .action(async (options, groupName) => {
+                .action(async (options, groupName, userIds) => {
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
-                    let res = await client.createGroup(groupName);
+                    let res = await client.createGroup(groupName, userIds);
                     res.name = groupName;
 
                     switch (options.outputFormat) {

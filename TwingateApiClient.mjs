@@ -675,7 +675,7 @@ export class TwingateApiClient {
     }
 
 
-    async createGroup(name, userIds) {
+    async createGroup(name, userIds=[]) {
         const createGroupQuery = "mutation CreateGroup($name:String!,$userIds:[ID]){result:groupCreate(name:$name,userIds:$userIds){error entity{id}}}";
         let groupsResponse = await this.exec(createGroupQuery, {name, userIds})
         if ( groupsResponse.result.error !== null ) throw new Error(`Error creating group: '${groupsResponse.result.error}'`)
@@ -741,7 +741,7 @@ export class TwingateApiClient {
     }
 
     async createResource(name, address, remoteNetworkId, protocols = null, groupIds = []) {
-        const createResourceQuery = "mutation CreateResource($name:String!,$address:String!,$remoteNetworkId:ID!,$protocols:ProtocolsInput,$groupIds:[ID]){result:resourceCreate(address:$address,groupIds:$groupIds,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId){error entity{id name remoteNetwork{name}}}}";
+        const createResourceQuery = "mutation CreateResource($name:String!,$address:String!,$remoteNetworkId:ID!,$protocols:ProtocolsInput,$groupIds:[ID]){result:resourceCreate(address:$address,groupIds:$groupIds,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId){error entity{id name remoteNetwork{name} groups{edges{node{id name}}}}}}";
         let createResourceResponse = await this.exec(createResourceQuery, {name, address, remoteNetworkId, protocols, groupIds} );
         if ( createResourceResponse.result.error !== null ) throw new Error(`Error creating resource: '${createResourceResponse.result.error}'`)
         return createResourceResponse.result.entity;

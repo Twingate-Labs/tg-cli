@@ -29,7 +29,7 @@ export function getRemoveCommands(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            Log.success(`Removed ${name} with id '${groupId}'.`);
+                            Log.success(`Removed ${name} with id '${groupId}'`);
                             break;
                     }
 
@@ -51,7 +51,7 @@ export function getRemoveCommands(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            Log.success(`Removed ${name} with id '${serviceAccountId}'.`);
+                            Log.success(`Removed ${name} with id '${serviceAccountId}'`);
                             break;
                     }
 
@@ -73,7 +73,7 @@ export function getRemoveCommands(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            Log.success(`Removed ${name} with id '${resourceId}'.`);
+                            Log.success(`Removed ${name} with id '${resourceId}'`);
                             break;
                     }
 

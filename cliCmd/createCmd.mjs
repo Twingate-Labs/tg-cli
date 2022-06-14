@@ -171,7 +171,7 @@ export function getCreateCommand(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `New ${name} named '${res.name}' created with id '${res.id}'.`
+                            let msg = `New ${name} named '${res.name}' created with id '${res.id}'`
                             if (userIds) msg += ` with added users ${userStr}`
                             Log.success(msg);
                             break;
@@ -195,7 +195,7 @@ export function getCreateCommand(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            Log.success(`New ${name} named '${res.name}' created with id '${res.id}'.`);
+                            Log.success(`New ${name} named '${res.name}' created with id '${res.id}'`);
                             break;
                     }
 
@@ -240,7 +240,7 @@ export function getCreateCommand(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `New ${name} named '${res.name}' created with id '${res.id}'.`;
+                            let msg = `New ${name} named '${res.name}' created with id '${res.id}'`;
                             if (resourceIds) msg += ` with added resources ${resourceStr}`
                             Log.success(msg);
                             break;

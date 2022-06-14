@@ -689,8 +689,8 @@ export class TwingateApiClient {
         return createRemoteNetworkResponse.result.entity;
     }
 
-    async createServiceAccount(name, resourceIds) {
-        const createServiceAccountQuery = "mutation CreateServiceAccount($name:String!,$resourceIds:[ID]){result:serviceAccountCreate(name:$name,resourceIds:$resourceIds){error entity{id}}}";
+    async createServiceAccount(name, resourceIds=[]) {
+        const createServiceAccountQuery = "mutation CreateServiceAccount($name:String!,$resourceIds:[ID]){result:serviceAccountCreate(name:$name,resourceIds:$resourceIds){error entity{id name resources{edges{node{id name}}}}}}";
         let serviceAccountResponse = await this.exec(createServiceAccountQuery, {name, resourceIds} );
         if ( serviceAccountResponse.result.error !== null ) throw new Error(`Error creating service account: '${serviceAccountResponse.result.error}'`)
         return serviceAccountResponse.result.entity;

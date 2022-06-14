@@ -196,22 +196,47 @@ export function getCreateCommand(name) {
             break;
         case "service_account":
             cmd = new Command()
-                .arguments("<name:string>")
+                .arguments("<name:string> [resourceNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
-                .action(async (options, serviceAccountName) => {
+                .action(async (options, serviceAccountName, resourceNamesOrIds) => {
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
-                    let res = await client.createServiceAccount(serviceAccountName);
-                    res.name = serviceAccountName;
+
+                    let resourceIds = resourceNamesOrIds
+                    if (resourceIds){
+                        for ( let x = 0; x < resourceIds.length; x++ ) {
+                            let resourceId = resourceIds[x]
+                            if (!resourceId.startsWith(TwingateApiClient.IdPrefixes.Resource)) {
+                                resourceId = await client.lookupResourceByName(resourceId);
+                                if (resourceId == null) {
+                                    throw new Error(`Could not find resource: '${resourceIds[x]}'`)
+                                } else {
+                                    resourceIds[x] = resourceId
+                                }
+                            }
+                        }
+                    }
+
+                    let res = await client.createServiceAccount(serviceAccountName, resourceIds);
+
+                    let resourceStr = ``
+                    if (resourceNamesOrIds){
+                        for (const element of res.resources.edges) {
+                            resourceStr += `named '${element.node.name}' with ID '${element.node.id}' and `
+                        }
+                        resourceStr = resourceStr.substring(0, resourceStr.length - 5)
+                    }
 
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            Log.success(`New ${name} named '${res.name}' created with id '${res.id}'.`);
+                            let msg = `New ${name} named '${res.name}' created with id '${res.id}'.`;
+                            if (resourceIds) msg += ` with added resources ${resourceStr}`
+                            Log.success(msg);
                             break;
                     }
 

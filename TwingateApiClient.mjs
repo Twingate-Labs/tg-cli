@@ -23,7 +23,8 @@ export class TwingateApiClient {
         // Really not ideal since identifiers are meant to be opaque
         RemoteNetwork: "UmVtb3RlTmV0d29yazo",// btoa("RemoteNetwork:").replace(/=$/, ""),
         Group: "R3JvdXA6", // btoa("Group:").replace(/=$/, "")
-        Resource: "UmVzb3Vy"
+        Resource: "UmVzb3Vy",
+        User: "VXNlcjox"
     }
 
     static Schema = {
@@ -658,6 +659,15 @@ export class TwingateApiClient {
         return result.edges[0].node.id;
     }
 
+    // todo: waiting on feature request
+    async lookupUserByEmail(email) {
+        const query = "query UserByEmail($email:String){users(filter:{email:{eq:$email}}){edges{node{id}}}}";
+        let response = await this.exec(query, {email: ""+email.trim()});
+        let result = response.users;
+        if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
+        return result.edges[0].node.id;
+    }
+
     async lookupResourceByName(name) {
         const query = "query ResourceByName($name:String){resources(filter:{name:{eq:$name}}){edges{node{id}}}}";
         let response = await this.exec(query, {name: ""+name.trim()});
@@ -676,7 +686,7 @@ export class TwingateApiClient {
 
 
     async createGroup(name, userIds=[]) {
-        const createGroupQuery = "mutation CreateGroup($name:String!,$userIds:[ID]){result:groupCreate(name:$name,userIds:$userIds){error entity{id}}}";
+        const createGroupQuery = "mutation CreateGroup($name:String!,$userIds:[ID]){result:groupCreate(name:$name,userIds:$userIds){error entity{id name users{edges{node{id email}}}}}}";
         let groupsResponse = await this.exec(createGroupQuery, {name, userIds})
         if ( groupsResponse.result.error !== null ) throw new Error(`Error creating group: '${groupsResponse.result.error}'`)
         return groupsResponse.result.entity;

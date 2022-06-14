@@ -71,9 +71,8 @@ export function getCreateCommand(name) {
                     let groupStr = ``
                     if (groupIds){
                         for (const element of res.groups.edges) {
-                            groupStr += `named '${element.node.name}' with ID '${element.node.id}' and `
+                            groupStr += `'${element.node.name}: ${element.node.id}' `
                         }
-                        groupStr = groupStr.substring(0, groupStr.length - 5)
                     }
 
 
@@ -151,22 +150,30 @@ export function getCreateCommand(name) {
 
         case "group":
             cmd = new Command()
-                .arguments("<name:string> [userIds...:string]")
+                .arguments("<name:string> [UserIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
                 .action(async (options, groupName, userIds) => {
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
-                    let res = await client.createGroup(groupName, userIds);
-                    res.name = groupName;
+                    let res = await client.createGroup(groupName, userIds)
+
+                    let userStr = ``
+                    if (userIds){
+                        for (const element of res.users.edges) {
+                            userStr += `'${element.node.id}' `
+                        }
+                    }
 
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            Log.success(`New ${name} named '${res.name}' created with id '${res.id}'.`);
+                            let msg = `New ${name} named '${res.name}' created with id '${res.id}'.`
+                            if (userIds) msg += ` with added users ${userStr}`
+                            Log.success(msg);
                             break;
                     }
 
@@ -224,9 +231,8 @@ export function getCreateCommand(name) {
                     let resourceStr = ``
                     if (resourceNamesOrIds){
                         for (const element of res.resources.edges) {
-                            resourceStr += `named '${element.node.name}' with ID '${element.node.id}' and `
+                            resourceStr += `'${element.node.name}: ${element.node.id}' `
                         }
-                        resourceStr = resourceStr.substring(0, resourceStr.length - 5)
                     }
 
                     switch (options.outputFormat) {

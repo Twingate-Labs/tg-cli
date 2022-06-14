@@ -37,7 +37,7 @@ export function getTopLevelCommand(name) {
     if ( addResourceToServiceAccount !== null ) cmd = cmd.command("add_resource_to_service_account", addResourceToServiceAccount)
 
     let addGroupToResource = getAddGroupToResourceCommands(name)
-    if ( addGroupToResource !== null ) cmd = cmd.command("add_group_to_resource", addGroupToResource)
+    if ( addGroupToResource !== null ) cmd = cmd.command("add_group", addGroupToResource)
 
 
     switch (name) {

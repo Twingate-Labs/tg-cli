@@ -22,7 +22,7 @@ export function getCreateCommand(name) {
                 .option("-r, --protocol-restrictions [string]", "Protocol Restrictions")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
-                .action(async (options, remoteNetworkNameOrId, resourceName, resourceAddress, groupNameOrId) => {
+                .action(async (options, remoteNetworkNameOrId, resourceName, resourceAddress, groupNameOrIds) => {
 
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
@@ -34,13 +34,13 @@ export function getCreateCommand(name) {
                         remoteNetworkId = await client.lookupRemoteNetworkByName(remoteNetworkNameOrId);
                         if (remoteNetworkId == null) throw new Error(`Could not find remote network: '${remoteNetworkNameOrId}'`);
                     }
-                    let groupIds = ( Array.isArray(groupNameOrId) ? groupNameOrId.join("").replace("[", "").replace("]", "").split(",") : [groupNameOrId])
+                    let groupIds = groupNameOrIds
                     for ( let x = 0; x < groupIds.length; x++ ) {
                         let groupId = groupIds[x]
                         if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
                             groupId = await client.lookupGroupByName(groupId);
                             if (groupId == null) {
-                                throw new Error(`Could not find group: '${groupId}'`)
+                                throw new Error(`Could not find group: '${groupIds[x]}'`)
                             } else {
                                 groupIds[x] = groupId
                             }

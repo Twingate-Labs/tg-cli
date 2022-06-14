@@ -35,17 +35,22 @@ export function getCreateCommand(name) {
                         if (remoteNetworkId == null) throw new Error(`Could not find remote network: '${remoteNetworkNameOrId}'`);
                     }
                     let groupIds = groupNameOrIds
-                    for ( let x = 0; x < groupIds.length; x++ ) {
-                        let groupId = groupIds[x]
-                        if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
-                            groupId = await client.lookupGroupByName(groupId);
-                            if (groupId == null) {
-                                throw new Error(`Could not find group: '${groupIds[x]}'`)
-                            } else {
-                                groupIds[x] = groupId
+                    if (groupIds){
+                        for ( let x = 0; x < groupIds.length; x++ ) {
+                            let groupId = groupIds[x]
+                            if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
+                                groupId = await client.lookupGroupByName(groupId);
+                                if (groupId == null) {
+                                    throw new Error(`Could not find group: '${groupIds[x]}'`)
+                                } else {
+                                    groupIds[x] = groupId
+                                }
                             }
                         }
+                    } else {
+                        groupIds = []
                     }
+
 
                     let ports = null;
                     if ( options.protocolRestrictions ) ports = tryProcessPortRestrictionString(options.protocolRestrictions);
@@ -72,7 +77,7 @@ export function getCreateCommand(name) {
                             break;
                         default:
                             let msg = `New ${name} named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork.name}'`;
-                            if (res.tokens) msg += ` with tokens:`
+                            if (groupIds) msg += ` with added groups: ${JSON.stringify(groupIds)}`
                             Log.success(msg);
                             if (res.tokens) {
                                 console.log(`ACCESS_TOKEN=${res.tokens.accessToken}`);

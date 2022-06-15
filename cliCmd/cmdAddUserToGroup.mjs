@@ -33,7 +33,7 @@ export function getAddUserToGroupCommands(name) {
                     if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
                         groupId = await client.lookupGroupByName(groupId);
                         if (groupId == null) {
-                            throw new Error(`Could not find group: '${groupId}'`)
+                            throw new Error(`Could not find group: '${groupNameOrId}'`)
                         }
                     }
 

@@ -576,6 +576,12 @@ export class TwingateApiClient {
         return groupsResponse.resourceUpdate.entity;
     }
 
+    async addResourceToGroup(resourceId, groupIds){
+        const addGrouptoResourceQuery = "mutation AddResourceToGroup($groupId:ID!,$resourceIds:[ID]){groupUpdate(id:$groupId,addedResourceIds:$groupIds){error entity{id name resources{edges{node{id name}}}}}}";
+        let groupsResponse = await this.exec(addGrouptoResourceQuery, {resourceId, groupIds} );
+        return groupsResponse.groupUpdate.entity;
+    }
+
     /**
      * Removes a userId or list of userIds from a Group
      * @param {string} groupId - Twingate Group Id

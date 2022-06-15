@@ -11,7 +11,7 @@ import {getRemoveCommands} from "./removeCmd.mjs";
 import {getAddUserToGroupCommands} from "./cmdAddUserToGroup.mjs";
 import {getAddResourceToSericeAccountCommands} from "./cmdAddResourceToServiceAccount.mjs";
 import {getRemoveBulkCommands} from "./removeBulkCmd.mjs";
-import {getAddGroupToResourceCommands} from "./cmdAddGroupToResource.mjs"
+import {getAddGroupToResourceCommands, getAddResourceToGroupCommands} from "./cmdGroupResource.mjs"
 
 export function getTopLevelCommand(name) {
 
@@ -38,6 +38,9 @@ export function getTopLevelCommand(name) {
 
     let addGroupToResource = getAddGroupToResourceCommands(name)
     if ( addGroupToResource !== null ) cmd = cmd.command("add_group", addGroupToResource)
+
+    let addResourceToGroup = getAddResourceToGroupCommands(name)
+    if ( addResourceToGroup !== null ) cmd = cmd.command("add_resource", addResourceToGroup)
 
 
     switch (name) {

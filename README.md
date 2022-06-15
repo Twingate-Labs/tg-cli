@@ -61,3 +61,7 @@ Example Commands
 **Import Groups, Remote Networks and resources into a new account**
 
 ``./tg import -a [new account name] -nrg -f [path to file to import from (format must be as outputted by the export command)]``
+
+Need Help?
+===========================
+If you are experiencing any issues, create a new issue [here](https://github.com/Twingate-Labs/tg-cli/issues/new).

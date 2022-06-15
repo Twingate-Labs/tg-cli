@@ -162,7 +162,7 @@ export function getCreateCommand(name) {
                     let userStr = ``
                     if (userIds){
                         for (const element of res.users.edges) {
-                            userStr += `'${element.node.id}' `
+                            userStr += `'${element.node.email}: ${element.node.id}' `
                         }
                     }
 

@@ -19,8 +19,7 @@ export function getRemoveBulkCommands(name) {
                 .arguments("[groupIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Remove ${name}s bulk`)
-                .action(async (options, groupId) => {
-                    let groupIds = ( Array.isArray(groupId) ? groupId.join("").replace("[", "").replace("]", "").split(",") : [groupId])
+                .action(async (options, groupIds) => {
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
@@ -32,7 +31,7 @@ export function getRemoveBulkCommands(name) {
                                     console.log(JSON.stringify(res));
                                     break;
                                 default:
-                                    Log.success(`Removed ${name} with id '${groupIds[x]}'.`);
+                                    Log.success(`Removed ${name} with id '${groupIds[x]}'`);
                                     break;
                             }
                         } catch (e) {
@@ -41,15 +40,12 @@ export function getRemoveBulkCommands(name) {
                     }
                 });
             break;
-        case "user":
-            break;
         case "resource":
             cmd = new Command()
                 .arguments("[resourceIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Remove ${name}s bulk`)
-                .action(async (options, resourceId) => {
-                    let resourceIds = ( Array.isArray(resourceId) ? resourceId.join("").replace("[", "").replace("]", "").split(",") : [resourceId])
+                .action(async (options, resourceIds) => {
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
@@ -61,7 +57,7 @@ export function getRemoveBulkCommands(name) {
                                     console.log(JSON.stringify(res));
                                     break;
                                 default:
-                                    Log.success(`Removed ${name} with id '${resourceIds[x]}'.`);
+                                    Log.success(`Removed ${name} with id '${resourceIds[x]}'`);
                                     break;
                             }
                         } catch (e) {

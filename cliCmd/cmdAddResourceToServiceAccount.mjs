@@ -14,7 +14,7 @@ OutputFormat.JSON = "json";
 export function getAddResourceToSericeAccountCommands(name) {
     let cmd = null;
     switch (name) {
-        case "service_account":
+        case "service":
             cmd = new Command()
                 .arguments("<serviceAccountId:string> [resourceNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})

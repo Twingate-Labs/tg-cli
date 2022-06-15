@@ -31,7 +31,7 @@ export function getRemoveBulkCommands(name) {
                                     console.log(JSON.stringify(res));
                                     break;
                                 default:
-                                    Log.success(`Removed ${name} with id '${groupIds[x]}'`);
+                                    Log.success(`Removed ${name}s with id '${groupIds[x]}'`);
                                     break;
                             }
                         } catch (e) {
@@ -57,7 +57,7 @@ export function getRemoveBulkCommands(name) {
                                     console.log(JSON.stringify(res));
                                     break;
                                 default:
-                                    Log.success(`Removed ${name} with id '${resourceIds[x]}'`);
+                                    Log.success(`Removed ${name}s with id '${resourceIds[x]}'`);
                                     break;
                             }
                         } catch (e) {

@@ -35,7 +35,7 @@ export function getRemoveCommands(name) {
 
                 });
             break;
-        case "service_account":
+        case "service":
             cmd = new Command()
                 .arguments("<id:string>")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})

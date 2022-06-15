@@ -201,7 +201,7 @@ export function getCreateCommand(name) {
 
                 });
             break;
-        case "service_account":
+        case "service":
             cmd = new Command()
                 .arguments("<name:string> [resourceNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})

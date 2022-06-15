@@ -565,9 +565,9 @@ export class TwingateApiClient {
 
     async addResourceToServiceAccount(serviceAccountId, resourceId) {
         let resourceIds = ( Array.isArray(resourceId) ? resourceId : [resourceId]);
-        const serviceAccountQuery = "mutation AddResourceToServiceAccount($serviceAccountId:ID!,$resourceIds:[ID]){serviceAccountUpdate(id:$serviceAccountId,addedResourceIds:$resourceIds){ok error}}";
+        const serviceAccountQuery = "mutation AddResourceToServiceAccount($serviceAccountId:ID!,$resourceIds:[ID]){serviceAccountUpdate(id:$serviceAccountId,addedResourceIds:$resourceIds){error entity{id name resources{edges{node{id name}}}}}}";
         let serviceAccountResponse = await this.exec(serviceAccountQuery, {serviceAccountId, resourceIds} );
-        return serviceAccountResponse.entity;
+        return serviceAccountResponse.serviceAccountUpdate.entity;
     }
 
     async addGroupToResource(resourceId, groupIds){

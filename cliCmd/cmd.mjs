@@ -34,7 +34,7 @@ export function getTopLevelCommand(name) {
     if ( removeBulkCmd !== null ) cmd = cmd.command("remove_bulk", removeBulkCmd)
 
     let addResourceToServiceAccount = getAddResourceToSericeAccountCommands(name)
-    if ( addResourceToServiceAccount !== null ) cmd = cmd.command("add_resource_to_service_account", addResourceToServiceAccount)
+    if ( addResourceToServiceAccount !== null ) cmd = cmd.command("add_resource", addResourceToServiceAccount)
 
     let addGroupToResource = getAddGroupToResourceCommands(name)
     if ( addGroupToResource !== null ) cmd = cmd.command("add_group", addGroupToResource)

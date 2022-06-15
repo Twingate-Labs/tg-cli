@@ -18,7 +18,7 @@ export function getAddResourceToSericeAccountCommands(name) {
             cmd = new Command()
                 .arguments("<serviceAccountId:string> [resourceNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
-                .description(`Add resources to service account`)
+                .description(`Add resources to a service`)
                 .action(async (options, serviceAccountId, resourceNamesOrIds) => {
 
                     if (!resourceNamesOrIds){

@@ -69,7 +69,8 @@ export const scriptCmd = new Command()
             }
 
             if ( isEmpty(row["Resource Id"]) ) {
-                row["Resource Id"] = await client.createResource(remoteNetworkName, `${remoteNetworkName}.pro-vigil.com`, row["Remote Network Id"]);
+                let resource = await client.createResource(remoteNetworkName, `${remoteNetworkName}.pro-vigil.com`, row["Remote Network Id"]);
+                row["Resource Id"] = resource.id;
             }
 
             let remoteNetworkId = row["Remote Network Id"];

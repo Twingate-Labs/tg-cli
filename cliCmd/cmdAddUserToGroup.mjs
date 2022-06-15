@@ -16,23 +16,45 @@ export function getAddUserToGroupCommands(name) {
     switch (name) {
         case "group":
             cmd = new Command()
-                .arguments("<group_id:string> [userIds...:string]")
+                .arguments("<groupNameOrId:string> [userIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add users to a group`)
-                .action(async (options, groupId, userId) => {
+                .action(async (options, groupNameOrId, userIds) => {
+
+                    if (!userIds){
+                        throw new Error(`User IDs are not defined.`)
+                    }
+
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
-
+                    let groupId = groupNameOrId
+                    if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
+                        groupId = await client.lookupGroupByName(groupId);
+                        if (groupId == null) {
+                            throw new Error(`Could not find group: '${groupId}'`)
+                        }
+                    }
 
                     let res = await client.addUserToGroup(groupId, userIds);
+
+                    let userStr = ``
+                    let result = res.users.edges.map(function(obj) {return obj.node.id})
+                    for (const element of userIds) {
+                        if (result.includes(element)){
+                            userStr += `'${res.users.edges.find(o => o.node.id === element).node.email}: ${element}' `
+                        }
+                    }
+                    userStr = userStr.substring(0, userStr.length - 1);
+
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            Log.success(`Add users '${userIds}' to group '${groupId}'.`);
+                            let msg = `Added users ${userStr} to group named '${res.name}' with ID '${res.id}'`
+                            Log.success(msg)
                             break;
                     }
                 });

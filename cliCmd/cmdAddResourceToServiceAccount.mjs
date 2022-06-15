@@ -20,6 +20,7 @@ export function getAddResourceToSericeAccountCommands(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add resources to service account`)
                 .action(async (options, serviceAccountId, resourceNamesOrIds) => {
+
                     if (!resourceNamesOrIds){
                         throw new Error(`Resource names or IDs are not defined.`)
                     }
@@ -29,34 +30,28 @@ export function getAddResourceToSericeAccountCommands(name) {
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     let resourceIds = resourceNamesOrIds
-                    if (resourceIds){
-                        for ( let x = 0; x < resourceIds.length; x++ ) {
-                            let resourceId = resourceIds[x]
-                            if (!resourceId.startsWith(TwingateApiClient.IdPrefixes.Resource)) {
-                                resourceId = await client.lookupResourceByName(resourceId);
-                                if (resourceId == null) {
-                                    throw new Error(`Could not find resource: '${resourceIds[x]}'`)
-                                } else {
-                                    resourceIds[x] = resourceId
-                                }
+                    for ( let x = 0; x < resourceIds.length; x++ ) {
+                        let resourceId = resourceIds[x]
+                        if (!resourceId.startsWith(TwingateApiClient.IdPrefixes.Resource)) {
+                            resourceId = await client.lookupResourceByName(resourceId);
+                            if (resourceId == null) {
+                                throw new Error(`Could not find resource: '${resourceIds[x]}'`)
+                            } else {
+                                resourceIds[x] = resourceId
                             }
                         }
                     }
-
 
                     let res = await client.addResourceToServiceAccount(serviceAccountId, resourceIds);
 
-
                     let resourceStr = ``
-                    if (resourceIds){
-                        let result = res.resources.edges.map(function(obj) {return obj.node.id})
-                        for (const element of resourceIds) {
-                            if (result.includes(element)){
-                                resourceStr += `'${res.resources.edges.find(o => o.node.id === element).node.name}: ${element}' `
-                            }
+                    let result = res.resources.edges.map(function(obj) {return obj.node.id})
+                    for (const element of resourceIds) {
+                        if (result.includes(element)){
+                            resourceStr += `'${res.resources.edges.find(o => o.node.id === element).node.name}: ${element}' `
                         }
-                        resourceStr = resourceStr.substring(0, resourceStr.length - 1);
                     }
+                    resourceStr = resourceStr.substring(0, resourceStr.length - 1);
 
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:

@@ -25,7 +25,6 @@ export function getAddGroupToResourceCommands(name) {
                         throw new Error(`Group names or IDs are not defined.`)
                     }
 
-
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
@@ -53,15 +52,13 @@ export function getAddGroupToResourceCommands(name) {
                     let res = await client.addGroupToResource(resourceId, groupIds)
 
                     let groupStr = ``
-                    if (groupIds){
-                        let result = res.groups.edges.map(function(obj) {return obj.node.id})
-                        for (const element of groupIds) {
-                            if (result.includes(element)){
-                                groupStr += `'${res.groups.edges.find(o => o.node.id === element).node.name}: ${element}' `
-                            }
+                    let result = res.groups.edges.map(function(obj) {return obj.node.id})
+                    for (const element of groupIds) {
+                        if (result.includes(element)){
+                            groupStr += `'${res.groups.edges.find(o => o.node.id === element).node.name}: ${element}' `
                         }
-                        groupStr = groupStr.substring(0, groupStr.length - 1);
                     }
+                    groupStr = groupStr.substring(0, groupStr.length - 1);
 
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:

@@ -557,9 +557,9 @@ export class TwingateApiClient {
      */
     async addUserToGroup(groupId, userId) {
         let userIds = ( Array.isArray(userId) ? userId : [userId]);
-        const groupQuery = "mutation AddUserToGroup($groupId:ID!,$userIds:[ID]){groupUpdate(id:$groupId,addedUserIds:$userIds){ok error}}";
+        const groupQuery = "mutation AddUserToGroup($groupId:ID!,$userIds:[ID]){groupUpdate(id:$groupId,addedUserIds:$userIds){error entity{id name users{edges{node{id email}}}}}}";
         let groupsResponse = await this.exec(groupQuery, {groupId, userIds} );
-        return groupsResponse.entity;
+        return groupsResponse.groupUpdate.entity;
     }
 
 

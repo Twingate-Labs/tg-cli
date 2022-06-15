@@ -13,6 +13,7 @@ import {getAddUserToGroupCommands} from "./cmdAddUserToGroup.mjs";
 import {getAddResourceToSericeAccountCommands} from "./cmdAddResourceToServiceAccount.mjs";
 import {getRemoveBulkCommands} from "./removeBulkCmd.mjs";
 import {getAddGroupToResourceCommands, getAddResourceToGroupCommands} from "./cmdGroupResource.mjs"
+import {getServiceAccountKeyCreateCommands} from "./serviceAccountKey.mjs";
 
 export function getTopLevelCommand(name) {
 
@@ -42,6 +43,9 @@ export function getTopLevelCommand(name) {
 
     let addResourceToGroup = getAddResourceToGroupCommands(name)
     if ( addResourceToGroup !== null ) cmd = cmd.command("add_resource", addResourceToGroup)
+
+    let serviceAccountKeyCreate = getServiceAccountKeyCreateCommands(name)
+    if ( serviceAccountKeyCreate !== null ) cmd = cmd.command("key_create", serviceAccountKeyCreate)
 
 
     switch (name) {

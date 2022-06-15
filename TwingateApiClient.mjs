@@ -756,6 +756,13 @@ export class TwingateApiClient {
         return response.result.connectorTokens;
     }
 
+    async serviceAccountKeyCreate(serviceAccountId, name, expirationTime) {
+        const query = "mutation CreateKey($serviceAccountId:ID!, $name:String,$expirationTime:Int!){result:serviceAccountKeyCreate(serviceAccountId:$serviceAccountId,name:$name,expirationTime:$expirationTime){error token entity{id name serviceAccount{id name}}}}";
+        let response = await this.exec(query, {serviceAccountId, name, expirationTime} );
+        if ( response.result.error !== null ) throw new Error(`Error creating service account key: '${response.result.error}'`)
+        return response.result;
+    }
+
     async createResource(name, address, remoteNetworkId, protocols = null, groupIds = []) {
         const createResourceQuery = "mutation CreateResource($name:String!,$address:String!,$remoteNetworkId:ID!,$protocols:ProtocolsInput,$groupIds:[ID]){result:resourceCreate(address:$address,groupIds:$groupIds,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId){error entity{id name remoteNetwork{name} groups{edges{node{id name}}}}}}";
         let createResourceResponse = await this.exec(createResourceQuery, {name, address, remoteNetworkId, protocols, groupIds} );

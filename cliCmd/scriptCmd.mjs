@@ -68,12 +68,12 @@ export const scriptCmd = new Command()
                 row["Remote Network Id"] = remoteNetworkMap[remoteNetworkName];
             }
 
-            if ( isEmpty(row["Resource Id"]) ) {
-                let resource = await client.createResource(remoteNetworkName, `${remoteNetworkName}.pro-vigil.com`, row["Remote Network Id"]);
-                row["Resource Id"] = resource.id;
-            }
-
             let remoteNetworkId = row["Remote Network Id"];
+
+            if (isEmpty(row["Resource Id"]) && isNotEmpty(remoteNetworkId)) {
+                let newResource = await client.createResource(remoteNetworkName, `${remoteNetworkName}.pro-vigil.com`, remoteNetworkId);
+                row["Resource Id"] = newResource.id;
+            }
 
             if ( isEmpty(row["Connector Id"]) ) {
                 // Create connector

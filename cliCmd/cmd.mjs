@@ -3,6 +3,7 @@ import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
 export * from "./exportCmd.mjs";
 export * from "./importCmd.mjs";
 export * from "./removeAllCmd.mjs";
+export * from "./scriptCmd.mjs";
 import {getCopyCommand} from "./copyCmd.mjs";
 import {getCreateCommand} from "./createCmd.mjs";
 import {getListCommand} from "./listCmd.mjs";

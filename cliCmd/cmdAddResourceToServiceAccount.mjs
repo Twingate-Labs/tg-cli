@@ -58,7 +58,7 @@ export function getAddResourceToSericeAccountCommands(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg =  `Added resources ${resourceStr} to ${name} '${res.name}' with ID '${res.id}'`
+                            let msg =  `Added resources ${resourceStr} to ${name} '${res.name}: ${res.id}'`
                             Log.success(msg);
                             break;
                     }

@@ -68,7 +68,7 @@ export function getAddGroupToResourceCommands(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `Added groups ${groupStr} to resource named '${res.name}' with ID '${res.id}'`
+                            let msg = `Added groups ${groupStr} to ${name} '${res.name}: ${res.id}'`
                             Log.success(msg)
                             break;
                     }
@@ -135,7 +135,7 @@ export function getAddResourceToGroupCommands(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `Added resources ${resourceStr} to group named '${res.name}' with ID '${res.id}'`
+                            let msg = `Added resources ${resourceStr} to ${name} '${res.name}: ${res.id}'`
                             Log.success(msg)
                             break;
                     }

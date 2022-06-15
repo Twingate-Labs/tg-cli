@@ -53,7 +53,7 @@ export function getAddUserToGroupCommands(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `Added users ${userStr} to group named '${res.name}' with ID '${res.id}'`
+                            let msg = `Added users ${userStr} to ${name} '${res.name}: ${res.id}'`
                             Log.success(msg)
                             break;
                     }

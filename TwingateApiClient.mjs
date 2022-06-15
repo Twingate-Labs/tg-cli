@@ -572,13 +572,13 @@ export class TwingateApiClient {
 
     async addGroupToResource(resourceId, groupIds){
         const addGrouptoResourceQuery = "mutation AddGroupToResource($resourceId:ID!,$groupIds:[ID]){resourceUpdate(id:$resourceId,addedGroupIds:$groupIds){error entity{id name groups{edges{node{id name}}}}}}";
-        let groupsResponse = await this.exec(addGrouptoResourceQuery, {resourceId, groupIds} );
-        return groupsResponse.resourceUpdate.entity;
+        let resourceResponse = await this.exec(addGrouptoResourceQuery, {resourceId, groupIds} );
+        return resourceResponse.resourceUpdate.entity;
     }
 
-    async addResourceToGroup(resourceId, groupIds){
-        const addGrouptoResourceQuery = "mutation AddResourceToGroup($groupId:ID!,$resourceIds:[ID]){groupUpdate(id:$groupId,addedResourceIds:$groupIds){error entity{id name resources{edges{node{id name}}}}}}";
-        let groupsResponse = await this.exec(addGrouptoResourceQuery, {resourceId, groupIds} );
+    async addResourceToGroup(groupId, resourceIds){
+        const addResourceToGroupQuery = "mutation AddResourceToGroup($groupId:ID!,$resourceIds:[ID]){groupUpdate(id:$groupId,addedResourceIds:$resourceIds){error entity{id name resources{edges{node{id name}}}}}}";
+        let groupsResponse = await this.exec(addResourceToGroupQuery, {groupId, resourceIds} );
         return groupsResponse.groupUpdate.entity;
     }
 

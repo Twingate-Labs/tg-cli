@@ -119,7 +119,7 @@ export const scriptCmd = new Command()
                 }
 
                 try {
-                    let call = `docker run -d --sysctl net.ipv4.ping_group_range="0 2147483647" --env TENANT_URL="https://${networkName}.twingate.com" --env ACCESS_TOKEN="${row["Docker Access Token"]}" --env REFRESH_TOKEN="${row["Docker Refresh Token"]}"  --env TWINGATE_LABEL_HOSTNAME="${row["Docker Connector Name"]}-docker" --name "twingate-${row["Docker Connector Name"]}" --restart=unless-stopped twingate/connector:1`
+                    let call = `docker run -d --network=host --env TENANT_URL="https://${networkName}.twingate.com" --env ACCESS_TOKEN="${row["Docker Access Token"]}" --env REFRESH_TOKEN="${row["Docker Refresh Token"]}"  --env TWINGATE_LABEL_HOSTNAME="${row["Docker Connector Name"]}-docker" --name "twingate-${row["Docker Connector Name"]}" --restart=unless-stopped twingate/connector:1`
                     //if (isNotEmpty(row["Sudo Password"])){
                         //let sudoPassword = row["Sudo Password"].toString()
                         call = `export HISTIGNORE='*sudo -S*' && echo ${sudoPassword} | sudo -S ${call}`

@@ -9,6 +9,7 @@ import {
     importCmd,
     removeDuplicateResourceCmd,
     getTopLevelCommand
+    getTopLevelCommand, scriptCmd
 } from "./cliCmd/cmd.mjs";
 
 async function main(args) {
@@ -31,6 +32,7 @@ async function main(args) {
         .command("import", importCmd)
         .command("remove-duplicate-resource", removeDuplicateResourceCmd)
         .command("remove-all", removeAllCmd)
+        .command("script", scriptCmd)
 
     ;
     for ( const command of topLevelCommands ) cmd = cmd.command(command, getTopLevelCommand(command));

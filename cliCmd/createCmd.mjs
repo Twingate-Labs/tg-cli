@@ -22,7 +22,8 @@ export function getCreateCommand(name) {
                 .option("-r, --protocol-restrictions [string]", "Protocol Restrictions")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
-                .action(async (options, remoteNetworkNameOrId, resourceName, resourceAddress, groupNamesOrIds) => {
+                .action(async (options, remoteNetworkNameOrId, resourceName, resourceAddress, groupNameOrIds) => {
+
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
@@ -31,20 +32,49 @@ export function getCreateCommand(name) {
                     let remoteNetworkId = remoteNetworkNameOrId;
                     if (!remoteNetworkNameOrId.startsWith(TwingateApiClient.IdPrefixes.RemoteNetwork)) {
                         remoteNetworkId = await client.lookupRemoteNetworkByName(remoteNetworkNameOrId);
-                        if (remoteNetworkId == null) throw new Error(`Could not find remote network: '${remoteNetwork}'`);
+                        if (remoteNetworkId == null) throw new Error(`Could not find remote network: '${remoteNetworkNameOrId}'`);
                     }
+                    let groupIds = groupNameOrIds
+                    if (groupIds){
+                        for ( let x = 0; x < groupIds.length; x++ ) {
+                            let groupId = groupIds[x]
+                            if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
+                                groupId = await client.lookupGroupByName(groupId);
+                                if (groupId == null) {
+                                    throw new Error(`Could not find group: '${groupIds[x]}'`)
+                                } else {
+                                    groupIds[x] = groupId
+                                }
+                            }
+                        }
+                    }
+
 
                     let ports = null;
                     if ( options.protocolRestrictions ) ports = tryProcessPortRestrictionString(options.protocolRestrictions);
                     const policy = ports == null ? "ALLOW_ALL" : "RESTRICTED";
                     let protocols = {
-                        allowIcmp: options.allowIcmp,
-                        tcp: { policy, ports },
-                        udp: { policy, ports }
+                        allowIcmp: options.allowIcmp || true,
+                        tcp: { policy, ports},
+                        udp: { policy, ports}
                     };
+                    if (ports == null){
+                        protocols = {
+                            allowIcmp: options.allowIcmp || true,
+                            tcp: { policy },
+                            udp: { policy }
+                    }}
 
                     // Create resource
-                    let res = client.createResource(resourceName, resourceAddress, remoteNetworkId, protocols)
+                    let res = await client.createResource(resourceName, resourceAddress, remoteNetworkId, protocols, groupIds)
+
+                    let groupStr = ``
+                    if (groupIds){
+                        for (const element of res.groups.edges) {
+                            groupStr += `'${element.node.name}: ${element.node.id}' `
+                        }
+                    }
+
 
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:
@@ -52,13 +82,9 @@ export function getCreateCommand(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `New ${res.name} named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork}'`;
-                            if (res.tokens) msg += ` with tokens:`
+                            let msg = `New ${name} named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork.name}'`;
+                            if (groupIds) msg += ` with added groups ${groupStr}`
                             Log.success(msg);
-                            if (res.tokens) {
-                                console.log(`ACCESS_TOKEN=${res.tokens.accessToken}`);
-                                console.log(`REFRESH_TOKEN=${res.tokens.refreshToken}`);
-                            }
                             break;
                     }
                 });
@@ -66,7 +92,7 @@ export function getCreateCommand(name) {
         case "connector":
             cmd = new Command()
                 .type("format", OutputFormat)
-                .arguments("<remoteNetworkNameOrId:string> [name:string]")
+                .arguments("<remoteNetworkNameOrId:string> <name:string>")
                 .option("-t, --generate-tokens [boolean]", "Generate tokens", {
                     default: true
                 })
@@ -86,12 +112,10 @@ export function getCreateCommand(name) {
 
                     // Create connector
                     let res = await client.createConnector(remoteNetworkId);
-                    res.remoteNetwork = remoteNetworkNameOrId;
-
                     // If name was specified, update the connector
                     if (typeof connectorName == "string" && connectorName.length > 0) {
                         try {
-                            res = await client.setConnectorName(res.id, connectorName);
+                            res.setName = await client.setConnectorName(res.id, connectorName);
                         } catch (e) {
                             Log.error(e);
                         }
@@ -112,7 +136,7 @@ export function getCreateCommand(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `New ${res.name} named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork}'`;
+                            let msg = `New ${name} named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork.name}'`;
                             if (res.tokens) msg += ` with tokens:`
                             Log.success(msg);
                             if (res.tokens) {
@@ -126,22 +150,30 @@ export function getCreateCommand(name) {
 
         case "group":
             cmd = new Command()
-                .arguments("<name:string>")
+                .arguments("<name:string> [UserIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
-                .action(async (options, groupName) => {
+                .action(async (options, groupName, userIds) => {
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
-                    let res = await client.createGroup(groupName);
-                    res.name = groupName;
+                    let res = await client.createGroup(groupName, userIds)
+
+                    let userStr = ``
+                    if (userIds){
+                        for (const element of res.users.edges) {
+                            userStr += `'${element.node.id}' `
+                        }
+                    }
 
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            Log.success(`New ${name} named '${res.name}' created with id '${res.id}'.`);
+                            let msg = `New ${name} named '${res.name}' created with id '${res.id}'`
+                            if (userIds) msg += ` with added users ${userStr}`
+                            Log.success(msg);
                             break;
                     }
 
@@ -163,12 +195,59 @@ export function getCreateCommand(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            Log.success(`New ${name} named '${res.name}' created with id '${res.id}'.`);
+                            Log.success(`New ${name} named '${res.name}' created with id '${res.id}'`);
                             break;
                     }
 
                 });
             break;
+        case "service_account":
+            cmd = new Command()
+                .arguments("<name:string> [resourceNamesOrIds...:string]")
+                .option("-o, --output-format <format:format>", "Output format", {default: "text"})
+                .description(`Create a ${name}`)
+                .action(async (options, serviceAccountName, resourceNamesOrIds) => {
+                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    options.accountName = networkName;
+                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
+
+                    let resourceIds = resourceNamesOrIds
+                    if (resourceIds){
+                        for ( let x = 0; x < resourceIds.length; x++ ) {
+                            let resourceId = resourceIds[x]
+                            if (!resourceId.startsWith(TwingateApiClient.IdPrefixes.Resource)) {
+                                resourceId = await client.lookupResourceByName(resourceId);
+                                if (resourceId == null) {
+                                    throw new Error(`Could not find resource: '${resourceIds[x]}'`)
+                                } else {
+                                    resourceIds[x] = resourceId
+                                }
+                            }
+                        }
+                    }
+
+                    let res = await client.createServiceAccount(serviceAccountName, resourceIds);
+
+                    let resourceStr = ``
+                    if (resourceNamesOrIds){
+                        for (const element of res.resources.edges) {
+                            resourceStr += `'${element.node.name}: ${element.node.id}' `
+                        }
+                    }
+
+                    switch (options.outputFormat) {
+                        case OutputFormat.JSON:
+                            console.log(JSON.stringify(res));
+                            break;
+                        default:
+                            let msg = `New ${name} named '${res.name}' created with id '${res.id}'`;
+                            if (resourceIds) msg += ` with added resources ${resourceStr}`
+                            Log.success(msg);
+                            break;
+                    }
+
+                });
+            break
     }
     return cmd;
 }

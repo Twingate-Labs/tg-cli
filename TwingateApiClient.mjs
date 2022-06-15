@@ -1,3 +1,4 @@
+import {Log} from "./utils/log.js";
 
 
 const _capitalise = (s) => `${s[0].toUpperCase()}${s.slice(1)}`;
@@ -21,7 +22,9 @@ export class TwingateApiClient {
     static IdPrefixes = {
         // Really not ideal since identifiers are meant to be opaque
         RemoteNetwork: "UmVtb3RlTmV0d29yazo",// btoa("RemoteNetwork:").replace(/=$/, ""),
-        Group: "R3JvdXA6"// btoa("Group:").replace(/=$/, "")
+        Group: "R3JvdXA6", // btoa("Group:").replace(/=$/, "")
+        Resource: "UmVzb3Vy",
+        User: "VXNlcjox"
     }
 
     static Schema = {
@@ -57,6 +60,13 @@ export class TwingateApiClient {
                 {name: "end", type: "integer"}
             ]
         },
+        "Key": {
+            isNode: false,
+            fields: [
+                {name: "totalCount", type: "integer"},
+            ]
+        },
+
         // END types
         // BEGIN nodes
         "User": {
@@ -143,6 +153,18 @@ export class TwingateApiClient {
                 {name: "username", type: "string"},
                 {name: "serialNumber", type: "string"},
                 {name: "manufacturerName", type: "string"}
+            ]
+        },
+        "ServiceAccount": {
+            isNode: true,
+            queryNodeField: "serviceAccount",
+            queryConnectionField: "serviceAccounts",
+            fields: [
+                {name: "name", type: "string", isLabel: true},
+                {name: "createdAt", type: "datetime"},
+                {name: "updatedAt", type: "datetime"},
+                {name: "resources", type: "Connection", typeName: "Resource"},
+                {name: "keys", type: "Object", typeName: "Key"}
             ]
         }
         // END nodes
@@ -393,7 +415,6 @@ export class TwingateApiClient {
 
     async _fetchAllNodesOfType(nodeType, options) {
         let {opts, fieldOpts, nodeSchema} = this._processFetchOptions(nodeType, options, "All");
-
         const nodeFields = this._getFields(nodeType, opts.fieldSet, fieldOpts);
         const recordTransformFn = nodeSchema.recordTransformFn;
         const recordTransformOpts = opts.recordTransformOpts || {};
@@ -444,6 +465,10 @@ export class TwingateApiClient {
 
     async fetchAllDevices(opts) {
         return this._fetchAllNodesOfType("Device", opts);
+    }
+
+    async fetchAllServiceAccounts(opts) {
+        return this._fetchAllNodesOfType("ServiceAccount", opts);
     }
 
     async fetchAllUsers(opts) {
@@ -528,12 +553,33 @@ export class TwingateApiClient {
      * @param {string} groupId - Twingate Group Id
      * @param {string|string[]} userId - userId or userIds to add
      * @returns {Promise<*>} - GraphQL entity
+     * Todo: check if the group or users exist
      */
     async addUserToGroup(groupId, userId) {
         let userIds = ( Array.isArray(userId) ? userId : [userId]);
-        const groupQuery = "mutation AddUserToGroup($groupId:ID!,$userIds:[ID]){groupUpdate(id:$groupId,addedUserIds:$userIds){ok error}}";
+        const groupQuery = "mutation AddUserToGroup($groupId:ID!,$userIds:[ID]){groupUpdate(id:$groupId,addedUserIds:$userIds){error entity{id name users{edges{node{id email}}}}}}";
         let groupsResponse = await this.exec(groupQuery, {groupId, userIds} );
-        return groupsResponse.entity;
+        return groupsResponse.groupUpdate.entity;
+    }
+
+
+    async addResourceToServiceAccount(serviceAccountId, resourceId) {
+        let resourceIds = ( Array.isArray(resourceId) ? resourceId : [resourceId]);
+        const serviceAccountQuery = "mutation AddResourceToServiceAccount($serviceAccountId:ID!,$resourceIds:[ID]){serviceAccountUpdate(id:$serviceAccountId,addedResourceIds:$resourceIds){error entity{id name resources{edges{node{id name}}}}}}";
+        let serviceAccountResponse = await this.exec(serviceAccountQuery, {serviceAccountId, resourceIds} );
+        return serviceAccountResponse.serviceAccountUpdate.entity;
+    }
+
+    async addGroupToResource(resourceId, groupIds){
+        const addGrouptoResourceQuery = "mutation AddGroupToResource($resourceId:ID!,$groupIds:[ID]){resourceUpdate(id:$resourceId,addedGroupIds:$groupIds){error entity{id name groups{edges{node{id name}}}}}}";
+        let resourceResponse = await this.exec(addGrouptoResourceQuery, {resourceId, groupIds} );
+        return resourceResponse.resourceUpdate.entity;
+    }
+
+    async addResourceToGroup(groupId, resourceIds){
+        const addResourceToGroupQuery = "mutation AddResourceToGroup($groupId:ID!,$resourceIds:[ID]){groupUpdate(id:$groupId,addedResourceIds:$resourceIds){error entity{id name resources{edges{node{id name}}}}}}";
+        let groupsResponse = await this.exec(addResourceToGroupQuery, {groupId, resourceIds} );
+        return groupsResponse.groupUpdate.entity;
     }
 
     /**
@@ -611,6 +657,31 @@ export class TwingateApiClient {
         return result.edges[0].node.id;
     }
 
+    async lookupGroupByName(name) {
+        const query = "query GroupByName($name:String){groups(filter:{name:{eq:$name}}){edges{node{id}}}}";
+        let response = await this.exec(query, {name: ""+name.trim()});
+        let result = response.groups;
+        if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
+        return result.edges[0].node.id;
+    }
+
+    // todo: waiting on feature request
+    async lookupUserByEmail(email) {
+        const query = "query UserByEmail($email:String){users(filter:{email:{eq:$email}}){edges{node{id}}}}";
+        let response = await this.exec(query, {email: ""+email.trim()});
+        let result = response.users;
+        if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
+        return result.edges[0].node.id;
+    }
+
+    async lookupResourceByName(name) {
+        const query = "query ResourceByName($name:String){resources(filter:{name:{eq:$name}}){edges{node{id}}}}";
+        let response = await this.exec(query, {name: ""+name.trim()});
+        let result = response.resources;
+        if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
+        return result.edges[0].node.id;
+    }
+
 
     async setDeviceTrust(id, isTrusted) {
         const setDeviceTrustQuery = "mutation SetDeviceTrust($id:ID!,$isTrusted:Boolean!){result:deviceUpdate(id:$id,isTrusted:$isTrusted){ok error entity{id isTrusted}}}";
@@ -632,6 +703,13 @@ export class TwingateApiClient {
         let createRemoteNetworkResponse = await this.exec(createRemoteNetworkQuery, {name} );
         if ( createRemoteNetworkResponse.result.error !== null ) throw new Error(`Error creating remote network: '${createRemoteNetworkResponse.result.error}'`)
         return createRemoteNetworkResponse.result.entity;
+    }
+
+    async createServiceAccount(name, resourceIds=[]) {
+        const createServiceAccountQuery = "mutation CreateServiceAccount($name:String!,$resourceIds:[ID]){result:serviceAccountCreate(name:$name,resourceIds:$resourceIds){error entity{id name resources{edges{node{id name}}}}}}";
+        let serviceAccountResponse = await this.exec(createServiceAccountQuery, {name, resourceIds} );
+        if ( serviceAccountResponse.result.error !== null ) throw new Error(`Error creating service account: '${serviceAccountResponse.result.error}'`)
+        return serviceAccountResponse.result.entity;
     }
 
     async updateRemoteNetwork(id, isActive=null, name=null) {
@@ -657,7 +735,7 @@ export class TwingateApiClient {
     }
 
     async createConnector(remoteNetworkId) {
-        const createConnectorQuery = "mutation CreateConnector($remoteNetworkId:ID!){result:connectorCreate(remoteNetworkId:$remoteNetworkId){error entity{id name}}}";
+        const createConnectorQuery = "mutation CreateConnector($remoteNetworkId:ID!){result:connectorCreate(remoteNetworkId:$remoteNetworkId){error entity{id name remoteNetwork{name}}}}";
         let createConnectorResponse = await this.exec(createConnectorQuery, {remoteNetworkId} );
         if ( createConnectorResponse.result.error !== null ) throw new Error(`Error creating connector: '${createConnectorResponse.result.error}'`)
         return createConnectorResponse.result.entity;
@@ -679,7 +757,7 @@ export class TwingateApiClient {
     }
 
     async createResource(name, address, remoteNetworkId, protocols = null, groupIds = []) {
-        const createResourceQuery = "mutation CreateResource($name:String!,$address:String!,$remoteNetworkId:ID!,$protocols:ProtocolsInput,$groupIds:[ID]){result:resourceCreate(address:$address,groupIds:$groupIds,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId){error entity{id}}}";
+        const createResourceQuery = "mutation CreateResource($name:String!,$address:String!,$remoteNetworkId:ID!,$protocols:ProtocolsInput,$groupIds:[ID]){result:resourceCreate(address:$address,groupIds:$groupIds,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId){error entity{id name remoteNetwork{name} groups{edges{node{id name}}}}}}";
         let createResourceResponse = await this.exec(createResourceQuery, {name, address, remoteNetworkId, protocols, groupIds} );
         if ( createResourceResponse.result.error !== null ) throw new Error(`Error creating resource: '${createResourceResponse.result.error}'`)
         return createResourceResponse.result.entity;
@@ -706,7 +784,12 @@ export class TwingateApiClient {
         return true;
     }
 
-
+    async removeServiceAccount(id) {
+        const removeServiceAccountQuery = "mutation RemoveServiceAccount($id:ID!){result:serviceAccountDelete(id:$id){ok, error}}";
+        let removeServiceAccountResponse = await this.exec(removeServiceAccountQuery, {id});
+        if ( !removeServiceAccountResponse.result.ok ) throw new Error(`Error removing group '${id}' ${removeServiceAccountResponse.result.error}`);
+        return true;
+    }
 
     //<editor-fold desc="Bulk APIs (very experimental)">
 
@@ -735,23 +818,13 @@ export class TwingateApiClient {
         if ( !Array.isArray(ids)  ) throw new Error(`removeGroupsBulk requires an array as input.`);
         if ( ids.length === 0 ) return [];
         if ( !ids.every( id => typeof id === "string" && id.startsWith(TwingateApiClient.IdPrefixes.Group) ) ) throw new Error(`removeGroupsBulk requires every value to be a Group Id`);
-
-        const gqlParams = ids.map( (_, i) => `$id${i}:ID!`).join(",");
-        const gqlMutationParts = devices.map( (_, i) => `result${i}:groupDelete(id:$id${i}){ok error}`).join(" ");
-        const gqlVariables = Object.fromEntries(ids.flatMap( (id, i) => [[`id${i}`, id]]));
-        let query = `mutation BulkRemoveGroup_${ids.length}(${gqlParams}){${gqlMutationParts}}`;
-        let response = await this.exec(query, gqlVariables );
-
-        let results = [];
         for ( let x = 0; x < ids.length; x++ ) {
-            results.push(response[`result${x}`]);
+            try {
+                await this.removeGroup(ids[x]);
+            } catch (e) {
+                console.error(e);
+            }
         }
-        return results;
-
-
-        const removeGroupQuery = "mutation RemoveGroup($id:ID!){result:groupDelete(id:$id){ok, error}}";
-        let removeGroupResponse = await this.exec(removeGroupQuery, {id});
-        if ( !removeGroupResponse.result.ok ) throw new Error(`Error removing group '${id}' ${removeGroupResponse.result.error}`);
         return true;
     }
 
@@ -763,9 +836,9 @@ export class TwingateApiClient {
     }
 
     async removeResourcesBulk(ids) {
-        const removeResourceQuery = "mutation RemoveResource($id:ID!){result:resourceDelete(id:$id){ok, error}}";
-        let removeResourceResponse = await this.exec(removeResourceQuery, {id});
-        if ( !removeResourceResponse.result.ok ) throw new Error(`Error removing resource '${id}' ${removeResourceResponse.result.error}`);
+        const removeResourceQuery = "mutation RemoveResource($ids:ID!){result:resourceDelete(id:$ids){ok, error}}";
+        let removeResourceResponse = await this.exec(removeResourceQuery, {ids});
+        if ( !removeResourceResponse.result.ok ) throw new Error(`Error removing resource '${ids}' ${removeResourceResponse.result.error}`);
         return true;
     }
 

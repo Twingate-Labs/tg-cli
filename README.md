@@ -1,45 +1,67 @@
-
-***tg***
-
-[!Work In Progress!]
-
+Twingate CLI Tool
+===========================
 This is a command line application demonstrating various usages of the Twingate API.
 
 
-**Setup**
-1. Obtain an API key from the Twingate Admin Console with at least read and write permissions
-2. Install [Deno](https://deno.land/#installation) for your platform.
-3. At the terminal execute ``./tg.js``.
+Setup
+===========================
+* Download the lastest release cli-{version}-{os}-{cpu architecture}.zip from https://github.com/Twingate-Labs/tg-cli/releases/latest<br />
+* Unzip the downloaded zip file
 
-**Compilation**
 
-This script can be compiled to a native executable binary using `deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js`
+Windows
+===========================
+* Open Command Prompt
+* Test
+  * ```\path\to\tg.exe --help``` e.g. ```G:\tg.exe --help``` or 
+  * ```cd \path\to\tg.exe``` followed by ```tg.exe --help```
 
-Thereafter you can execute the binary without deno: ``./tg --help``
 
-**Example - Show command usage**
+Linux
+===========================
+* Open Linux Terminal
+* Test
+  *  ```/path/to/tg --help``` e.g. ```/apps/tg --help``` or 
+  *  ```cd \path\to\tg``` followed by ```./tg --help```
 
-``./tg.js --help``
 
-``./tg.js group --help``
+Mac
+===========================
+* Open Mac Terminal
+* Test
+  *  ```/path/to/tg --help``` e.g. ```/apps/tg --help``` or 
+  *  ```cd \path\to\tg``` followed by ```./tg --help```
 
-``./tg.js export --help``
 
-**Example - Export Excel file**
+Example Commands
+===========================
+**Show command usage**
 
-``./tg.js export``
+``./tg --help``
 
-**Example - Export PNG image**
+``./tg group --help``
 
-``./tg.js export --format png``
+``./tg export --help``
+
+**Export Excel file**
+
+``./tg export``
+
+**Export PNG image**
+
+``./tg export --format png``
 
 *Note: Requires the [GraphViz](https://graphviz.gitlab.io) package to be [installed](https://graphviz.gitlab.io/download/#executable-packages) and available on your path.*
 
-**Example - List resources**
+**List resources**
 
-``./tg.js resource list``
+``./tg resource list``
 
 
-**Example - Import Groups, Remote Networks and resources into a new account**
+**Import Groups, Remote Networks and resources into a new account**
 
-``./tg.js import -a [new account name] -nrg -f [path to file to import from (format must be as outputted by the export command)]``
+``./tg import -a [new account name] -nrg -f [path to file to import from (format must be as outputted by the export command)]``
+
+Need Help?
+===========================
+If you are experiencing any issues, create a new issue [here](https://github.com/Twingate-Labs/tg-cli/issues/new).

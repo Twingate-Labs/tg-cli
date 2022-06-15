@@ -3,10 +3,15 @@ import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
 export * from "./exportCmd.mjs";
 export * from "./importCmd.mjs";
 export * from "./removeAllCmd.mjs";
+export * from "./removeDuplicateResource.mjs"
 import {getCopyCommand} from "./copyCmd.mjs";
 import {getCreateCommand} from "./createCmd.mjs";
 import {getListCommand} from "./listCmd.mjs";
-
+import {getRemoveCommands} from "./removeCmd.mjs";
+import {getAddUserToGroupCommands} from "./cmdAddUserToGroup.mjs";
+import {getAddResourceToSericeAccountCommands} from "./cmdAddResourceToServiceAccount.mjs";
+import {getRemoveBulkCommands} from "./removeBulkCmd.mjs";
+import {getAddGroupToResourceCommands, getAddResourceToGroupCommands} from "./cmdGroupResource.mjs"
 
 export function getTopLevelCommand(name) {
 
@@ -18,6 +23,25 @@ export function getTopLevelCommand(name) {
 
     let createCmd = getCreateCommand(name);
     if ( createCmd !== null ) cmd = cmd.command("create", createCmd);
+
+    let removeCmd = getRemoveCommands(name)
+    if ( removeCmd !== null ) cmd = cmd.command("remove", removeCmd);
+
+    let addUserToGroupCmd = getAddUserToGroupCommands(name)
+    if ( addUserToGroupCmd !== null ) cmd = cmd.command("add_user", addUserToGroupCmd)
+
+    let removeBulkCmd = getRemoveBulkCommands(name)
+    if ( removeBulkCmd !== null ) cmd = cmd.command("remove_bulk", removeBulkCmd)
+
+    let addResourceToServiceAccount = getAddResourceToSericeAccountCommands(name)
+    if ( addResourceToServiceAccount !== null ) cmd = cmd.command("add_resource", addResourceToServiceAccount)
+
+    let addGroupToResource = getAddGroupToResourceCommands(name)
+    if ( addGroupToResource !== null ) cmd = cmd.command("add_group", addGroupToResource)
+
+    let addResourceToGroup = getAddResourceToGroupCommands(name)
+    if ( addResourceToGroup !== null ) cmd = cmd.command("add_resource", addResourceToGroup)
+
 
     switch (name) {
         case "group":

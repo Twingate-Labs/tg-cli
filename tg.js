@@ -7,12 +7,13 @@ import {
     exportCmd,
     removeAllCmd,
     importCmd,
+    removeDuplicateResourceCmd,
     getTopLevelCommand
 } from "./cliCmd/cmd.mjs";
 
 async function main(args) {
 
-    const topLevelCommands = ["resource", "group", "user", "network", "connector", "device"];
+    const topLevelCommands = ["resource", "group", "user", "network", "connector", "device", "service_account"];
     const LogLevelType = new EnumType(Object.keys(LOG_LEVELS));
     let cmd = new Command()
         .name("tg")
@@ -28,6 +29,7 @@ async function main(args) {
         })
         .command("export", exportCmd)
         .command("import", importCmd)
+        .command("remove-duplicate-resource", removeDuplicateResourceCmd)
         .command("remove-all", removeAllCmd)
 
     ;

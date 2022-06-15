@@ -20,6 +20,10 @@ export function getAddResourceToSericeAccountCommands(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add resources to service account`)
                 .action(async (options, serviceAccountId, resourceNamesOrIds) => {
+                    if (!resourceNamesOrIds){
+                        throw new Error(`Resource names or IDs are not defined.`)
+                    }
+
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});

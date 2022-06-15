@@ -21,10 +21,14 @@ export function getAddGroupToResourceCommands(name) {
                 .description(`Add groups to a resource`)
                 .action(async (options, resourceNamesOrIds, groupNamesOrIds) => {
 
+                    if (!groupNamesOrIds){
+                        throw new Error(`Group names or IDs are not defined.`)
+                    }
+
+
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
-
                     let groupIds = groupNamesOrIds
                     for ( let x = 0; x < groupIds.length; x++ ) {
                         let groupId = groupIds[x]

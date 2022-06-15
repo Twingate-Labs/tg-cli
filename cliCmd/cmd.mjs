@@ -28,7 +28,7 @@ export function getTopLevelCommand(name) {
     if ( removeCmd !== null ) cmd = cmd.command("remove", removeCmd);
 
     let addUserToGroupCmd = getAddUserToGroupCommands(name)
-    if ( addUserToGroupCmd !== null ) cmd = cmd.command("add_user_to_group", addUserToGroupCmd)
+    if ( addUserToGroupCmd !== null ) cmd = cmd.command("add_user", addUserToGroupCmd)
 
     let removeBulkCmd = getRemoveBulkCommands(name)
     if ( removeBulkCmd !== null ) cmd = cmd.command("remove_bulk", removeBulkCmd)

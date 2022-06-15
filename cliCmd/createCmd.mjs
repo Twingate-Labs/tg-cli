@@ -157,7 +157,7 @@ export function getCreateCommand(name) {
                     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
                     options.accountName = networkName;
                     let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
-                    let res = await client.createGroup(groupName, userIds)
+                    let res = await client.createGroup(groupName, [], userIds)
 
                     let userStr = ``
                     if (userIds){

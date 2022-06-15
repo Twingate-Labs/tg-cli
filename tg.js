@@ -8,9 +8,8 @@ import {
     removeAllCmd,
     importCmd,
     removeDuplicateResourceCmd,
+    scriptCmd,
     getTopLevelCommand,
-    getTopLevelCommand,
-    scriptCmd
 } from "./cliCmd/cmd.mjs";
 
 async function main(args) {

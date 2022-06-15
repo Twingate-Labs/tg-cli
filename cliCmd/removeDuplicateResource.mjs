@@ -18,14 +18,15 @@ function objectSearch(array, key){
     return array.find(x => x.id === key)
 }
 
+/**
+ * used to remove duplcate resource using key
+ * ${remoteNetworkLabel}-${addressValue}-${protocolsAllowIcmp}-${protocolsTcpPolicy}-${protocolsTcpPorts}-${remoteNetworkLabel}-${protocolsUdpPolicy}
+ * from the tg export
+ */
 export const removeDuplicateResourceCmd = new Command()
     .option("-f, --file <string>", "Path to Excel file to find from", {
         required: true
     })
-    // .option("-u, --users [boolean]", "Include Users")
-    // .option("-n, --remote-networks [boolean]", "Include Remote Networks")
-    // .option("-r, --resources [boolean]", "Include Resources")
-    // .option("-g, --groups [boolean]", "Include Groups")
     .option("-o, --output-file [value:string]", "Output filename")
     .option("-s, --sync [boolean]", "Attempt to synchronise entities with the same natural identifier")
     .option("-y, --assume-yes [boolean]", "Automatic yes to prompts; assume 'yes' as answer to all prompts")

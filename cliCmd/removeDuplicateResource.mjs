@@ -30,6 +30,7 @@ export const removeDuplicateResourceCmd = new Command()
     .option("-s, --sync [boolean]", "Attempt to synchronise entities with the same natural identifier")
     .option("-y, --assume-yes [boolean]", "Automatic yes to prompts; assume 'yes' as answer to all prompts")
     .description("Import from excel file to a Twingate account")
+    .hidden()
     .action(async (options) => {
         const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
         options.accountName = networkName;

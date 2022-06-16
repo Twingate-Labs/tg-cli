@@ -29,17 +29,17 @@ export function getTopLevelCommand(name) {
     let removeCmd = getRemoveCommands(name)
     if ( removeCmd !== null ) cmd = cmd.command("remove", removeCmd);
 
-    let addUserToGroupCmd = getAddUserToGroupCommands(name)
-    if ( addUserToGroupCmd !== null ) cmd = cmd.command("add_user", addUserToGroupCmd)
-
     let removeBulkCmd = getRemoveBulkCommands(name)
     if ( removeBulkCmd !== null ) cmd = cmd.command("remove_bulk", removeBulkCmd)
 
-    let addResourceToServiceAccount = getAddResourceToSericeAccountCommands(name)
-    if ( addResourceToServiceAccount !== null ) cmd = cmd.command("add_resource", addResourceToServiceAccount)
+    let addUserToGroupCmd = getAddUserToGroupCommands(name)
+    if ( addUserToGroupCmd !== null ) cmd = cmd.command("add_user", addUserToGroupCmd)
 
     let addGroupToResource = getAddGroupToResourceCommands(name)
     if ( addGroupToResource !== null ) cmd = cmd.command("add_group", addGroupToResource)
+
+    let addResourceToServiceAccount = getAddResourceToSericeAccountCommands(name)
+    if ( addResourceToServiceAccount !== null ) cmd = cmd.command("add_resource", addResourceToServiceAccount)
 
     let addResourceToGroup = getAddResourceToGroupCommands(name)
     if ( addResourceToGroup !== null ) cmd = cmd.command("add_resource", addResourceToGroup)

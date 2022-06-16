@@ -16,7 +16,7 @@ export function getServiceAccountKeyCreateCommands(name) {
     switch (name) {
         case "service":
             cmd = new Command()
-                .arguments("<serviceAccountId:string> <keyName:string> <expirationTime:string>")
+                .arguments("<serviceAccountId:string> <keyName:string> <expirationTimeInDays:string>")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a service account key`)
                 .action(async (options, serviceAccountId, keyName, expirationTime) => {

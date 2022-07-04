@@ -23,7 +23,7 @@ export function genFileNameFromNetworkName(networkName, extension = "xlsx") {
 
 
 export async function loadNetworkAndApiKey(networkName = null) {
-    let apiKey = null,
+    let apiKey = Deno.env.get("TG_API_KEY"),
         saveConfig = false,
         keyConf = {},
         availableNetworks = [];
@@ -49,6 +49,10 @@ export async function loadNetworkAndApiKey(networkName = null) {
         }
     ;
 
+    if ( apiKey != null && networkName != null ) {
+        return {networkName, apiKey};
+    }
+
     try {
         if (false === await fileExists(keyFilePath)) throw new Error("Keyfile does not exist");
         let confFileData = await decryptData(await Deno.readFile(keyFilePath));
@@ -69,7 +73,8 @@ export async function loadNetworkAndApiKey(networkName = null) {
     } catch (e) {
         if ( networkName != null ) networkNamePrompt.default = networkName;
         ({networkName} = await prompt([networkNamePrompt]));
-        ({apiKey} = await prompt([{ ...apiKeyPrompt,
+        ({apiKey} = await prompt([{
+            ...apiKeyPrompt,
             validate: async (apiKey) => ((await TwingateApiClient.testApiKeyValid(networkName, apiKey)) ? true : `API key not valid.`)
         }]));
         ({saveConfig} = await prompt([saveConfigConfirmation]));

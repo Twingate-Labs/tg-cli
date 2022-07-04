@@ -21,7 +21,10 @@ async function main(args) {
         .version(TwingateApiClient.VERSION)
         .description("CLI for Twingate")
         .type("LogLevel", LogLevelType)
-        .option("-a, --account-name <string>", "Twingate account name", {global: true})
+        .option("-a, --account-name <string>", "Twingate account name", {
+            global: true,
+            default: Deno.env.get("TG_ACCOUNT")
+        })
         .option("-l, --log-level [logLevel:LogLevel]", "Log level", {
             global: true,
             //hidden: true,

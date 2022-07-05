@@ -169,5 +169,5 @@ export const deployTerraformCommand = new Command()
         else {
             await Deno.writeTextFile(`${outputDir}/import-twingate.sh`, "#!/bin/sh\n"+tfImports.join("\n"), {mode: 0o755});
         }
-        Log.success(`Deploy to '${options.output}' completed.`);
+        Log.success(`Deploy to '${outputDir}' completed.`);
     });

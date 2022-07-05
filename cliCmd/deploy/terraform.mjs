@@ -1,7 +1,7 @@
 import {resolve as resolvePath} from "https://deno.land/std/path/posix.ts";
 import {ensureDir} from "https://deno.land/std/fs/mod.ts";
 import {TwingateApiClient} from "../../TwingateApiClient.mjs";
-import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
+import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
 import {loadNetworkAndApiKey} from "../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../utils/log.js";
 
@@ -134,9 +134,6 @@ async function generateTwingateTerraform(client, options) {
 
     const tfContent = `${remoteNetworksTf}\n\n${connectorsTf}\n\n${groupsTf}\n\n${resourcesTf}`;
     return {tfContent, tfImports};
-    //return toDot(G);
-    //options.outputFile = options.outputFile || genFileNameFromNetworkName(options.accountName, "json");
-    //await Deno.writeTextFile(`./${options.outputFile}`, JSON.stringify(allNodes));
 }
 
 
@@ -146,9 +143,6 @@ export const deployTerraformCommand = new Command()
     .option("-i, --initialize [boolean]", "Initialize Terraform")
     .action(async (options) => {
         const outputDir = resolvePath(options.outputDirectory || "terraform");
-        //if (!outputDir.match(/^[^\s^\x00-\x1f\\?*:"";<>|\/.][^\x00-\x1f\\?*:"";<>|\/]*[^\s^\x00-\x1f\\?*:"";<>|\/.]+$/g)) {
-        //    throw new Error(`output directory not valid: ${options.outputDirectory}`)
-        //}
         await ensureDir(outputDir);
         let moduleDir = `${outputDir}/twingate`;
         await ensureDir(moduleDir);

@@ -2,11 +2,7 @@
  * A place for small util funcs. Some may get moved to a different location later
  */
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
-import {
-    Input as InputPrompt, prompt,
-    Secret as SecretPrompt,
-    Toggle as TogglePrompt
-} from "https://deno.land/x/cliffy/prompt/mod.ts";
+import {Input as InputPrompt, prompt, Secret as SecretPrompt, Toggle as TogglePrompt} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {exists as fileExists} from "https://deno.land/std/fs/mod.ts";
 import {decryptData, encryptData} from "../crypto.mjs";
@@ -120,7 +116,26 @@ export function setLastConnectedOnUser(nodeObj) {
 }
 
 
-const portTestRegEx = /^[0-9]+$/.compile();
+export async function execCmd(cmd, opts={}) {
+    const p = Deno.run(Object.assign({
+        cmd,
+        stdout: "piped",
+        stderr: "piped",
+    }, opts));
+
+    const { code } = await p.status();
+
+    if (code === 0) {
+        const rawOutput = await p.output();
+        return new TextDecoder().decode(rawOutput);
+    } else {
+        const rawError = await p.stderrOutput();
+        const errorString = new TextDecoder().decode(rawError);
+        throw new Error(errorString);
+    }
+}
+
+const portTestRegEx = /^[0-9]+$/;
 export const AFFIRMATIVES = ["YES", "Y", "TRUE", "T"]
 export function tryProcessPortRestrictionString(restrictions) {
     // 443, 8080-8090

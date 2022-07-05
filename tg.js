@@ -11,6 +11,7 @@ import {
     scriptCmd,
     getTopLevelCommand,
 } from "./cliCmd/cmd.mjs";
+import {deployCmd} from "./cliCmd/deploy/index.mjs";
 
 async function main(args) {
 
@@ -36,7 +37,7 @@ async function main(args) {
         .command("remove-duplicate-resource", removeDuplicateResourceCmd)
         .command("remove-all", removeAllCmd)
         .command("script", scriptCmd)
-
+        .command("deploy", deployCmd)
     ;
     for ( const command of topLevelCommands ) cmd = cmd.command(command, getTopLevelCommand(command));
     return await cmd.parse(args);

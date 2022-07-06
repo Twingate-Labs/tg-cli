@@ -4,7 +4,7 @@ import {TwingateApiClient} from "../../TwingateApiClient.mjs";
 import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
 import {loadNetworkAndApiKey} from "../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../utils/log.js";
-
+import tfAwsScripts from "../../scripts/terraform/aws.json" assert { type: "json" };
 function getTwingateTfVars(networkName, apiKey, extraVars={}) {
     let rtnVal = Object.assign({
         twingate_network_name: networkName,
@@ -99,18 +99,31 @@ async function generateTwingateTerraform(client, options) {
     const remoteNetworksTf = "\n#\n# Twingate Remote Networks\n#\n" + allNodes.RemoteNetwork.map(n => `
         resource "twingate_remote_network" "${n.tfId}" { # Id: ${n.id}
           name = "${n.name}"
-        }`.replace(/^        /gm, "")).join("\n");
+        }
+        output "network-${n.tfId}" {
+          value = twingate_remote_network.${n.tfId}
+        }
+        
+        `.replace(/^        /gm, "")).join("\n");
 
     const connectorsTf = "\n#\n# Twingate Connectors\n#\n" + allNodes.Connector.map(n => `
         resource "twingate_connector" "${n.tfId}" { # Id: ${n.id}
           name = "${n.name}"
           remote_network_id = twingate_remote_network.${idMap[n.remoteNetworkId]}.id
-        }`.replace(/^        /gm, "")).join("\n");
+        }
+        output "connector-${n.tfId}" {
+          value = twingate_connector.${n.tfId}
+        }
+        `.replace(/^        /gm, "")).join("\n");
 
     const groupsTf = "\n#\n# Twingate Groups\n#\n" + allNodes.Group.map(n => `
         resource "twingate_group" "${n.tfId}" { # Id: ${n.id}
           name = "${n.name}"
-        }`.replace(/^        /gm, "")).join("\n");
+        }
+        output "group-${n.tfId}" {
+          value = twingate_connector.${n.tfId}
+        }
+        `.replace(/^        /gm, "")).join("\n");
 
     const resourcesTf = "\n#\n# Twingate Resources\n#\n" + allNodes.Resource.map(n => `
         resource "twingate_resource" "${n.tfId}" { # Id: ${n.id}
@@ -129,7 +142,11 @@ async function generateTwingateTerraform(client, options) {
                 ports = [${n.protocols.udp.ports.map(port => port.start === port.end ? `"${port.start}"` : `"${port.start}-${port.end}"`).join(", ")}]
             }
           }
-        }`.replace(/^        /gm, "")).join("\n");
+        }
+        output "resource-${n.tfId}" {
+          value = twingate_resource.${n.tfId}
+        }
+        `.replace(/^        /gm, "")).join("\n");
 
 
     const tfContent = `${remoteNetworksTf}\n\n${connectorsTf}\n\n${groupsTf}\n\n${resourcesTf}`;
@@ -142,6 +159,7 @@ export const deployTerraformCommand = new Command()
     .option("-o, --output-directory [value:string]", "Output directory")
     .option("-i, --initialize [boolean]", "Initialize Terraform")
     .action(async (options) => {
+        const a = tfAwsScripts.advanced;
         const outputDir = resolvePath(options.outputDirectory || "terraform");
         await ensureDir(outputDir);
         let moduleDir = `${outputDir}/twingate`;
@@ -163,5 +181,6 @@ export const deployTerraformCommand = new Command()
         else {
             await Deno.writeTextFile(`${outputDir}/import-twingate.sh`, "#!/bin/sh\n"+tfImports.join("\n"), {mode: 0o755});
         }
+        Log.warn(`Note: Your Twingate API key has been written into '${outputDir}/twingate.auto.tfvars.json', please take care to keep it secure`);
         Log.success(`Deploy to '${outputDir}' completed.`);
     });

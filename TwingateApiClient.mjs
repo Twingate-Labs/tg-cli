@@ -597,6 +597,34 @@ export class TwingateApiClient {
 
 
     /**
+     * Removes a groupId or list of groupIds from a Group
+     * @param {string} resourceId - Twingate Resource Id
+     * @param {string|string[]} groupId - groupId or groupIds to remove
+     * @returns {Promise<*>} - GraphQL entity
+     */
+    async removeGroupFromResource(resourceId, groupId) {
+        let groupIds = ( Array.isArray(groupId) ? groupId : [groupId]);
+        const resourceQuery = "mutation RemoveGroupFromResource($resourceId:ID!,$groupIds:[ID]){resourceUpdate(id:$resourceId,removedGroupIds:$groupIds){error entity{id name groups{edges{node{id name}}}}}}";
+        let resourcesResponse = await this.exec(resourceQuery, {resourceId, groupIds} );
+        return resourcesResponse.resourceUpdate.entity;
+    }
+
+    /**
+     * Removes a groupId or list of groupIds from a Group
+     * @param {string} resourceId - Twingate Resource Id
+     * @param {string|string[]} groupId - groupId or groupIds to remove
+     * @returns {Promise<*>} - GraphQL entity
+     */
+    async removeResourceFromGroup(groupId, resourceId) {
+        let resourceIds = ( Array.isArray(resourceId) ? resourceId : [resourceId]);
+        const groupQuery = "mutation RemoveResourceFromGroup($groupId:ID!,$resourceIds:[ID]){groupUpdate(id:$groupId,removedResourceIds:$resourceIds){error entity{id name resources{edges{node{id name}}}}}}";
+        let groupResponse = await this.exec(groupQuery, {groupId, resourceIds} );
+        return groupResponse.groupUpdate.entity;
+    }
+
+
+
+    /**
      * @param {string} groupId - Twingate Group Id
      * @param {string[]} userIds - userIds to remove
      * @param {string[]} resourceIds - resourceIds to remove

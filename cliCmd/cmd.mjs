@@ -12,7 +12,11 @@ import {getRemoveCommands} from "./removeCmd.mjs";
 import {getAddUserToGroupCommands} from "./cmdAddUserToGroup.mjs";
 import {getAddResourceToSericeAccountCommands} from "./cmdAddResourceToServiceAccount.mjs";
 import {getRemoveBulkCommands} from "./removeBulkCmd.mjs";
-import {getAddGroupToResourceCommands, getAddResourceToGroupCommands} from "./cmdGroupResource.mjs"
+import {
+    getAddGroupToResourceCommands,
+    getAddResourceToGroupCommands,
+    getRemoveGroupFromResourceCommands, getRemoveResourceFromGroupCommands
+} from "./cmdGroupResource.mjs"
 import {getServiceAccountKeyCreateCommands} from "./serviceAccountKey.mjs";
 
 export function getTopLevelCommand(name) {
@@ -37,6 +41,12 @@ export function getTopLevelCommand(name) {
 
     let addGroupToResource = getAddGroupToResourceCommands(name)
     if ( addGroupToResource !== null ) cmd = cmd.command("add_group", addGroupToResource)
+
+    let removeGroupFromResource = getRemoveGroupFromResourceCommands(name)
+    if ( removeGroupFromResource !== null ) cmd = cmd.command("remove_group", removeGroupFromResource)
+
+    let removeResourceFromGroup = getRemoveResourceFromGroupCommands(name)
+    if ( removeResourceFromGroup !== null ) cmd = cmd.command("remove_resource", removeResourceFromGroup)
 
     let addResourceToServiceAccount = getAddResourceToSericeAccountCommands(name)
     if ( addResourceToServiceAccount !== null ) cmd = cmd.command("add_resource", addResourceToServiceAccount)

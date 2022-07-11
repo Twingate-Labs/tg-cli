@@ -1,12 +1,10 @@
-import {loadNetworkAndApiKey} from "../utils/smallUtilFuncs.mjs";
+import {execCmd, loadNetworkAndApiKey} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
 import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
 import {Confirm, prompt, Secret as SecretPrompt} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
 import XLSX from "https://cdn.esm.sh/v58/xlsx@0.17.4/deno/xlsx.js";
-import {exec} from "../crypto.mjs";
-
 
 const optionToNameMap = {
     groups: "Groups",
@@ -115,7 +113,7 @@ export const scriptCmd = new Command()
                         //let sudoPassword = row["Sudo Password"].toString()
                     let call = `curl "https://binaries.twingate.com/connector/setup.sh" > setup.sh && export HISTIGNORE='*sudo -S*' && echo ${sudoPassword} | sudo -S TWINGATE_ACCESS_TOKEN=${row["Access Token"]} TWINGATE_REFRESH_TOKEN=${row["Refresh Token"]} TWINGATE_LOG_ANALYTICS="v1" TWINGATE_URL="https://${networkName}.twingate.com" bash setup.sh && rm setup.sh`
                     //}
-                    let output = await exec(["ssh", "-o StrictHostKeychecking=no", sshParam, call]);
+                    let output = await execCmd(["ssh", "-o StrictHostKeychecking=no", sshParam, call]);
                     Log.success(`Deployed connector to '${remoteNetworkName}'`);
                     row["SSH Output"] = output;
                 }
@@ -129,7 +127,7 @@ export const scriptCmd = new Command()
                         //let sudoPassword = row["Sudo Password"].toString()
                         call = `export HISTIGNORE='*sudo -S*' && echo ${sudoPassword} | sudo -S ${call}`
                     //}
-                    let output = await exec(["ssh", "-o StrictHostKeychecking=no", sshParam, call]);
+                    let output = await execCmd(["ssh", "-o StrictHostKeychecking=no", sshParam, call]);
                     Log.success(`Deployed Docker connector to '${remoteNetworkName}'`);
 
                 }

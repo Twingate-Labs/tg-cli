@@ -2,11 +2,7 @@
  * A place for small util funcs. Some may get moved to a different location later
  */
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
-import {
-    Input as InputPrompt, prompt,
-    Secret as SecretPrompt,
-    Toggle as TogglePrompt
-} from "https://deno.land/x/cliffy/prompt/mod.ts";
+import {Input as InputPrompt, prompt, Secret as SecretPrompt, Toggle as TogglePrompt} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {exists as fileExists} from "https://deno.land/std/fs/mod.ts";
 import {decryptData, encryptData} from "../crypto.mjs";
@@ -23,7 +19,7 @@ export function genFileNameFromNetworkName(networkName, extension = "xlsx") {
 
 
 export async function loadNetworkAndApiKey(networkName = null) {
-    let apiKey = null,
+    let apiKey = Deno.env.get("TG_API_KEY"),
         saveConfig = false,
         keyConf = {},
         availableNetworks = [];
@@ -49,6 +45,10 @@ export async function loadNetworkAndApiKey(networkName = null) {
         }
     ;
 
+    if ( apiKey != null && networkName != null ) {
+        return {networkName, apiKey};
+    }
+
     try {
         if (false === await fileExists(keyFilePath)) throw new Error("Keyfile does not exist");
         let confFileData = await decryptData(await Deno.readFile(keyFilePath));
@@ -69,7 +69,8 @@ export async function loadNetworkAndApiKey(networkName = null) {
     } catch (e) {
         if ( networkName != null ) networkNamePrompt.default = networkName;
         ({networkName} = await prompt([networkNamePrompt]));
-        ({apiKey} = await prompt([{ ...apiKeyPrompt,
+        ({apiKey} = await prompt([{
+            ...apiKeyPrompt,
             validate: async (apiKey) => ((await TwingateApiClient.testApiKeyValid(networkName, apiKey)) ? true : `API key not valid.`)
         }]));
         ({saveConfig} = await prompt([saveConfigConfirmation]));
@@ -115,7 +116,26 @@ export function setLastConnectedOnUser(nodeObj) {
 }
 
 
-const portTestRegEx = /^[0-9]+$/.compile();
+export async function execCmd(cmd, opts={}) {
+    const p = Deno.run(Object.assign({
+        cmd,
+        stdout: "piped",
+        stderr: "piped",
+    }, opts));
+
+    const { code } = await p.status();
+
+    if (code === 0) {
+        const rawOutput = await p.output();
+        return new TextDecoder().decode(rawOutput);
+    } else {
+        const rawError = await p.stderrOutput();
+        const errorString = new TextDecoder().decode(rawError);
+        throw new Error(errorString);
+    }
+}
+
+const portTestRegEx = /^[0-9]+$/;
 export const AFFIRMATIVES = ["YES", "Y", "TRUE", "T"]
 export function tryProcessPortRestrictionString(restrictions) {
     // 443, 8080-8090

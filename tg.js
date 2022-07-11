@@ -11,6 +11,7 @@ import {
     scriptCmd,
     getTopLevelCommand,
 } from "./cliCmd/cmd.mjs";
+import {deployCmd} from "./cliCmd/deploy/index.mjs";
 
 async function main(args) {
 
@@ -21,7 +22,10 @@ async function main(args) {
         .version(TwingateApiClient.VERSION)
         .description("CLI for Twingate")
         .type("LogLevel", LogLevelType)
-        .option("-a, --account-name <string>", "Twingate account name", {global: true})
+        .option("-a, --account-name <string>", "Twingate account name", {
+            global: true,
+            default: Deno.env.get("TG_ACCOUNT")
+        })
         .option("-l, --log-level [logLevel:LogLevel]", "Log level", {
             global: true,
             //hidden: true,
@@ -33,7 +37,7 @@ async function main(args) {
         .command("remove-duplicate-resource", removeDuplicateResourceCmd)
         .command("remove-all", removeAllCmd)
         .command("script", scriptCmd)
-
+        .command("deploy", deployCmd)
     ;
     for ( const command of topLevelCommands ) cmd = cmd.command(command, getTopLevelCommand(command));
     return await cmd.parse(args);

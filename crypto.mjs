@@ -3,6 +3,8 @@
 //const buff_to_base64 = (buff) => btoa(String.fromCharCode.apply(null, buff));
 //const base64_to_buf = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(null));
 
+import {execCmd} from "./utils/smallUtilFuncs.mjs";
+
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
@@ -14,11 +16,11 @@ async function machineId() {
         case "linux": {
             var output = "";
             try {
-                output = await exec(
+                output = await execCmd(
                     ["cat", "/var/lib/dbus/machine-id", "/etc/machine-id"],
                 );
             } catch {
-                output = await exec(["hostname"]);
+                output = await execCmd(["hostname"]);
             }
             guid = output
                 .substr(0, output.indexOf("\n"))
@@ -28,7 +30,7 @@ async function machineId() {
         }
 
         case "darwin": {
-            const output = await exec(
+            const output = await execCmd(
                 ["ioreg", "-rd1", "-c", "IOPlatformExpertDevice"],
             );
             guid = output.split("IOPlatformUUID")[1]
@@ -38,7 +40,7 @@ async function machineId() {
         }
 
         case "windows": {
-            const output = await exec(
+            const output = await execCmd(
                 [
                     "REG",
                     "QUERY",
@@ -56,26 +58,6 @@ async function machineId() {
     }
 
     return guid;
-}
-
-export async function exec(cmd) {
-    const p = Deno.run({
-        cmd,
-        stdout: "piped",
-        stderr: "piped",
-    });
-
-    const { code } = await p.status();
-
-    if (code === 0) {
-        const rawOutput = await p.output();
-        const outputString = new TextDecoder().decode(rawOutput);
-        return outputString;
-    } else {
-        const rawError = await p.stderrOutput();
-        const errorString = new TextDecoder().decode(rawError);
-        throw new Error(errorString);
-    }
 }
 
 const HW_ID = await machineId();

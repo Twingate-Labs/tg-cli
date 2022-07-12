@@ -34,6 +34,7 @@ jobs:
         #   run: deno run https://deno.land/std/examples/welcome.ts
       - name: Compile
         run: |
+          deno -V
           deno cache --reload ./tg.js --unstable
           deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js
           mkdir -p dist/linux/x86_64 dist/win/x86_64 dist/macos/x86_64 dist/macos/aarch64

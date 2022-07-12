@@ -141,12 +141,3 @@ jobs:
           asset_name: tgcli_${{ steps.get_version.outputs.version-without-v }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
 
-      - name: Upload tg.bundle.js
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.get_release.outputs.upload_url }}
-          asset_path: tg.bundle.js
-          asset_name: tg.bundle.js
-          asset_content_type: text/javascript

@@ -18,6 +18,7 @@ import {
     getRemoveGroupFromResourceCommands, getRemoveResourceFromGroupCommands
 } from "./cmdGroupResource.mjs"
 import {getServiceAccountKeyCreateCommands} from "./serviceAccountKey.mjs";
+import {getGroupFromResourceCommands, getResourceFromGroupCommands} from "./getCmd.mjs";
 
 export function getTopLevelCommand(name) {
 
@@ -50,6 +51,13 @@ export function getTopLevelCommand(name) {
 
     let addResourceToServiceAccount = getAddResourceToSericeAccountCommands(name)
     if ( addResourceToServiceAccount !== null ) cmd = cmd.command("add_resource", addResourceToServiceAccount)
+
+    let getGroup = getGroupFromResourceCommands(name)
+    if ( getGroup !== null ) cmd = cmd.command("get_group", getGroup)
+
+    let getResource = getResourceFromGroupCommands(name)
+    if ( getResource !== null ) cmd = cmd.command("get_resource", getResource)
+
 
     let addResourceToGroup = getAddResourceToGroupCommands(name)
     if ( addResourceToGroup !== null ) cmd = cmd.command("add_resource", addResourceToGroup)

@@ -303,7 +303,7 @@ export class TwingateApiClient {
         const firstResults = pageSize>0 ? `first:${pageSize},` : "";
         fieldAlias = (fieldAlias != null && fieldAlias != field) ? `${fieldAlias}:` : "";
         if ( Array.isArray(nodeFields) ) nodeFields = nodeFields.join(" ");
-        return `query ${queryName}($id:ID!,$endCursor:String!){${fieldAlias}${field}(id:$id){${connectionField}(${firstResults}after:$endCursor){pageInfo{hasNextPage endCursor}edges{node{${nodeFields}}}}}}`;
+        return `query ${queryName}($id:ID!,$endCursor:String){${fieldAlias}${field}(id:$id){${connectionField}(${firstResults}after:$endCursor){pageInfo{hasNextPage endCursor}edges{node{${nodeFields}}}}}}`;
     }
 
     /**
@@ -365,6 +365,42 @@ export class TwingateApiClient {
             result = pageTransformFn(response, rtnVal, recordTransformFn, recordTransformOpts);
             onPageFn(result);
             pageInfo = nextPageFn(response);
+        }
+        return rtnVal;
+    }
+
+
+
+    async fetchAllRootNodePages(query, opts) {
+        opts = opts || {};
+        const getResultObjFn = opts.getResultObjFn || ((response) => response.result);
+        const defaultOpts = {
+            initialValue: [],
+            recordTransformFn: (node, opts) => node,
+            pageTransformFn: (response, rtnVal, recordTransformFn, recordTransformOpts) => {
+                let r = getResultObjFn(response).edges.map(t => recordTransformFn(t.node, recordTransformOpts) );
+                if ( Array.isArray(rtnVal) ) rtnVal.push(...r);
+                return r;
+            },
+            nextPageFn: (response) => getResultObjFn(response).pageInfo,
+            onPageFn: (result) => result,
+            pageInfo: {hasNextPage: true, endCursor: null},
+            recordTransformOpts: {},
+            id: undefined
+        };
+        let {initialValue, recordTransformFn, pageTransformFn, nextPageFn, onPageFn, pageInfo, recordTransformOpts, id} = Object.assign(defaultOpts, opts);
+        let rtnVal = initialValue;
+        let response, result = null;
+        let objectKey = ""
+        while (pageInfo.hasNextPage === true) {
+            response = await this.exec(query, {id, endCursor: pageInfo.endCursor});
+            if (Object.keys(response.result).length != 1){
+                throw new Error("Number of Connection Fields Cannot Be More Than 1.")
+            }
+            objectKey = Object.keys(response.result)[0]
+            result = pageTransformFn({"result": response.result[objectKey]}, rtnVal, recordTransformFn, recordTransformOpts);
+            onPageFn(result);
+            pageInfo = nextPageFn({"result": response.result[objectKey]});
         }
         return rtnVal;
     }

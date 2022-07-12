@@ -3,6 +3,7 @@ import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import XLSX from "https://cdn.esm.sh/v58/xlsx@0.17.4/deno/xlsx.js";
 import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
 import {Log, LOG_LEVELS} from "../utils/log.js";
+import { format } from "https://deno.land/std/datetime/mod.ts";
 
 import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 
@@ -106,6 +107,10 @@ export function getListCommand(name) {
                     break;
                 case "json":
                     console.dir(JSON.stringify(records));
+                    break;
+                case "csv":
+                    let csvsheet = XLSX.utils.json_to_sheet(records);
+                    console.dir(XLSX.utils.sheet_to_csv(csvsheet));
                     break;
                 default:
                     Log.error(`Unhandled output format: ${options.outputFormat}`);

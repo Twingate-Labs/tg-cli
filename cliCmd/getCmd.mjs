@@ -54,3 +54,25 @@ export function getResourceFromGroupCommands(name) {
     }
     return cmd;
 }
+
+
+export function getAllUserEmailCommands(name) {
+    let cmd = null;
+    switch (name) {
+        case "user":
+            cmd = new Command()
+                .description(`Get email of all users`)
+                .hidden()
+                .action(async (options, groupId) => {
+                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    options.accountName = networkName;
+                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
+                    let query = client.getTopLevelKVQuery("UserEmails", "users", "email", "id");
+                    let results = await client.fetchAllPages(query)
+                    results = Object.fromEntries(results.map(o => [o.key, o.value]))
+                    console.dir(JSON.stringify(results));
+                });
+            break;
+    }
+    return cmd;
+}

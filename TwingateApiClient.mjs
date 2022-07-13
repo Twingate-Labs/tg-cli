@@ -626,9 +626,9 @@ export class TwingateApiClient {
      */
     async removeUserFromGroup(groupId, userId) {
         let userIds = ( Array.isArray(userId) ? userId : [userId]);
-        const groupQuery = "mutation RemoveUserFromGroup($groupId:ID!,$userIds:[ID]){groupUpdate(id:$groupId,removedUserIds:$userIds){ok error}}";
+        const groupQuery = "mutation RemoveUserFromGroup($groupId:ID!,$userIds:[ID]){groupUpdate(id:$groupId,removedUserIds:$userIds){error entity{id name users{edges{node{id email}}}}}}";
         let groupsResponse = await this.exec(groupQuery, {groupId, userIds} );
-        return groupsResponse.entity;
+        return groupsResponse.groupUpdate.entity;
     }
 
 

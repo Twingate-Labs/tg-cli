@@ -65,3 +65,51 @@ export function getAddUserToGroupCommands(name) {
 }
 
 
+export function getRemoveUserFromGroupCommands(name) {
+    let cmd = null;
+    switch (name) {
+        case "group":
+            cmd = new Command()
+                .arguments("<groupNameOrId:string> [userIds...:string]")
+                .option("-o, --output-format <format:format>", "Output format", {default: "text"})
+                .description(`Remove users to a group`)
+                .action(async (options, groupNameOrId, userIds) => {
+
+                    if (!userIds){
+                        throw new Error(`User IDs are not defined.`)
+                    }
+
+                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    options.accountName = networkName;
+                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
+
+                    let groupId = groupNameOrId
+                    if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
+                        groupId = await client.lookupGroupByName(groupId);
+                        if (groupId == null) {
+                            throw new Error(`Could not find group: '${groupNameOrId}'`)
+                        }
+                    }
+
+                    let res = await client.removeUserFromGroup(groupId, userIds);
+
+                    let userStr = ``
+                    for (let user of userIds){
+                        userStr += `'${user}' `
+                    }
+
+                    switch (options.outputFormat) {
+                        case OutputFormat.JSON:
+                            console.log(JSON.stringify(res));
+                            break;
+                        default:
+                            let msg = `Removed users ${userStr} from ${name} '${res.name}: ${res.id}'`
+                            Log.success(msg)
+                            break;
+                    }
+                });
+            break;
+    }
+
+    return cmd;
+}

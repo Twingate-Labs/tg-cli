@@ -330,8 +330,8 @@ export class TwingateApiClient {
      * @param {int} pageSize - page size to use (default: 0 - server determined)
      * @returns {string} - Query string
      */
-    getTopLevelKVQuery(queryName, field, key, value, fieldAlias="result", pageSize=0) {
-        return this.getRootConnectionPagedQuery(queryName, field, `value:${value} key:${key}`, fieldAlias, pageSize);
+    getTopLevelKVQuery(queryName, field, keyField, valueField, fieldAlias="result", pageSize=0, keyName="key", valueName= "value") {
+        return this.getRootConnectionPagedQuery(queryName, field, `${valueName}:${valueField} ${keyName}:${keyField}`, fieldAlias, pageSize);
     }
 
     /**
@@ -340,7 +340,7 @@ export class TwingateApiClient {
      * @param opts - Options - TODO: Documentation
      * @returns {Promise<*>}
      */
-    async fetchAllPages(query, opts) {
+    async fetchAllPages(query, opts = {}) {
         opts = opts || {};
         const getResultObjFn = opts.getResultObjFn || ((response) => response.result);
         const defaultOpts = {

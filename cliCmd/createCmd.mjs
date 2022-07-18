@@ -82,7 +82,7 @@ export function getCreateCommand(name) {
                             console.log(JSON.stringify(res));
                             break;
                         default:
-                            let msg = `New ${name} named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork.name}'`;
+                            let msg = `New ${name} with address '${res.address.value}' named '${res.name}' created with id '${res.id}' in network '${res.remoteNetwork.name}'`
                             if (groupIds) msg += ` with added groups ${groupStr}`
                             Log.success(msg);
                             break;

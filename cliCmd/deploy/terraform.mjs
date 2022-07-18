@@ -1,10 +1,11 @@
 import {resolve as resolvePath} from "https://deno.land/std/path/posix.ts";
 import {ensureDir} from "https://deno.land/std/fs/mod.ts";
 import {TwingateApiClient} from "../../TwingateApiClient.mjs";
-import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
+import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 import {loadNetworkAndApiKey} from "../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../utils/log.js";
-import tfAwsScripts from "../../scripts/terraform/aws.json" assert { type: "json" };
+import {outputTerraformAws} from "./terraform_aws.mjs";
+
 function getTwingateTfVars(networkName, apiKey, extraVars={}) {
     let rtnVal = Object.assign({
         twingate_network_name: networkName,
@@ -121,7 +122,7 @@ async function generateTwingateTerraform(client, options) {
           name = "${n.name}"
         }
         output "group-${n.tfId}" {
-          value = twingate_connector.${n.tfId}
+          value = twingate_group.${n.tfId}
         }
         `.replace(/^        /gm, "")).join("\n");
 
@@ -156,10 +157,12 @@ async function generateTwingateTerraform(client, options) {
 
 export const deployTerraformCommand = new Command()
     .description("Deploy Twingate via Terraform")
+    .type("targetCloud", new EnumType(["none", "aws"]))
+    .option("-t, --target-cloud [value:targetCloud]", "Target cloud", {default: "none"})
     .option("-o, --output-directory [value:string]", "Output directory")
     .option("-i, --initialize [boolean]", "Initialize Terraform")
+    .option("-s, --silent [boolean]", "Try to remain silent (not prompt for inputs)")
     .action(async (options) => {
-        const a = tfAwsScripts.advanced;
         const outputDir = resolvePath(options.outputDirectory || "terraform");
         await ensureDir(outputDir);
         let moduleDir = `${outputDir}/twingate`;
@@ -180,6 +183,10 @@ export const deployTerraformCommand = new Command()
         }
         else {
             await Deno.writeTextFile(`${outputDir}/import-twingate.sh`, "#!/bin/sh\n"+tfImports.join("\n"), {mode: 0o755});
+        }
+
+        if ( options.targetCloud === "aws") {
+            await outputTerraformAws(outputDir, client, options)
         }
         Log.warn(`Note: Your Twingate API key has been written into '${outputDir}/twingate.auto.tfvars.json', please take care to keep it secure`);
         Log.success(`Deploy to '${outputDir}' completed.`);

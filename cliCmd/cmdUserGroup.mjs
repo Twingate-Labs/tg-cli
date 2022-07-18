@@ -91,12 +91,23 @@ export function getRemoveUserFromGroupCommands(name) {
                         }
                     }
 
+                    let users = {}
+                    for ( let x = 0; x < userIds.length; x++ ) {
+                        let userId = userIds[x]
+                        let userEmail = await client.fetchUserById(userId)
+                        users[userIds[x]] = userEmail.email
+                    }
+
+
                     let res = await client.removeUserFromGroup(groupId, userIds);
 
                     let userStr = ``
-                    for (let user of userIds){
-                        userStr += `'${user}' `
+                    for (const user in users){
+                        userStr += `'${users[user]}: ${user}' `
                     }
+
+                    userStr = userStr.substring(0, userStr.length - 1)
+
 
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:

@@ -104,27 +104,30 @@ export function getRemoveGroupFromResourceCommands(name) {
                             throw new Error(`Could not find resource: '${resourceNameOrId}'`)
                         }
                     }
-                    let groupIds = groupNamesOrIds
-                    for ( let x = 0; x < groupIds.length; x++ ) {
-                        let groupId = groupIds[x]
-                        if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
-                            groupId = await client.lookupGroupByName(groupId);
+                    let groups = {}
+                    for ( let x = 0; x < groupNamesOrIds.length; x++ ) {
+                        let groupId = ""
+                        let groupName = ""
+                        if (!groupNamesOrIds[x].startsWith(TwingateApiClient.IdPrefixes.Group)) {
+                            groupId = await client.lookupGroupByName(groupNamesOrIds[x]);
                             if (groupId == null) {
-                                throw new Error(`Could not find group: '${groupIds[x]}'`)
+                                throw new Error(`Could not find group: '${groupNamesOrIds[x]}'`)
                             } else {
-                                groupIds[x] = groupId
+                                groups[groupId] = groupNamesOrIds[x]
                             }
+                        } else {
+                            groupName = await client.fetchGroupById(groupNamesOrIds[x])
+                            groups[groupNamesOrIds[x]] = groupName.name
                         }
                     }
 
 
 
-                    let res = await client.removeGroupFromResource(resourceId, groupIds)
+                    let res = await client.removeGroupFromResource(resourceId, Object.keys(groups))
 
-                    //@todo log should return both name and id of the removed group, need lookUpGroupById for this
                     let groupStr = ``
-                    for (let group of groupIds){
-                        groupStr += `'${group}' `
+                    for (const group in groups) {
+                        groupStr += `'${groups[group]}: ${group}' `
                     }
                     groupStr = groupStr.substring(0, groupStr.length - 1)
 
@@ -239,29 +242,32 @@ export function getRemoveResourceFromGroupCommands(name) {
                         }
                     }
 
-                    let resourceIds = resourceNamesOrIds
-                    for ( let x = 0; x < resourceIds.length; x++ ) {
-                        let resourceId = resourceIds[x]
-                        if (!resourceId.startsWith(TwingateApiClient.IdPrefixes.Resource)) {
-                            resourceId = await client.lookupResourceByName(resourceId);
+                    let resources = {}
+                    for ( let x = 0; x < resourceNamesOrIds.length; x++ ) {
+                        let resourceId = ""
+                        let resourceName = ""
+                        if (!resourceNamesOrIds[x].startsWith(TwingateApiClient.IdPrefixes.Resource)) {
+                            resourceId = await client.lookupResourceByName(resourceNamesOrIds[x]);
                             if (resourceId == null) {
-                                throw new Error(`Could not find resource: '${resourceIds[x]}'`)
+                                throw new Error(`Could not find resource: '${resourceNamesOrIds[x]}'`)
                             } else {
-                                resourceIds[x] = resourceId
+                                resources[resourceId] = resourceNamesOrIds[x]
                             }
+                        } else {
+                            resourceName = await client.fetchResourceById(resourceNamesOrIds[x])
+                            resources[resourceNamesOrIds[x]] = resourceName.name
                         }
                     }
 
 
-                    let res = await client.removeResourceFromGroup(groupId, resourceIds)
+                    let res = await client.removeResourceFromGroup(groupId, Object.keys(resources))
 
                     //@todo log should return both name and id of the removed resource, need lookUpResourceById for this
                     let resourceStr = ``
-                    for (let resource of resourceIds){
-                        resourceStr += `'${resource}' `
+                    for (const resource in resources){
+                        resourceStr += `'${resources[resource]}: ${resource}' `
                     }
                     resourceStr = resourceStr.substring(0, resourceStr.length - 1)
-
 
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:

@@ -70,7 +70,7 @@ async function createAwsKeyPair(name, saveToFile=true, cliOptions) {
     return keyPair;
 }
 
-async function createAwsEc2Instance(name, imageId, userData, instanceType="t3a.micro", subnetId, keyName = null, cliOptions) {
+async function createAwsEc2Instance(name, imageId, userData, instanceType="t3a.micro", subnetId, keyName = null, assignPublicIp = false, cliOptions) {
      // --image-id $TWINGATE_AMI --user-data $USER_DATA --count 1 --instance-type t3a.micro --region eu-west-1 --subnet-id subnet-0d27e0733843716be --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=twingate-cunning-nyala}]'
     const cmd = getAwsEc2Command("run-instances", {}, cliOptions);
     cmd.push("--image-id", imageId);
@@ -78,6 +78,7 @@ async function createAwsEc2Instance(name, imageId, userData, instanceType="t3a.m
     cmd.push("--count", 1);
     cmd.push("--instance-type", instanceType);
     cmd.push("--subnet-id", subnetId);
+    if ( assignPublicIp === true) cmd.push("--associate-public-ip-address");
     if ( keyName != null ) cmd.push("--key-name", keyName);
     cmd.push("--tag-specifications", `ResourceType=instance,Tags=[{Key=Name,Value=${name}}]`);
     const output = await execCmd(cmd);
@@ -167,8 +168,8 @@ async function getSubnetsAndRoutes(vpcId, cliOptions) {
             }
         }
         subnet.outboundInternet = "NO INTERNET";
-        if ( subnet.outboundNat ) subnet.outboundInternet = "NAT";
-        else if ( subnet.outboundIgw ) subnet.outboundInternet = "IGW";
+        if ( subnet.outboundNat ) subnet.outboundInternet = "NAT Gateway";
+        else if ( subnet.outboundIgw ) subnet.outboundInternet = "Internet Gateway";
     }
     return subnets;
 }
@@ -194,7 +195,7 @@ async function selectVpc(cliOptions) {
             name: `${vpc.VpcId} - ${vpc.Name.padEnd(maxNameLength, " ")} - ${vpc.CidrBlock} ${vpc.IsDefault ? Colors.italic("(Default)"):""}`,
             value: vpc.VpcId
         })),
-        default: defaultVpc ? defaultVpc.VpcId : null
+        default: defaultVpc ? defaultVpc.VpcId : undefined
     });
     return vpcs.find(vpc => vpc.VpcId === vpcId);
 }
@@ -214,7 +215,8 @@ async function selectSubnet(vpcId, cliOptions) {
             value: subnet.SubnetId,
             disabled: subnet.outboundInternet === "NO INTERNET"
         })),
-        default: defaultSubnet ? defaultSubnet.SubnetId : null
+        hint: subnets.some(s => s.outboundInternet === "Internet Gateway") ? "If you select a subnet with an Internet Gateway then an Elastic Public IP will be assigned to your connector" : undefined,
+        default: defaultSubnet ? defaultSubnet.SubnetId : undefined
     });
     return subnets.find(subnet => subnet.SubnetId === subnetId);
 }
@@ -335,7 +337,7 @@ export const deployAwsEc2Command = new Command()
 
         // TODO SSH key
         const keyName = await selectKeyPair(options);
-        if ( keyPair != null ) options.keyName = keyName;
+        if ( keyName != null ) options.keyName = keyName;
 
         // TODO: Make instance type configurable
 
@@ -355,7 +357,8 @@ export const deployAwsEc2Command = new Command()
             } > /etc/twingate/connector.conf
             sudo systemctl enable --now twingate-connector
         `.replace(/^            /gm, "");
-        let instance = await createAwsEc2Instance(instanceName, ami, userData, "t3a.micro", options.subnetId, options.keyName, options);
+        const assignPublicIp = subnet.outboundInternet === "Internet Gateway";
+        let instance = await createAwsEc2Instance(instanceName, ami, userData, "t3a.micro", options.subnetId, options.keyName, assignPublicIp, options);
 
         Log.success(`Created AWS EC2 Instance!\nInstance Id: ${Colors.italic(instance.InstanceId)}\nPrivate IP: ${Colors.italic(instance.PrivateIpAddress)}\nPrivate hostname: ${Colors.italic(instance.PrivateDnsName)}\nSecurity group: ${Colors.italic(instance.SecurityGroups[0].GroupId)} (${instance.SecurityGroups[0].GroupName})`);
         Log.info(`Please allow a few minutes for the instance to initialize. You should then be able to add the private IP as a resource in Twingate - you can do this via the Admin Console UI or via the CLI: ${Colors.italic(`tg resource create "${rn.name}" "Connector host ${instanceName}" "${instance.PrivateIpAddress}"`)}.`);

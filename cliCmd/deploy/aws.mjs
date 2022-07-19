@@ -1,6 +1,7 @@
 import {TwingateApiClient} from "../../TwingateApiClient.mjs";
 import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
 import {Select, Input, Toggle} from "https://deno.land/x/cliffy/prompt/mod.ts";
+import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
 import {execCmd, loadNetworkAndApiKey} from "../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../utils/log.js";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
@@ -342,28 +343,43 @@ export const deployAwsEc2Command = new Command()
         // TODO: Make instance type configurable
 
         // TODO: Make local analytics configurable
+        const logAnalytics = "v1";
+
         const instanceName = `twingate-${connector.name}`;
+        const instanceType = "t3a.micro";
         const tokens = await client.generateConnectorTokens(connector.id);
+        const assignPublicIp = subnet.outboundInternet === "Internet Gateway";
         const userData = `#!/bin/bash
             sudo mkdir -p /etc/twingate/
             HOSTNAME_LOOKUP=$(curl http://169.254.169.254/latest/meta-data/local-hostname)
-            {
+            EGRESS_IP=$(curl https://checkip.amazonaws.com)
+            {z
             echo TWINGATE_URL="https://${networkName}.twingate.com"
             echo TWINGATE_ACCESS_TOKEN="${tokens.accessToken}"
             echo TWINGATE_REFRESH_TOKEN="${tokens.refreshToken}"
+            echo TWINGATE_LOG_ANALYTICS=${logAnalytics}
             echo TWINGATE_LABEL_HOSTNAME=$HOSTNAME_LOOKUP
-            echo TWINGATE_LOG_ANALYTICS=v1
+            echo TWINGATE_LABEL_EGRESSIP=$EGRESS_IP
             echo TWINGATE_LABEL_DEPLOYEDBY=tgcli-aws-ec2
             } > /etc/twingate/connector.conf
             sudo systemctl enable --now twingate-connector
         `.replace(/^            /gm, "");
-        const assignPublicIp = subnet.outboundInternet === "Internet Gateway";
-        let instance = await createAwsEc2Instance(instanceName, ami, userData, "t3a.micro", options.subnetId, options.keyName, assignPublicIp, options);
 
-        Log.success(`Created AWS EC2 Instance!\nInstance Id: ${Colors.italic(instance.InstanceId)}\nPrivate IP: ${Colors.italic(instance.PrivateIpAddress)}\nPrivate hostname: ${Colors.italic(instance.PrivateDnsName)}\nSecurity group: ${Colors.italic(instance.SecurityGroups[0].GroupId)} (${instance.SecurityGroups[0].GroupName})`);
-        Log.info(`Please allow a few minutes for the instance to initialize. You should then be able to add the private IP as a resource in Twingate - you can do this via the Admin Console UI or via the CLI: ${Colors.italic(`tg resource create "${rn.name}" "Connector host ${instanceName}" "${instance.PrivateIpAddress}"`)}.`);
+        let instance = await createAwsEc2Instance(instanceName, ami, userData, instanceType, options.subnetId, options.keyName, assignPublicIp, options);
+
+        Log.success(`Created AWS EC2 Instance!\n`);
+        const table = new Table();
+        table.push(["Instance Id", instance.InstanceId]);
+        table.push(["Private IP", instance.PrivateIpAddress]);
+        table.push(["Private Hostname", instance.PrivateDnsName]);
+        table.push(["Security Group", `${instance.SecurityGroups[0].GroupId} (${instance.SecurityGroups[0].GroupName})`]);
+        table.render();
+        Log.info(`\nPlease allow a few minutes for the instance to initialize. You should then be able to add the private IP as a resource in Twingate.`);
+        Log.info(`You can do this via the Admin Console UI or via the CLI:`);
+        Log.info(Colors.italic(`tg resource create "${rn.name}" "Connector host ${instanceName}" "${instance.PrivateIpAddress}"`));
         if ( options.keyName ) {
-            Log.info(`Once done and authenticated to Twingate you can connect to the instance via SSH using the following command:\n${Colors.italic(`ssh -i ${options.keyName}.pem ubuntu@${instance.PrivateIpAddress}`)}`);
+            Log.info(`Once done and authenticated to Twingate you can connect to the instance via SSH using the following command:`);
+            Log.info(`${Colors.italic(`ssh -i ${options.keyName}.pem ubuntu@${instance.PrivateIpAddress}`)}`);
         }
         return;
     });

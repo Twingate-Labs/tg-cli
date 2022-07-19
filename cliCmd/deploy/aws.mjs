@@ -161,9 +161,9 @@ async function getSubnetsAndRoutes(vpcId, cliOptions) {
                 break;
             }
         }
-        if ( subnet.outboundIgw == null && subnet.outboundNat == null ) {
+        if (  subnet.outboundIgw == null && subnet.outboundNat == null ) {
             const mainRoute = routeTables.find(r => r.main === true);
-            if ( mainRoute != null ) {
+            if ( mainRoute != null && mainRoute.associations.length === 0 ) {
                 subnet.outboundIgw = mainRoute.outboundIgw;
                 subnet.outboundNat = mainRoute.outboundNat;
             }
@@ -353,7 +353,7 @@ export const deployAwsEc2Command = new Command()
             sudo mkdir -p /etc/twingate/
             HOSTNAME_LOOKUP=$(curl http://169.254.169.254/latest/meta-data/local-hostname)
             EGRESS_IP=$(curl https://checkip.amazonaws.com)
-            {z
+            {
             echo TWINGATE_URL="https://${networkName}.twingate.com"
             echo TWINGATE_ACCESS_TOKEN="${tokens.accessToken}"
             echo TWINGATE_REFRESH_TOKEN="${tokens.refreshToken}"

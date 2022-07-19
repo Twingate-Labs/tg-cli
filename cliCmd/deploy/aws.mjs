@@ -334,9 +334,10 @@ export const deployAwsEc2Command = new Command()
         // Get or select Subnet
         const subnet = await selectSubnet(vpc.VpcId, options);
         options.subnetId = subnet.SubnetId;
+
         // TODO: Security group
 
-        // TODO SSH key
+        // Select SSH key
         const keyName = await selectKeyPair(options);
         if ( keyName != null ) options.keyName = keyName;
 

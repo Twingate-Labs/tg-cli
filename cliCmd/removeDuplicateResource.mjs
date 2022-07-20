@@ -1,4 +1,4 @@
-import {genFileNameFromNetworkName, loadNetworkAndApiKey, AFFIRMATIVES, tryProcessPortRestrictionString} from "../utils/smallUtilFuncs.mjs";
+import {genFileNameFromNetworkName, loadNetworkAndApiKey, AFFIRMATIVES, tryProcessPortRestrictionString, loadClientForCLI} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
 import XLSX from "https://cdn.esm.sh/v58/xlsx@0.17.4/deno/xlsx.js";
@@ -33,9 +33,9 @@ export const removeDuplicateResourceCmd = new Command()
     .description("Import from excel file to a Twingate account")
     .hidden()
     .action(async (options) => {
-        const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+        const {networkName, apiKey, client} = await loadClientForCLI(options);
+        options.apiKey = apiKey;
         options.accountName = networkName;
-        let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
         let fileData = null
         try {

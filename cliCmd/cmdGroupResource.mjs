@@ -1,5 +1,6 @@
 import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 import {
+    loadClientForCLI,
     loadNetworkAndApiKey,
     tryProcessPortRestrictionString
 } from "../utils/smallUtilFuncs.mjs";
@@ -25,9 +26,9 @@ export function getAddGroupToResourceCommands(name) {
                         throw new Error(`Group names or IDs are not defined.`)
                     }
 
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     let resourceId = resourceNameOrId
                     if (!resourceNameOrId.startsWith(TwingateApiClient.IdPrefixes.Resource)) {
@@ -93,9 +94,9 @@ export function getRemoveGroupFromResourceCommands(name) {
                         throw new Error(`Group names or IDs are not defined.`)
                     }
 
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     let resourceId = resourceNameOrId
                     if (!resourceNameOrId.startsWith(TwingateApiClient.IdPrefixes.Resource)) {
@@ -162,9 +163,9 @@ export function getAddResourceToGroupCommands(name) {
                         throw new Error(`Resource names or IDs are not defined.`)
                     }
 
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     let groupId = groupNameOrId
                     if (!groupNameOrId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
@@ -230,9 +231,9 @@ export function getRemoveResourceFromGroupCommands(name) {
                         throw new Error(`Resource names or IDs are not defined.`)
                     }
 
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     let groupId = groupNameOrId
                     if (!groupNameOrId.startsWith(TwingateApiClient.IdPrefixes.Group)) {

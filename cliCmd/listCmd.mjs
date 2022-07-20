@@ -1,4 +1,4 @@
-import {loadNetworkAndApiKey, sortByTextField} from "../utils/smallUtilFuncs.mjs";
+import {loadClientForCLI, loadNetworkAndApiKey, sortByTextField} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import XLSX from "https://cdn.esm.sh/v58/xlsx@0.17.4/deno/xlsx.js";
 import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
@@ -69,9 +69,9 @@ export function getListCommand(name) {
         .type("LogLevel", LogLevelType)
         .option("-o, --output-format <format:format>", "Output format", {default: "table"})
         .action(async (options) => {
-            const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+            const {networkName, apiKey, client} = await loadClientForCLI(options);
+            options.apiKey = apiKey;
             options.accountName = networkName;
-            let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
             const configForCli = {
                 defaultConnectionFields: "LABEL_FIELD",

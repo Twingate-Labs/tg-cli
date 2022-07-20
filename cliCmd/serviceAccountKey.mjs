@@ -1,5 +1,6 @@
 import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 import {
+    loadClientForCLI,
     loadNetworkAndApiKey,
     tryProcessPortRestrictionString
 } from "../utils/smallUtilFuncs.mjs";
@@ -20,9 +21,9 @@ export function getServiceAccountKeyCreateCommands(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a service account key`)
                 .action(async (options, serviceAccountId, keyName, expirationTime) => {
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     let res = await client.serviceAccountKeyCreate(serviceAccountId, keyName, Number(expirationTime));
 

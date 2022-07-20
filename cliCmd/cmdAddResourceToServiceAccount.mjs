@@ -1,5 +1,6 @@
 import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 import {
+    loadClientForCLI,
     loadNetworkAndApiKey,
     tryProcessPortRestrictionString
 } from "../utils/smallUtilFuncs.mjs";
@@ -25,9 +26,9 @@ export function getAddResourceToSericeAccountCommands(name) {
                         throw new Error(`Resource names or IDs are not defined.`)
                     }
 
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     let resourceIds = resourceNamesOrIds
                     for ( let x = 0; x < resourceIds.length; x++ ) {

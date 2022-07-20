@@ -1,5 +1,6 @@
 import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 import {
+    loadClientForCLI,
     loadNetworkAndApiKey,
     tryProcessPortRestrictionString
 } from "../utils/smallUtilFuncs.mjs";
@@ -25,9 +26,9 @@ export function getAddUserToGroupCommands(name) {
                         throw new Error(`User IDs are not defined.`)
                     }
 
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     let groupId = groupNameOrId
                     if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {
@@ -79,9 +80,9 @@ export function getRemoveUserFromGroupCommands(name) {
                         throw new Error(`User IDs are not defined.`)
                     }
 
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     let groupId = groupNameOrId
                     if (!groupId.startsWith(TwingateApiClient.IdPrefixes.Group)) {

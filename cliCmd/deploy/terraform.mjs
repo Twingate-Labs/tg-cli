@@ -2,7 +2,7 @@ import {resolve as resolvePath} from "https://deno.land/std/path/posix.ts";
 import {ensureDir} from "https://deno.land/std/fs/mod.ts";
 import {TwingateApiClient} from "../../TwingateApiClient.mjs";
 import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
-import {loadNetworkAndApiKey} from "../../utils/smallUtilFuncs.mjs";
+import {loadClientForCLI, loadNetworkAndApiKey} from "../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../utils/log.js";
 import {outputTerraformAws} from "./terraform_aws.mjs";
 
@@ -168,9 +168,9 @@ export const deployTerraformCommand = new Command()
         let moduleDir = `${outputDir}/twingate`;
         await ensureDir(moduleDir);
 
-        const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+        const {networkName, apiKey, client} = await loadClientForCLI(options);
         options.apiKey = apiKey;
-        const client = new TwingateApiClient(networkName, apiKey, {logger: Log});
+        options.accountName = networkName;
         const {tfContent, tfImports} = await generateTwingateTerraform(client, options);
 
         await Deno.writeTextFile(`${outputDir}/twingate-module.tf`, getTwingateTfModule());

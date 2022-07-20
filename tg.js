@@ -12,6 +12,7 @@ import {
     getTopLevelCommand,
 } from "./cliCmd/cmd.mjs";
 import {deployCmd} from "./cliCmd/deploy/index.mjs";
+import {VERSION} from "./version.js";
 
 async function main(args) {
 
@@ -19,7 +20,7 @@ async function main(args) {
     const LogLevelType = new EnumType(Object.keys(LOG_LEVELS));
     let cmd = new Command()
         .name("tg")
-        .version(TwingateApiClient.VERSION)
+        .version(`CLI Version: ${VERSION} | TwingateApiClient Version: ${TwingateApiClient.VERSION}`)
         .description("CLI for Twingate")
         .type("LogLevel", LogLevelType)
         .option("-a, --account-name <string>", "Twingate account name", {

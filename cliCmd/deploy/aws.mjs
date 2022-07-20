@@ -2,7 +2,7 @@ import {TwingateApiClient} from "../../TwingateApiClient.mjs";
 import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
 import {Select, Input, Toggle} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
-import {execCmd, loadNetworkAndApiKey} from "../../utils/smallUtilFuncs.mjs";
+import {execCmd, loadClientForCLI, loadNetworkAndApiKey} from "../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../utils/log.js";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
 
@@ -333,15 +333,15 @@ export const deployAwsEc2Command = new Command()
         default: "t3a.micro"
     })
     .action(async (options) => {
-        const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+        const {networkName, apiKey, client} = await loadClientForCLI(options);
+        options.apiKey = apiKey;
+        options.accountName = networkName;
+        options.client = client;
         if (!options.region) {
             options.region = await selectRegion(options);
         } else {
             Log.info(`Using AWS Region: ${options.region}`);
         }
-        options.apiKey = apiKey;
-        const client = new TwingateApiClient(networkName, apiKey, {logger: Log});
-        options.client = client;
 
         let rn = await selectRemoteNetwork(options);
         let connector = await selectConnector(rn, options);
@@ -413,15 +413,15 @@ export const deployAwsEc2Command = new Command()
 export const deployAwsEcsCommand = new Command()
     .description("Deploy Twingate on AWS ECS")
     .action(async (options) => {
-        const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+        const {networkName, apiKey, client} = await loadClientForCLI(options);
+        options.apiKey = apiKey;
+        options.accountName = networkName;
+        options.client = client;
         if (!options.region) {
             options.region = await selectRegion(options);
         } else {
             Log.info(`Using AWS Region: ${options.region}`);
         }
-        options.apiKey = apiKey;
-        const client = new TwingateApiClient(networkName, apiKey, {logger: Log});
-        options.client = client;
 
         let rn = await selectRemoteNetwork(options);
         let connector = await selectConnector(rn, options);

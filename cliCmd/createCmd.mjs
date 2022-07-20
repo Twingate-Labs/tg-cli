@@ -1,5 +1,6 @@
 import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 import {
+    loadClientForCLI,
     loadNetworkAndApiKey,
     tryProcessPortRestrictionString
 } from "../utils/smallUtilFuncs.mjs";
@@ -24,9 +25,9 @@ export function getCreateCommand(name) {
                 .description(`Create a ${name}`)
                 .action(async (options, remoteNetworkNameOrId, resourceName, resourceAddress, groupNameOrIds) => {
 
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     // Lookup id from name if we need to
                     let remoteNetworkId = remoteNetworkNameOrId;
@@ -99,9 +100,9 @@ export function getCreateCommand(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
                 .action(async (options, remoteNetworkNameOrId, connectorName) => {
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     // Lookup id from name if we need to
                     let remoteNetworkId = remoteNetworkNameOrId;
@@ -154,9 +155,9 @@ export function getCreateCommand(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
                 .action(async (options, groupName, userIds) => {
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
                     let res = await client.createGroup(groupName, [], userIds)
 
                     let userStr = ``
@@ -185,9 +186,9 @@ export function getCreateCommand(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
                 .action(async (options, remoteNetworkName) => {
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
                     let res = await client.createRemoteNetwork(remoteNetworkName);
                     res.name = remoteNetworkName;
                     switch (options.outputFormat) {
@@ -207,9 +208,9 @@ export function getCreateCommand(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
                 .action(async (options, serviceAccountName, resourceNamesOrIds) => {
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
                     let resourceIds = resourceNamesOrIds
                     if (resourceIds){

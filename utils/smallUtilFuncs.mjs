@@ -8,6 +8,7 @@ import {exists as fileExists} from "https://deno.land/std/fs/mod.ts";
 import {decryptData, encryptData} from "../crypto.mjs";
 import {Log} from "./log.js";
 import {Input} from "https://deno.land/x/cliffy@v0.20.1/prompt/input.ts";
+import {VERSION} from "../version.js";
 
 export function genFileNameFromNetworkName(networkName, extension = "xlsx") {
     const
@@ -17,6 +18,14 @@ export function genFileNameFromNetworkName(networkName, extension = "xlsx") {
     return `${networkName}-${date}_${time}.${extension}`;
 }
 
+export async function loadClientForCLI(options) {
+    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+    const client = new TwingateApiClient(networkName, apiKey, {
+        logger: Log,
+        applicationName: `tg-cli/${VERSION}`
+    });
+    return {networkName, apiKey, client};
+}
 
 export async function loadNetworkAndApiKey(networkName = null) {
     let apiKey = Deno.env.get("TG_API_KEY"),

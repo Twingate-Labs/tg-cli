@@ -1,4 +1,4 @@
-import {genFileNameFromNetworkName, loadNetworkAndApiKey, setLastConnectedOnUser} from "../utils/smallUtilFuncs.mjs";
+import {genFileNameFromNetworkName, loadClientForCLI, loadNetworkAndApiKey, setLastConnectedOnUser} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
 import XLSX from "https://cdn.esm.sh/v58/xlsx@0.17.4/deno/xlsx.js";
@@ -227,7 +227,8 @@ export const exportCmd = new Command()
     .option("-d, --devices [boolean]", "Include Devices (trust)")
     .description("Export from account to various formats")
     .action(async (options) => {
-        const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+        const {networkName, apiKey, client} = await loadClientForCLI(options);
+        options.apiKey = apiKey;
         options.accountName = networkName;
         options.typesToFetch = [];
         if ( options.remoteNetworks === true ) options.typesToFetch.push("RemoteNetwork")
@@ -236,7 +237,6 @@ export const exportCmd = new Command()
         if ( options.users === true ) options.typesToFetch.push("User")
         if ( options.devices === true ) options.typesToFetch.push("Device")
 
-        let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
         let outputFn = outputFnMap[options.format];
         if (outputFn == null) {
             Log.error(`Unsupported option: '${options.format}'`);

@@ -1,4 +1,4 @@
-import {loadNetworkAndApiKey} from "../utils/smallUtilFuncs.mjs";
+import {loadClientForCLI, loadNetworkAndApiKey} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
 import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
@@ -35,13 +35,12 @@ export const removeAllCmd = new Command()
             assetNamesStr += assetNames[x].toUpperCase();
         }
 
-        const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+        const {networkName, apiKey, client} = await loadClientForCLI(options);
+        options.apiKey = apiKey;
         options.accountName = networkName;
 
         Log.warn(`This action will ${Colors.red("BULK DELETE")} all ${assetNamesStr} in the account '${Colors.italic(networkName)}' and is ${Colors.red("NOT REVERSIBLE")}.`)
         if ( !(await Confirm.prompt(Colors.red(`Please confirm to continue?`))) ) return;
-
-        let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
 
         if ( options.groups ) {
             let allGroups = await client.fetchAllGroups({fieldSet: [TwingateApiClient.FieldSet.ID], fieldOpts:{extraFields: ["type"]}});

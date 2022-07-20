@@ -1,5 +1,6 @@
 import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 import {
+    loadClientForCLI,
     loadNetworkAndApiKey,
     tryProcessPortRestrictionString
 } from "../utils/smallUtilFuncs.mjs";
@@ -20,9 +21,9 @@ export function getRemoveBulkCommands(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Remove ${name}s bulk`)
                 .action(async (options, groupIds) => {
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
                     for ( let x = 0; x < groupIds.length; x++ ) {
                         try {
                             let res = await client.removeGroup(groupIds[x]);
@@ -46,9 +47,9 @@ export function getRemoveBulkCommands(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Remove ${name}s bulk`)
                 .action(async (options, resourceIds) => {
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
                     for ( let x = 0; x < resourceIds.length; x++ ) {
                         try {
                             let res = await client.removeResource(resourceIds[x]);

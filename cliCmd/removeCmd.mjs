@@ -1,5 +1,6 @@
 import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 import {
+    loadClientForCLI,
     loadNetworkAndApiKey,
     tryProcessPortRestrictionString
 } from "../utils/smallUtilFuncs.mjs";
@@ -20,9 +21,9 @@ export function getRemoveCommands(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Remove a ${name}`)
                 .action(async (options, groupId) => {
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
                     let res = await client.removeGroup(groupId);
                     switch (options.outputFormat) {
                         case OutputFormat.JSON:
@@ -41,9 +42,9 @@ export function getRemoveCommands(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Remove a ${name}`)
                 .action(async (options, serviceAccountId) => {
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
                     let res = await client.removeServiceAccount(serviceAccountId);
 
                     switch (options.outputFormat) {
@@ -63,9 +64,9 @@ export function getRemoveCommands(name) {
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Remove a ${name}`)
                 .action(async (options, resourceId) => {
-                    const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let client = new TwingateApiClient(networkName, apiKey, {logger: Log});
                     let res = await client.removeResource(resourceId);
 
                     switch (options.outputFormat) {

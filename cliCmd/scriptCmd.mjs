@@ -1,4 +1,4 @@
-import {execCmd, loadNetworkAndApiKey} from "../utils/smallUtilFuncs.mjs";
+import {execCmd, loadClientForCLI, loadNetworkAndApiKey} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
 import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
@@ -43,11 +43,11 @@ export const scriptCmd = new Command()
         let wb = XLSX.read(fileData,{type:'array', cellDates: true});
         let sheetData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
 
-        const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+        const {networkName, apiKey, client} = await loadClientForCLI(options);
+        options.apiKey = apiKey;
         options.accountName = networkName;
 
-        let client = new TwingateApiClient(networkName, apiKey, {logger: Log}),
-            x = 0,
+        let x = 0,
             remoteNetworkMap = {}
         ;
         let sudoPassword = null;

@@ -7,6 +7,26 @@ import {Log} from "../../utils/log.js";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
 
 // BEGIN AWS CLI functions
+function getAwsEcsCommand(command, options = {}, cliOptions = {}) {
+    let cmd = ["aws", "ecs", command];
+    options = Object.assign({
+        outputJson: true,
+        noPaginate: true,
+        filters: null,
+        query: null,
+        owners: null
+    }, options);
+    if ( cliOptions.profile != null ) cmd.push("--profile", cliOptions.profile);
+    if ( cliOptions.region != null ) cmd.push("--region", cliOptions.region);
+    if ( options.outputJson !== false ) cmd.push("--output", "json");
+    if ( options.noPaginate !== false ) cmd.push("--no-paginate");
+    if ( options.owners !== null ) cmd.push("--owners", options.owners);
+    if ( options.filters !== null ) cmd.push("--filters", options.filters);
+    if ( options.query !== null ) cmd.push("--query", options.query);
+    return cmd;
+}
+
+
 function getAwsEc2Command(command, options = {}, cliOptions = {}) {
     let cmd = ["aws", "ec2", command];
     options = Object.assign({
@@ -309,12 +329,14 @@ async function selectConnector(remoteNetwork, cliOptions) {
 // BEGIN Commands
 export const deployAwsEc2Command = new Command()
     .description("Deploy Twingate on AWS EC2")
+    .option("-i, --instance-type <string>", "EC2 instance type to provision", {
+        default: "t3a.micro"
+    })
     .action(async (options) => {
         const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
-        if ( !options.region ) {
+        if (!options.region) {
             options.region = await selectRegion(options);
-        }
-        else {
+        } else {
             Log.info(`Using AWS Region: ${options.region}`);
         }
         options.apiKey = apiKey;
@@ -326,7 +348,9 @@ export const deployAwsEc2Command = new Command()
 
         // Lookup the AMI Id
         const ami = await getTwingateAmi(options);
-        if ( ami == null ) throw new Error("Twingate AMI not found in region");
+        if (ami == null) {
+            throw new Error("Twingate AMI not found in region");
+        }
 
         // Get or select VPC
         const vpc = await selectVpc(options);
@@ -339,15 +363,15 @@ export const deployAwsEc2Command = new Command()
 
         // Select SSH key
         const keyName = await selectKeyPair(options);
-        if ( keyName != null ) options.keyName = keyName;
-
-        // TODO: Make instance type configurable
+        if (keyName != null) {
+            options.keyName = keyName;
+        }
 
         // TODO: Make local analytics configurable
         const logAnalytics = "v1";
 
         const instanceName = `twingate-${connector.name}`;
-        const instanceType = "t3a.micro";
+        const instanceType = options.instanceType || "t3a.micro";
         const tokens = await client.generateConnectorTokens(connector.id);
         const assignPublicIp = subnet.outboundInternet === "Internet Gateway";
         const userData = `#!/bin/bash
@@ -378,7 +402,7 @@ export const deployAwsEc2Command = new Command()
         Log.info(`\nPlease allow a few minutes for the instance to initialize. You should then be able to add the private IP as a resource in Twingate.`);
         Log.info(`You can do this via the Admin Console UI or via the CLI:`);
         Log.info(Colors.italic(`tg resource create "${rn.name}" "Connector host ${instanceName}" "${instance.PrivateIpAddress}"`));
-        if ( options.keyName ) {
+        if (options.keyName) {
             Log.info(`Once done and authenticated to Twingate you can connect to the instance via SSH using the following command:`);
             Log.info(`${Colors.italic(`ssh -i ${options.keyName}.pem ubuntu@${instance.PrivateIpAddress}`)}`);
         }
@@ -386,10 +410,32 @@ export const deployAwsEc2Command = new Command()
     });
 
 
+export const deployAwsEcsCommand = new Command()
+    .description("Deploy Twingate on AWS ECS")
+    .action(async (options) => {
+        const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
+        if (!options.region) {
+            options.region = await selectRegion(options);
+        } else {
+            Log.info(`Using AWS Region: ${options.region}`);
+        }
+        options.apiKey = apiKey;
+        const client = new TwingateApiClient(networkName, apiKey, {logger: Log});
+        options.client = client;
+
+        let rn = await selectRemoteNetwork(options);
+        let connector = await selectConnector(rn, options);
+
+
+    });
+
 export const deployAwsCommand = new Command()
     .description("Deploy Twingate on Amazon Web Services (AWS). Required AWS CLI to be installed.")
     .globalOption(
       "-p, --profile [awsProfile:string]",
-      "Named profile to use when interacting with AWS CLI.",
+      "Named profile to use when interacting with AWS CLI."
     )
-    .command("ec2", deployAwsEc2Command);
+    .globalOption("-r, --region <string>", "AWS region to use")
+    .command("ec2", deployAwsEc2Command)
+    .command("ecs", deployAwsEcsCommand)
+;

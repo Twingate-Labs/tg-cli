@@ -191,11 +191,12 @@ export class TwingateApiClient {
             onApiError: null,
             logger: console,
             silenceApiErrorsWithResults: false,
-            defaultPageSize: 0
+            defaultPageSize: 0,
+            applicationName: `TwingateApiClient/${TwingateApiClient.VERSION}`
         };
 
         const {domain, endpoint, defaultRequestOptions, defaultRequestHeaders, onApiError, logger,
-            silenceApiErrorsWithResults, defaultPageSize} = Object.assign(defaultOpts, opts);
+            silenceApiErrorsWithResults, defaultPageSize, applicationName} = Object.assign(defaultOpts, opts);
 
 
         this.networkName = networkName;
@@ -205,6 +206,7 @@ export class TwingateApiClient {
         this.defaultPageSize = defaultPageSize;
 
         this.defaultRequestOptions = defaultRequestOptions;
+        if ( defaultRequestHeaders["User-Agent"] === undefined ) defaultRequestHeaders["User-Agent"] = applicationName;
         this.defaultRequestHeaders = defaultRequestHeaders;
 
         this.onApiError = onApiError;

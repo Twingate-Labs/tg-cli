@@ -5,7 +5,9 @@ import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
 import {execCmd, loadClientForCLI, loadNetworkAndApiKey} from "../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../utils/log.js";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
-
+import {AwsEc2Deployer} from "./deployers/aws/AwsEc2Deployer.mjs";
+import {AwsEcsDeployer} from "./deployers/aws/AwsEcsDeployer.mjs";
+/*
 // BEGIN AWS CLI functions
 function getAwsEcsCommand(command, options = {}, cliOptions = {}) {
     let cmd = ["aws", "ecs", command];
@@ -26,6 +28,12 @@ function getAwsEcsCommand(command, options = {}, cliOptions = {}) {
     return cmd;
 }
 
+async function getAwsEcsClusters(cliOptions) {
+    const cmd = getAwsEcsCommand("describe-clusters", cliOptions);
+    const output = await execCmd(cmd);
+    const clusters = JSON.parse(output).clusters.filter(c => c.status === "ACTIVE");
+    return clusters;
+}
 
 function getAwsEc2Command(command, options = {}, cliOptions = {}) {
     let cmd = ["aws", "ec2", command];
@@ -122,7 +130,7 @@ async function getVpcs(cliOptions) {
 }
 
 async function getSubnets(vpcId, cliOptions) {
-    const cmd = getAwsEc2Command("describe-subnets", {filters: `Name=vpc-id,Values=${vpcId}`}, cliOptions);
+    const cmd = getAwsEc2Command("describe-subnets", {filters: `Name=vpc-id,Values=${vpcId}`});
     const output = await execCmd(cmd)
     let subnetList = JSON.parse(output).Subnets
     for ( const subnet of subnetList) {
@@ -325,6 +333,7 @@ async function selectConnector(remoteNetwork, cliOptions) {
 
     return connector;
 }
+*/
 
 // BEGIN Commands
 export const deployAwsEc2Command = new Command()
@@ -332,102 +341,12 @@ export const deployAwsEc2Command = new Command()
     .option("-i, --instance-type <string>", "EC2 instance type to provision", {
         default: "t3a.micro"
     })
-    .action(async (options) => {
-        const {networkName, apiKey, client} = await loadClientForCLI(options);
-        options.apiKey = apiKey;
-        options.accountName = networkName;
-        options.client = client;
-        if (!options.region) {
-            options.region = await selectRegion(options);
-        } else {
-            Log.info(`Using AWS Region: ${options.region}`);
-        }
-
-        let rn = await selectRemoteNetwork(options);
-        let connector = await selectConnector(rn, options);
-
-        // Lookup the AMI Id
-        const ami = await getTwingateAmi(options);
-        if (ami == null) {
-            throw new Error("Twingate AMI not found in region");
-        }
-
-        // Get or select VPC
-        const vpc = await selectVpc(options);
-
-        // Get or select Subnet
-        const subnet = await selectSubnet(vpc.VpcId, options);
-        options.subnetId = subnet.SubnetId;
-
-        // TODO: Security group
-
-        // Select SSH key
-        const keyName = await selectKeyPair(options);
-        if (keyName != null) {
-            options.keyName = keyName;
-        }
-
-        // TODO: Make local analytics configurable
-        const logAnalytics = "v1";
-
-        const instanceName = `twingate-${connector.name}`;
-        const instanceType = options.instanceType || "t3a.micro";
-        const tokens = await client.generateConnectorTokens(connector.id);
-        const assignPublicIp = subnet.outboundInternet === "Internet Gateway";
-        const userData = `#!/bin/bash
-            sudo mkdir -p /etc/twingate/
-            HOSTNAME_LOOKUP=$(curl http://169.254.169.254/latest/meta-data/local-hostname)
-            EGRESS_IP=$(curl https://checkip.amazonaws.com)
-            {
-            echo TWINGATE_URL="https://${networkName}.twingate.com"
-            echo TWINGATE_ACCESS_TOKEN="${tokens.accessToken}"
-            echo TWINGATE_REFRESH_TOKEN="${tokens.refreshToken}"
-            echo TWINGATE_LOG_ANALYTICS=${logAnalytics}
-            echo TWINGATE_LABEL_HOSTNAME=$HOSTNAME_LOOKUP
-            echo TWINGATE_LABEL_EGRESSIP=$EGRESS_IP
-            echo TWINGATE_LABEL_DEPLOYEDBY=tgcli-aws-ec2
-            } > /etc/twingate/connector.conf
-            sudo systemctl enable --now twingate-connector
-        `.replace(/^            /gm, "");
-
-        let instance = await createAwsEc2Instance(instanceName, ami, userData, instanceType, options.subnetId, options.keyName, assignPublicIp, options);
-
-        Log.success(`Created AWS EC2 Instance!\n`);
-        const table = new Table();
-        table.push(["Instance Id", instance.InstanceId]);
-        table.push(["Private IP", instance.PrivateIpAddress]);
-        table.push(["Private Hostname", instance.PrivateDnsName]);
-        table.push(["Security Group", `${instance.SecurityGroups[0].GroupId} (${instance.SecurityGroups[0].GroupName})`]);
-        table.render();
-        Log.info(`\nPlease allow a few minutes for the instance to initialize. You should then be able to add the private IP as a resource in Twingate.`);
-        Log.info(`You can do this via the Admin Console UI or via the CLI:`);
-        Log.info(Colors.italic(`tg resource create "${rn.name}" "Connector host ${instanceName}" "${instance.PrivateIpAddress}"`));
-        if (options.keyName) {
-            Log.info(`Once done and authenticated to Twingate you can connect to the instance via SSH using the following command:`);
-            Log.info(`${Colors.italic(`ssh -i ${options.keyName}.pem ubuntu@${instance.PrivateIpAddress}`)}`);
-        }
-        return;
-    });
+    .action(async (options) => await (new AwsEc2Deployer(options)).deploy());
 
 
 export const deployAwsEcsCommand = new Command()
-    .description("Deploy Twingate on AWS ECS")
-    .action(async (options) => {
-        const {networkName, apiKey, client} = await loadClientForCLI(options);
-        options.apiKey = apiKey;
-        options.accountName = networkName;
-        options.client = client;
-        if (!options.region) {
-            options.region = await selectRegion(options);
-        } else {
-            Log.info(`Using AWS Region: ${options.region}`);
-        }
-
-        let rn = await selectRemoteNetwork(options);
-        let connector = await selectConnector(rn, options);
-
-
-    });
+    .description("Deploy Twingate on AWS ECS (Fargate)")
+    .action(async (options) => await (new AwsEcsDeployer(options)).deploy());
 
 export const deployAwsCommand = new Command()
     .description("Deploy Twingate on Amazon Web Services (AWS). Required AWS CLI to be installed.")

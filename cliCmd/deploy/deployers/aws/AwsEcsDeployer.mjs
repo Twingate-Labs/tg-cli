@@ -47,15 +47,17 @@ export class AwsEcsDeployer extends AwsBaseDeployer {
         return clusters;
     }
 
-    async registerEcsTaskDefinition(connectors, familyName, options={}) {
+    async registerEcsTaskDefinition(connectors, familyName, options = {}) {
         options = Object.assign({
             image: "twingate/connector:1",
             memory: 2048,
             cpu: 1024
         }, options);
-        if ( !Array.isArray(connectors)) connectors = [connectors];
+        if (!Array.isArray(connectors)) {
+            connectors = [connectors];
+        }
         const containerDefinitions = [];
-        for (const connector of connectors ) {
+        for (const connector of connectors) {
             const tokens = await this.client.generateConnectorTokens(connector.id);
             const containerDefinition = {
                 "name": connector.name,
@@ -67,10 +69,16 @@ export class AwsEcsDeployer extends AwsBaseDeployer {
                     {
                         "name": "ACCESS_TOKEN",
                         "value": tokens.accessToken
-                    }, {
+                    },
+                    {
                         "name": "REFRESH_TOKEN",
                         "value": tokens.refreshToken
-                    }]
+                    },
+                    {
+                        "name": "TWINGATE_LABEL_DEPLOYEDBY",
+                        "value": "tgcli-aws-ecs"
+                    }
+                ]
             };
             containerDefinitions.push(containerDefinition);
         }
@@ -90,7 +98,7 @@ export class AwsEcsDeployer extends AwsBaseDeployer {
         return JSON.parse(output).taskDefinition;
     }
 
-    async createEcsService(cluster, taskDefinitionName, subnets, securityGroups, assignPublicIp=false) {
+    async createEcsService(cluster, taskDefinitionName, subnets, securityGroups, assignPublicIp = false) {
         subnets = Array.isArray(subnets) ? subnets.join(",") : [subnets];
         securityGroups = Array.isArray(securityGroups) ? securityGroups.join(",") : securityGroups;
         assignPublicIp = assignPublicIp === true ? ", assignPublicIp=ENABLED" : "";
@@ -104,6 +112,7 @@ export class AwsEcsDeployer extends AwsBaseDeployer {
         const output = await execCmd(cmd);
         return JSON.parse(output).service;
     }
+
     async selectCluster() {
         const ecsClusters = await this.getEcsClusters();
         if (ecsClusters.length === 0) {
@@ -141,11 +150,10 @@ export class AwsEcsDeployer extends AwsBaseDeployer {
         const sgName = "twingate-connector";
         const connectorSecurityGroup = securityGroups.find(sg => sg.GroupName === sgName);
         let sgId = null
-        if ( connectorSecurityGroup !== undefined) {
+        if (connectorSecurityGroup !== undefined) {
             // TODO: Check egress
             sgId = connectorSecurityGroup.GroupId;
-        }
-        else {
+        } else {
             sgId = await this.createSecurityGroup(vpc.VpcId);
             Log.info(`Created security group: ${Colors.italic(sgName)} (${sgId})`);
         }

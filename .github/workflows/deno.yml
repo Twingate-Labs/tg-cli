@@ -34,6 +34,7 @@ jobs:
         #   run: deno run https://deno.land/std/examples/welcome.ts
       - name: Compile
         run: |
+          sed -i 's/LATEST/${{ steps.get_version.outputs.version-without-v }}/g' ./version.js
           deno -V
           deno cache --reload ./tg.js --unstable
           deno compile --allow-all --import-map ./import_map.json --unstable ./tg.js

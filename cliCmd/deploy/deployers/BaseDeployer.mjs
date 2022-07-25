@@ -1,6 +1,7 @@
 import {Input, Select} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
 import {loadClientForCLI} from "../../../utils/smallUtilFuncs.mjs";
+import {Log} from "../../../utils/log.js";
 
 export class BaseDeployer {
     constructor(cliOptions) {
@@ -44,6 +45,7 @@ export class BaseDeployer {
             connector = await client.createConnector(remoteNetwork.id);
         } else if (connectors.length === 1) {
             connector = connectors[0];
+            Log.info(`Using connector: ${Colors.italic(connector.name)}`);
         } else {
             const connectorId = await Select.prompt({
                 message: "Choose Connector",

@@ -124,7 +124,7 @@ export class AwsEc2Deployer extends AwsBaseDeployer {
             HOSTNAME_LOOKUP=$(curl http://169.254.169.254/latest/meta-data/local-hostname)
             EGRESS_IP=$(curl https://checkip.amazonaws.com)
             {
-            echo TWINGATE_URL="https://${this.networkName}.twingate.com"
+            echo TWINGATE_URL="https://${this.cliOptions.accountName}.twingate.com"
             echo TWINGATE_ACCESS_TOKEN="${tokens.accessToken}"
             echo TWINGATE_REFRESH_TOKEN="${tokens.refreshToken}"
             echo TWINGATE_LOG_ANALYTICS=${logAnalytics}

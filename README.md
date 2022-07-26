@@ -28,6 +28,7 @@ Linux
 Mac
 ===========================
 * Open Mac Terminal
+* Execute ```xattr -d com.apple.quarantine /path/to/tg``` to remove the quarantine bit.
 * Test
   *  ```/path/to/tg --help``` e.g. ```/apps/tg --help``` or 
   *  ```cd \path\to\tg``` followed by ```./tg --help```

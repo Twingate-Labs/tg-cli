@@ -99,7 +99,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_linux_x86_64.zip
-          asset_name: cli_${{ steps.get_version.outputs.version-without-v }}_linux_x86_64.zip
+          asset_name: cli_linux_x86_64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_win_x86_64
@@ -109,7 +109,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_win_x86_64.zip
-          asset_name: cli_${{ steps.get_version.outputs.version-without-v }}_win_x86_64.zip
+          asset_name: cli_win_x86_64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_macos_x86_64
@@ -119,7 +119,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_macos_x86_64.zip
-          asset_name: cli_${{ steps.get_version.outputs.version-without-v }}_macos_x86_64.zip
+          asset_name: cli_macos_x86_64.zip
           asset_content_type: application/zip
 
       - name: Upload cli_macos_aarch64
@@ -129,7 +129,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: cli_macos_aarch64.zip
-          asset_name: cli_${{ steps.get_version.outputs.version-without-v }}_macos_aarch64.zip
+          asset_name: cli_macos_aarch64.zip
           asset_content_type: application/zip
 
       - name: Upload tgcli_debian

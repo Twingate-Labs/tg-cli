@@ -1,7 +1,7 @@
 import {BaseDeployer} from "../BaseDeployer.mjs";
 import {Select} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
-import {execCmd, tablifyOptions} from "../../../../utils/smallUtilFuncs.mjs";
+import {execCmd, sortByTextField, tablifyOptions} from "../../../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../../../utils/log.js";
 
 export class AwsBaseDeployer extends BaseDeployer {
@@ -71,21 +71,21 @@ export class AwsBaseDeployer extends BaseDeployer {
         const cmd = this.getAwsEc2Command("describe-regions", {
             filters: "Name=opt-in-status,Values=opted-in,opt-in-not-required",
             query: "Regions[].RegionName"
-        }, cliOptions);
+        });
         const output = await execCmd(cmd);
         return JSON.parse(output);
     }
 
     async getVpcs() {
         const cliOptions = this.cliOptions;
-        const cmd = this.getAwsEc2Command("describe-vpcs", {query: "Vpcs[*].{VpcId:VpcId,Name:Tags[?Key==`Name`].Value|[0],CidrBlock:CidrBlock,IsDefault:IsDefault}"}, cliOptions);
+        const cmd = this.getAwsEc2Command("describe-vpcs", {query: "Vpcs[*].{VpcId:VpcId,Name:Tags[?Key==`Name`].Value|[0],CidrBlock:CidrBlock,IsDefault:IsDefault}"});
         //const cmd = ["aws", "ec2", "describe-vpcs", "--output", "json", "--no-paginate", "--query", "Vpcs[*].{VpcId:VpcId,Name:Tags[?Key==`Name`].Value|[0],CidrBlock:CidrBlock,IsDefault:IsDefault}"];
         const output = await execCmd(cmd);
         let vpcList = JSON.parse(output);
         vpcList.map(vpc => vpc.Name = vpc.Name || "NO NAME");
         let defaultVpc = vpcList.filter(vpc => vpc.IsDefault === true);
         defaultVpc = defaultVpc.length === 0 ? null : defaultVpc[0];
-        vpcList = vpcList.sort( (a,b) => (a.Name.localeCompare(b.Name)));
+        vpcList = sortByTextField(vpcList, "Name");
         return [
             vpcList,
             defaultVpc

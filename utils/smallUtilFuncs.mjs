@@ -106,6 +106,34 @@ export async function loadNetworkAndApiKey(networkName = null) {
 export function sortByTextField(arr, prop, defaultVal = "") {
     return arr.sort((a,b) => (a[prop]||defaultVal).localeCompare(b[prop]||defaultVal));
 }
+
+export function tablifyOptions(objArr, fields=[], valueFn=(v)=>v.value, disabledFn=(o)=>o.disabled, seperator=" | ") {
+    for (let x = 0; x < fields.length; x++) {
+        const field = fields[x];
+        field._maxLen = Math.max(...objArr.map(obj => (obj[field.name]||"").length ));
+        field.defaultValue = field.defaultValue || "";
+        field._nameTemplate = `obj.${field.name}`;
+        if ( typeof field.defaultValue === "function" ) {
+            field._nameTemplate += ` || fields[${x}].defaultValue(obj, fields[${x}])`;
+        }
+        else if ( typeof field.formatter !== "function" ) {
+            field._nameTemplate += ` || "${field.defaultValue}"`;
+        }
+
+        if ( typeof field.formatter === "function" ) {
+            field._nameTemplate = `fields[${x}].formatter(${field._nameTemplate}, obj, fields[${x}])||""`;
+        }
+        field._nameTemplate = `(${field._nameTemplate}).padEnd(${field._maxLen}, " ")`;
+    }
+
+    const objToNameFn = new Function("obj", "fields", `return "| " + [${fields.map(f => f._nameTemplate).join(",")}].join("${seperator}")`);
+    return objArr.map(obj => ({
+        name: objToNameFn(obj, fields),
+        value: valueFn(obj),
+        disabled: disabledFn(obj)
+    }))
+}
+
 export function setLastConnectedOnUser(nodeObj) {
     if ( !nodeObj.Device || !nodeObj.User ) return;
     const MIN_DATE = new Date(-8640000000000000);
@@ -139,7 +167,11 @@ export async function execCmd(cmd, opts={}) {
     if (code === 0) {
         const rawOutput = await p.output();
         return new TextDecoder().decode(rawOutput);
-    } else {
+    }
+    else if ( opts.returnOnNonZeroError === true ) {
+        return code;
+    }
+    else {
         const rawError = await p.stderrOutput();
         const errorString = new TextDecoder().decode(rawError);
         throw new Error(errorString);

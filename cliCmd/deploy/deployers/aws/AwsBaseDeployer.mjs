@@ -1,10 +1,26 @@
 import {BaseDeployer} from "../BaseDeployer.mjs";
 import {Select} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
-import {execCmd} from "../../../../utils/smallUtilFuncs.mjs";
+import {execCmd, tablifyOptions} from "../../../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../../../utils/log.js";
 
 export class AwsBaseDeployer extends BaseDeployer {
+
+    async checkAvailable() {
+        if ( Deno.build.os === "windows" ) {
+            // TODO
+        }
+        else {
+            const output = await execCmd(["command", "-v", "aws"], {returnOnNonZeroError: true});
+            if (typeof output === "string") {
+                return true;
+            } else {
+                const errorMsg = "AWS CLI not detected on path. Please check that it is installed.";
+                Log.error(errorMsg);
+                throw new Error(errorMsg);
+            }
+        }
+    }
 
     getAwsEc2Command(command, options = {}) {
         const cliOptions = this.cliOptions;
@@ -183,13 +199,16 @@ export class AwsBaseDeployer extends BaseDeployer {
 
     async selectVpc() {
         const [vpcs, defaultVpc] = await this.getVpcs();
-        const maxNameLength = Math.max(...vpcs.map(vpc => vpc.Name.length));
+        const fields = [
+            {name: "VpcId"},
+            {name: "Name"},
+            {name: "CidrBlock"},
+            {name: "IsDefault", formatter: (value) => value === true ? Colors.italic("(Default)"):""}
+        ]
+        const options = tablifyOptions(vpcs, fields, (v) => v.VpcId);
         const vpcId = await Select.prompt({
             message: "Choose VPC",
-            options: vpcs.map(vpc => ({
-                name: `${vpc.VpcId} - ${vpc.Name.padEnd(maxNameLength, " ")} - ${vpc.CidrBlock} ${vpc.IsDefault ? Colors.italic("(Default)"):""}`,
-                value: vpc.VpcId
-            })),
+            options: options,
             default: defaultVpc ? defaultVpc.VpcId : undefined
         });
         return vpcs.find(vpc => vpc.VpcId === vpcId);
@@ -200,16 +219,20 @@ export class AwsBaseDeployer extends BaseDeployer {
         if ( subnets.length === 0 ) {
             throw new Error("There are no subnets in the selected VPC.");
         }
-        const maxNameLength = Math.max(...subnets.map(subnet => subnet.Name.length));
+
+        const fields = [
+            {name: "SubnetId"},
+            {name: "Name"},
+            {name: "CidrBlock"},
+            {name: "outboundInternet", formatter: (v) => Colors.italic(v)}
+        ]
+        const options = tablifyOptions(subnets, fields, (o) => o.SubnetId, (o) => o.outboundInternet === "NO INTERNET");
+
         const defaultSubnet = subnets.find(s => s.outboundNat != null ) || subnets.find(s => s.outboundIgw != null )
         if ( defaultSubnet === undefined ) throw new Error(`No subnet detected that has outbound internet access (via a 0.0.0.0/0 route) to an Internet or NAT Gateway`);
         const subnetId = await Select.prompt({
             message: "Choose subnet",
-            options: subnets.map(subnet => ({
-                name: `${subnet.SubnetId} - ${subnet.Name.padEnd(maxNameLength, " ")} - ${subnet.CidrBlock} - ${Colors.italic(subnet.outboundInternet)}`,
-                value: subnet.SubnetId,
-                disabled: subnet.outboundInternet === "NO INTERNET"
-            })),
+            options,
             hint: subnets.some(s => s.outboundInternet === "Internet Gateway") ? "If you select a subnet with an Internet Gateway then an Elastic Public IP will be assigned to your connector" : undefined,
             default: defaultSubnet ? defaultSubnet.SubnetId : undefined
         });
@@ -218,6 +241,7 @@ export class AwsBaseDeployer extends BaseDeployer {
 
     async deploy() {
         await super.deploy();
+        await this.checkAvailable();
         if (!this.cliOptions.region) {
             this.cliOptions.region = await this.selectRegion();
         } else {

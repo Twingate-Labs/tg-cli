@@ -117,6 +117,7 @@ export class AwsEcsDeployer extends AwsBaseDeployer {
         const ecsClusters = await this.getEcsClusters();
         if (ecsClusters.length === 0) {
             Log.error(`No ECS clusters found in region.`);
+            throw new Error("No ECS clusters found in region");
         } else if (ecsClusters.length === 1) {
             Log.info(`Only 1 active ECS cluster in region: ${Colors.italic(ecsClusters[0].clusterName)}`);
             return ecsClusters[0];

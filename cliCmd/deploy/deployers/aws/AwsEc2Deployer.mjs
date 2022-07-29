@@ -19,7 +19,7 @@ export class AwsEc2Deployer extends AwsBaseDeployer {
         return amis.length > 0 ? amis[amis.length - 1] : null;
     }
 
-    async getKeyPairs(cliOptions) {
+    async getKeyPairs() {
         const cmd = this.getAwsEc2Command("describe-key-pairs");
         const output = await execCmd(cmd);
         return JSON.parse(output).KeyPairs;

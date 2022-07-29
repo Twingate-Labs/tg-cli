@@ -1,11 +1,38 @@
 import {Input, Select} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
-import {loadClientForCLI} from "../../../utils/smallUtilFuncs.mjs";
+import {execCmd, loadClientForCLI, sortByTextField} from "../../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../../utils/log.js";
 
 export class BaseDeployer {
     constructor(cliOptions) {
         this.cliOptions = cliOptions;
+    }
+
+
+    async checkSshKeygenAvailable(throwError=false) {
+        if ( Deno.build.os === "windows" ) {
+            // TODO
+        }
+        else {
+            const output = await execCmd(["command", "-v", "ssh-keygen"], {returnOnNonZeroError: true});
+            if (typeof output === "string") {
+                return true;
+            }
+            else if (throwError) {
+                const errorMsg = "ssh-keygen not detected on path. Please check that it is installed.";
+                Log.error(errorMsg);
+                throw new Error(errorMsg);
+            }
+            else {
+                return false;
+            }
+        }
+    }
+
+    async generateSshKey(name) {
+        const cmd = ["ssh-keygen", "-t", "ed25519", "-C", name, "-f", `id_ed25519_tg-${name}`, "-q", "-N", '""'];
+        const output = await execCmd(cmd, {returnOnNonZeroError: true});
+        return typeof output === "string";
     }
 
     async selectRemoteNetwork() {
@@ -22,7 +49,7 @@ export class BaseDeployer {
         } else {
             const remoteNetworkId = await Select.prompt({
                 message: "Choose Remote Network",
-                options: remoteNetworks.map(rn => ({name: rn.name, value: rn.id}))
+                options: sortByTextField(remoteNetworks, "name").map(rn => ({name: rn.name, value: rn.id}))
             });
             remoteNetwork = remoteNetworks.find(remoteNetwork => remoteNetwork.id === remoteNetworkId);
         }

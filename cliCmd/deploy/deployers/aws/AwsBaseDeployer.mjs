@@ -12,14 +12,22 @@ export class AwsBaseDeployer extends BaseDeployer {
         }
         else {
             const output = await execCmd(["command", "-v", "aws"], {returnOnNonZeroError: true});
-            if (typeof output === "string") {
-                return true;
-            } else {
+            if (typeof output !== "string") {
                 const errorMsg = "AWS CLI not detected on path. Please check that it is installed.";
                 Log.error(errorMsg);
                 throw new Error(errorMsg);
             }
         }
+
+        const cmd = ["aws", "sts", "get-caller-identity"];
+        if (this.cliOptions.profile != null) cmd.push("--profile", this.cliOptions.profile);
+        const output = await execCmd(cmd, {returnOnNonZeroError: true});
+        if ( typeof output === "number" ) {
+            Log.error(`'aws sts get-caller-identity' returned non-zero exit code: ${output} - please check AWS CLI is configured correctly.`);
+        }
+        const awsIdentity = JSON.parse(output);
+        Log.info(`Using AWS ARN: ${awsIdentity.Arn}`);
+        return awsIdentity;
     }
 
     getAwsEc2Command(command, options = {}) {

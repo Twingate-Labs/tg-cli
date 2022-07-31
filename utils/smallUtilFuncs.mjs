@@ -103,6 +103,25 @@ export async function loadNetworkAndApiKey(networkName = null) {
     }
 }
 
+export async function loadExternalKey(type, env = null) {
+    let key = null,
+        keyConf = null;
+    if ( env != null && Deno.env.get(env) != null ) {
+        key = Deno.env.get(env);
+        return [key, false];
+    }
+    const
+        keyFile = ".tgkeys",
+        keyFilePath = `./${keyFile}`
+    ;
+
+    if (false === await fileExists(keyFilePath)) return [null, false];
+    let confFileData = await decryptData(await Deno.readFile(keyFilePath));
+    keyConf = JSON.parse(confFileData);
+    if ( !Array.isArray(keyConf.extKeys) ) return [null, true];
+    return keyConf.extKeys.find(extKey => extKey.type === type);
+}
+
 export function sortByTextField(arr, prop, defaultVal = "") {
     return arr.sort((a,b) => (a[prop]||defaultVal).localeCompare(b[prop]||defaultVal));
 }

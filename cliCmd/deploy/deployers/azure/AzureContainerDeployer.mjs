@@ -11,12 +11,41 @@ export class AzureContainerDeployer extends AzureBaseDeployer {
 
 
     async createContainer(resourceGroupName, vnetName, subnetName, name) {
-        /*const cmd = this.getMultipassCommand("launch", null);
-        cmd.push("-n", name);
-        cmd.push("--cloud-init", cloudInitFile);
-        cmd.push("22.04");
-        const [code, output, error] = await execCmd2(cmd);
-        return [code, output, error];*/
+        /*
+        const cmd = this.getAzureCommand("vm", "create");
+        cmd.push("-g", resourceGroupName);
+        cmd.push("--vnet-name", vnetName);
+        cmd.push("--name", name);
+        cmd.push("--accept-term");
+        // See https://docs.microsoft.com/en-gb/azure/virtual-machines/automatic-vm-guest-patching#supported-os-images
+        // cmd.push("--image", "canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:latest");
+        cmd.push("--image", "canonical:0001-com-ubuntu-server-focal:20_04-lts:latest");
+        //cmd.push("--image", "canonical:0001-com-ubuntu-minimal-focal:minimal-20_04-lts:latest");
+        cmd.push("--custom-data", customData);
+        cmd.push("--enable-hotpatching");
+        cmd.push("--patch-mode", "AutomaticByPlatform");
+        cmd.push("--size", size);
+        if ( keyName === "" ) {
+            cmd.push("--generate-ssh-keys");
+        }
+        else if ( typeof keyName === "string" ) {
+            cmd.push("--ssh-key-name", keyName);
+        }
+        cmd.push("--subnet", subnetName);
+        cmd.push("--tags", "Service=twingate-connector");
+        if ( assignPublicIp === false ) {
+            cmd.push("--public-ip-address", "");
+        }
+        else {
+            cmd.push("--public-ip-sku", "Standard");
+        }
+        cmd.push("--nic-delete-option", "Delete");
+        cmd.push("--os-disk-delete-option", "Delete");
+        //cmd.push("--ephemeral-os-disk");
+        //cmd.push("--ephemeral-os-disk-placement", "CacheDisk");
+        cmd.push("--nsg", "twingate-connectorNSG");
+        cmd.push("--nsg-rule", "NONE");
+        */
     }
 
     async deploy() {

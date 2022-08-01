@@ -4,36 +4,48 @@ import * as Colors from "https://deno.land/std/fmt/colors.ts";
 import {execCmd, sortByTextField, tablifyOptions} from "../../../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../../../utils/log.js";
 
-export class AzureBaseDeployer extends BaseDeployer {
+export class GCloudBaseDeployer extends BaseDeployer {
 
     constructor(cliOptions) {
         super(cliOptions);
-        this.cliCommand = "az";
+        this.cliCommand = "gcloud";
     }
 
-    getAzureCommand(command, subCommand = null, options = {}) {
+    getGCloudCommand(command, subCommand = null, options = {}) {
         const cliOptions = this.cliOptions;
         let cmd = [this.cliCommand, command];
         if ( typeof subCommand === "string" ) cmd.push(subCommand);
-        if (cliOptions.subscription != null) {
-            cmd.push("--subscription", cliOptions.subscription);
+        cliOptions.push("--format", "json");
+        if (cliOptions.project != null) {
+            cmd.push("--project", cliOptions.project);
         }
         return cmd;
     }
 
-    async getCurrentSubscription() {
-        const cmd = this.getAzureCommand("account", "show");
-        const output = await execCmd(cmd);
-        const subscription = JSON.parse(output);
-        if ( typeof subscription !== "object" ) {
-            Log.error("Unable to fetch subscription, check that you are logged in to Azure.");
-            throw new Error("Not able to get subscription");
+    getGCloudComputeCommand(command, subCommand = null, options = {}) {
+        const cliOptions = this.cliOptions;
+        let cmd = [this.cliCommand, "compute", command];
+        if ( typeof subCommand === "string" ) cmd.push(subCommand);
+        cliOptions.push("--format", "json");
+        if (cliOptions.project != null) {
+            cmd.push("--project", cliOptions.project);
         }
-        return subscription;
+        return cmd;
+    }
+
+    async getCurrentProject() {
+        const cmd = this.getGCloudCommand("config", "list");
+        const output = await execCmd(cmd);
+        const account = JSON.parse(output).core;
+        if ( typeof account !== "object" ) {
+            Log.error("Unable to fetch project, check that you are logged in to GCloud.");
+            throw new Error("Not able to get project");
+        }
+        return account;
     }
 
     async getResourceGroups() {
-        const cmd = this.getAzureCommand("group", "list");
+        const cmd = this.getGCloudComputeCommand("networks", "list");
         const output = await execCmd(cmd);
         let resourceGroups = JSON.parse(output);
         resourceGroups = sortByTextField(resourceGroups, "name");

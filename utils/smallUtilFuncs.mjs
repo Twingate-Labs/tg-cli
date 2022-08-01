@@ -197,6 +197,21 @@ export async function execCmd(cmd, opts={}) {
     }
 }
 
+export async function execCmd2(cmd, opts={}) {
+    const p = Deno.run(Object.assign({
+        cmd,
+        stdout: "piped",
+        stderr: "piped",
+    }, opts));
+
+    const { code } = await p.status();
+    const decoder = new TextDecoder();
+    const output = decoder.decode(await p.output());
+    let error = decoder.decode(await p.stderrOutput());
+    if ( opts.stdErrToArray === true && typeof error === "string") error = error.split(/\r?\n/);
+    return [code, output, error];
+}
+
 const portTestRegEx = /^[0-9]+$/;
 export const AFFIRMATIVES = ["YES", "Y", "TRUE", "T"]
 export function tryProcessPortRestrictionString(restrictions) {

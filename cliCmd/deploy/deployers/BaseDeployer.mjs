@@ -6,8 +6,23 @@ import {Log} from "../../../utils/log.js";
 export class BaseDeployer {
     constructor(cliOptions) {
         this.cliOptions = cliOptions;
+        this.cliCommand = null;
     }
 
+    async checkAvailable() {
+        if ( typeof this.cliCommand !== "string" ) return null;
+        if (Deno.build.os === "windows") {
+            // TODO
+        } else {
+            const output = await execCmd(["command", "-v", this.cliCommand], {returnOnNonZeroError: true});
+            if (typeof output !== "string") {
+                const errorMsg = `'${this.cliCommand}' CLI not detected on path. Please check that it is installed.`;
+                Log.error(errorMsg);
+                throw new Error(errorMsg);
+            }
+        }
+        return true;
+    }
 
     async checkSshKeygenAvailable(throwError=false) {
         if ( Deno.build.os === "windows" ) {

@@ -5,21 +5,14 @@ import {execCmd, sortByTextField, tablifyOptions} from "../../../../utils/smallU
 import {Log} from "../../../../utils/log.js";
 
 export class AwsBaseDeployer extends BaseDeployer {
+    constructor(cliOptions) {
+        super(cliOptions);
+        this.cliCommand = "aws";
+    }
 
     async checkAvailable() {
-        if ( Deno.build.os === "windows" ) {
-            // TODO
-        }
-        else {
-            const output = await execCmd(["command", "-v", "aws"], {returnOnNonZeroError: true});
-            if (typeof output !== "string") {
-                const errorMsg = "AWS CLI not detected on path. Please check that it is installed.";
-                Log.error(errorMsg);
-                throw new Error(errorMsg);
-            }
-        }
-
-        const cmd = ["aws", "sts", "get-caller-identity"];
+        await super.checkAvailable();
+        const cmd = [this.cliCommand, "sts", "get-caller-identity"];
         if (this.cliOptions.profile != null) cmd.push("--profile", this.cliOptions.profile);
         const output = await execCmd(cmd, {returnOnNonZeroError: true});
         if ( typeof output === "number" ) {
@@ -32,7 +25,7 @@ export class AwsBaseDeployer extends BaseDeployer {
 
     getAwsEc2Command(command, options = {}) {
         const cliOptions = this.cliOptions;
-        let cmd = ["aws", "ec2", command];
+        let cmd = [this.cliCommand, "ec2", command];
         options = Object.assign({
             outputJson: true,
             noPaginate: true,
@@ -66,7 +59,7 @@ export class AwsBaseDeployer extends BaseDeployer {
 
     async getAwsCurrentRegion() {
         const cliOptions = this.cliOptions;
-        const cmd = ["aws", "configure", "get", "region"];
+        const cmd = [this.cliCommand, "configure", "get", "region"];
         if (cliOptions.profile != null) {
             cmd.push("--profile", cliOptions.profile);
         }

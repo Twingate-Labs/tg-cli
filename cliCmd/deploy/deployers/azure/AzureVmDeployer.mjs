@@ -1,7 +1,7 @@
 import {BaseDeployer} from "../BaseDeployer.mjs";
 import {Input, Select} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
-import {execCmd, tablifyOptions} from "../../../../utils/smallUtilFuncs.mjs";
+import {execCmd, execCmd2, tablifyOptions} from "../../../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../../../utils/log.js";
 import {AzureBaseDeployer} from "./AzureBaseDeployer.mjs";
 import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
@@ -99,18 +99,20 @@ runcmd:
         const cmd = this.getAzureCommand("sshkey", "create");
         cmd.push("-n", keyName);
         cmd.push("-g", resourceGroupName);
-        cmd.push("--tags", "Service=twingate-connector");
-        const output = await execCmd(cmd);
+            cmd.push("--tags", "Service=twingate-connector");
+        const [code, output, errors] = await execCmd2(cmd, {stdErrToArray: true});
+        if ( code !== 0 ) {
+            errors.forEach(Log.error);
+            Log.error(`Could not create SSH key.`);
+        }
+        else {
+            errors.forEach(Log.info);
+        }
         return JSON.parse(output);
-        /*const created = await this.generateSshKey(keyName);
-        if ( created !== true ) {
-            throw new Error("Could not create ssh key");
-        }*/
-
     }
     async selectKeyPair(resourceGroupName) {
-        const keyPairs = await this.getKeyPairs(resourceGroupName),
-              sshKeygenAvailable = await this.checkSshKeygenAvailable();
+        const keyPairs = await this.getKeyPairs(resourceGroupName);
+              //sshKeygenAvailable = await this.checkSshKeygenAvailable();
 
         const useKeyPair = await Select.prompt({
             message: "SSH Public Key",
@@ -124,9 +126,9 @@ runcmd:
         });
         if ( useKeyPair === "SKIP" ) return null;
         else if ( useKeyPair === "NEW" ) {
-            const keyName = await Input.prompt({message: "Key name"});
+            const keyName = await Input.prompt({message: "Key name", default: "tg-connector"});
             await this.createSshKey(keyName, resourceGroupName);
-            return "";
+            return keyName;
         }
         else {
             const keyName = await Select.prompt({
@@ -190,7 +192,7 @@ runcmd:
             location = resourceGroup.location,
             vnet = await this.selectVirtualNetwork(resourceGroup.name),
             subnet = await this.selectSubnet(vnet.subnets),
-            keyName = null,// await this.selectKeyPair(resourceGroup.name),
+            keyName = await this.selectKeyPair(resourceGroup.name),
             assignPublicIp = subnet.natGateway == null,
             size = options.size || "Standard_B1ms",
             hostname = `tg-${connector.name}`

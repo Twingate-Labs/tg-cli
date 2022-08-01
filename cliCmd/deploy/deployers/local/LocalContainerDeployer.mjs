@@ -27,7 +27,7 @@ export class LocalContainerDeployer extends BaseDeployer {
         return cmd;
     }
 
-    async createContainer(name, accountUrl, tokens, cloudInitFile) {
+    async createContainer(name, accountUrl, tokens) {
         const cmd = this.getDockerCommand("run");
         cmd.push("-d");
         cmd.push("--sysctl", "net.ipv4.ping_group_range=0 2147483647");

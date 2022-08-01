@@ -35,6 +35,30 @@ export function getGroupFromResourceCommands(name) {
 }
 
 
+
+export function getUserGroupCommands(name) {
+    let cmd = null;
+    switch (name) {
+        case "user":
+            cmd = new Command()
+                .arguments("<userId:string>")
+                .description(`get a list of groups which the user has access to`)
+                .hidden()
+                .action(async (options, userId) => {
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
+                    options.accountName = networkName;
+
+                    let query = client.getRootNodePagedQuery("UserGroups", "user", "groups", ["id", "name"])
+                    let results = await client.fetchAllRootNodePages(query, {id: userId});
+                    console.dir(JSON.stringify(results));
+                });
+            break;
+    }
+    return cmd;
+}
+
+
 export function getResourceFromGroupCommands(name) {
     let cmd = null;
     switch (name) {

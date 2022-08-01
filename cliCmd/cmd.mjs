@@ -18,7 +18,12 @@ import {
     getRemoveGroupFromResourceCommands, getRemoveResourceFromGroupCommands
 } from "./cmdGroupResource.mjs"
 import {getServiceAccountKeyCreateCommands} from "./serviceAccountKey.mjs";
-import {getGroupFromResourceCommands, getResourceFromGroupCommands, getAllUserEmailCommands} from "./getCmd.mjs";
+import {
+    getUserGroupCommands,
+    getGroupFromResourceCommands,
+    getResourceFromGroupCommands,
+    getAllUserEmailCommands,
+} from "./getCmd.mjs";
 
 export function getTopLevelCommand(name) {
 
@@ -61,9 +66,11 @@ export function getTopLevelCommand(name) {
     let getResourceFromGroup = getResourceFromGroupCommands(name)
     if ( getResourceFromGroup !== null ) cmd = cmd.command("get_resource", getResourceFromGroup)
 
-    let getUserFromGroup = getAllUserEmailCommands(name)
-    if ( getUserFromGroup !== null ) cmd = cmd.command("get_email", getUserFromGroup)
+    let getAllUserEmail = getAllUserEmailCommands(name)
+    if ( getAllUserEmail !== null ) cmd = cmd.command("get_email", getAllUserEmail)
 
+    let getUserGroup = getUserGroupCommands(name)
+    if ( getUserGroup !== null ) cmd = cmd.command("get_groups", getUserGroup)
 
     let addResourceToGroup = getAddResourceToGroupCommands(name)
     if ( addResourceToGroup !== null ) cmd = cmd.command("add_resource", addResourceToGroup)

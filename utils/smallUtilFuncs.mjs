@@ -198,16 +198,17 @@ export async function execCmd(cmd, opts={}) {
 }
 
 export async function execCmd2(cmd, opts={}) {
-    const p = Deno.run(Object.assign({
-        cmd,
-        stdout: "piped",
-        stderr: "piped",
-    }, opts));
-
-    const { code } = await p.status();
-    const decoder = new TextDecoder();
-    const output = decoder.decode(await p.output());
-    let error = decoder.decode(await p.stderrOutput());
+    const runCommand = Object.assign({
+            cmd,
+            stdout: "piped",
+            stderr: "piped",
+        }, opts),
+        p = Deno.run(runCommand),
+        { code } = await p.status(),
+        decoder = new TextDecoder(),
+        output = runCommand.stdout === "piped" ? decoder.decode(await p.output()) : null
+    ;
+    let error = runCommand.stderr === "piped" ? decoder.decode(await p.stderrOutput()) : null;
     if ( opts.stdErrToArray === true && typeof error === "string") error = error.split(/\r?\n/);
     return [code, output, error];
 }

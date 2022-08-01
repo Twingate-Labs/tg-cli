@@ -1,9 +1,5 @@
 import {BaseDeployer} from "../BaseDeployer.mjs";
-import {Input, Select} from "https://deno.land/x/cliffy/prompt/mod.ts";
-import * as Colors from "https://deno.land/std/fmt/colors.ts";
-import {execCmd, execCmd2, tablifyOptions} from "../../../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../../../utils/log.js";
-import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
 import {ConnectorCloudInit} from "../../ConnectorCloudInit.js";
 
 export class LocalVmDeployer extends BaseDeployer {

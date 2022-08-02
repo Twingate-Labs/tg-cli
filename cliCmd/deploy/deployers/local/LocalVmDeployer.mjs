@@ -54,7 +54,8 @@ export class LocalVmDeployer extends BaseDeployer {
                     hostname,
                     deployedBy: "tgcli-local-vm",
                     egress_ip: "$(curl -s https://checkip.amazonaws.com)"
-                }),
+                })
+                .configure(),
             cloudConfigFile = await Deno.makeTempFile({dir: "./", prefix: 'CloudConfig', suffix: ".yaml"})
         ;
 

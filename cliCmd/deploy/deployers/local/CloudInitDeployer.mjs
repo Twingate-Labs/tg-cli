@@ -2,7 +2,7 @@ import {BaseDeployer} from "../BaseDeployer.mjs";
 import {Log} from "../../../../utils/log.js";
 import {ConnectorCloudInit} from "../../ConnectorCloudInit.js";
 
-export class LocalVmDeployer extends BaseDeployer {
+export class CloudInitDeployer extends BaseDeployer {
 
     constructor(cliOptions) {
         super(cliOptions);
@@ -28,14 +28,15 @@ export class LocalVmDeployer extends BaseDeployer {
                     hostname,
                     deployedBy: options.deployedBy || "tgcli-cloudconfig",
                     egress_ip: "$(curl -s https://checkip.amazonaws.com)"
-                }),
+                })
+                .configure(),
             cloudConfigFile = await Deno.makeTempFile({dir: "./", prefix: `CloudConfig-${hostname}`, suffix: ".yaml"})
         ;
 
 
         try {
             await Deno.writeTextFile(cloudConfigFile, cloudConfig.getConfig());
-            Log.success(`Cloud config file saved to: ${cloudConfig}\n`);
+            Log.success(`Cloud config file saved to: ${cloudConfigFile}\n`);
         }
         catch (e) {
             Log.error(e);

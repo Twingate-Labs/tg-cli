@@ -42,11 +42,6 @@ export class ConnectorCloudInit {
             {
               "content": "[Service]\nPermissionsStartOnly=true\nExecStartPre=/usr/sbin/twingate_refresh_conf\nEnvironmentFile=\nEnvironmentFile=/etc/twingate/connector.live\n",
               "path": "/etc/systemd/system/twingate-connector.service.d/override.conf"
-            },
-            {
-              "content": `Unattended-Upgrade::Origins-Pattern { "site=packages.twingate.com"; };`,
-              "append": true,
-              "path": "/etc/apt/apt.conf.d/50unattended-upgrades"
             }
         ];
     }
@@ -83,18 +78,19 @@ export class ConnectorCloudInit {
         return this;
     }
 
-    configure(options) {
+    configure(options = {}) {
         Object.assign(options, {
             autoUpdate: true
         }, options);
 
         if ( options.autoUpdate) {
             this.addFile({
-                "content": "Unattended-Upgrade::Origins-Pattern {\n  \"site=packages.twingate.com\";\n};",
+                "content": "\nUnattended-Upgrade::Origins-Pattern {\n  \"site=packages.twingate.com\";\n};\n",
                 "append": true,
                 "path": "/etc/apt/apt.conf.d/50unattended-upgrades"
             });
         }
+        return this;
     }
 
     addFile(fileObj) {
@@ -117,6 +113,6 @@ export class ConnectorCloudInit {
     }
 
     getConfig() {
-        return `#cloud-config\n${jsYaml.dump(this.getConfigJson(), {})}`
+        return `#cloud-config\n${jsYaml.dump(this.getConfigJson(), {lineWidth: 1000})}`
     }
 }

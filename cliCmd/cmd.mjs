@@ -70,7 +70,7 @@ export function getTopLevelCommand(name) {
     if ( getAllUserEmail !== null ) cmd = cmd.command("get_email", getAllUserEmail)
 
     let getUserGroup = getUserGroupCommands(name)
-    if ( getUserGroup !== null ) cmd = cmd.command("get_groups", getUserGroup)
+    if ( getUserGroup !== null ) cmd = cmd.command("get_group", getUserGroup)
 
     let addResourceToGroup = getAddResourceToGroupCommands(name)
     if ( addResourceToGroup !== null ) cmd = cmd.command("add_resource", addResourceToGroup)

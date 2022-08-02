@@ -71,7 +71,7 @@ export function getResourceFromGroupCommands(name) {
                     const {networkName, apiKey, client} = await loadClientForCLI(options);
                     options.apiKey = apiKey;
                     options.accountName = networkName;
-                    let query = client.getRootNodePagedQuery("GroupResources", "group", "resources", ["id", "name"])
+                    let query = client.getRootNodePagedQuery("GroupResources", "group", "resources", ["id", "name", "address{value}"])
                     let results = await client.fetchAllRootNodePages(query, {id: groupId});
                     console.dir(JSON.stringify(results));
                 });

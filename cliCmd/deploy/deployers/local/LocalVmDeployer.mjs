@@ -35,7 +35,7 @@ export class LocalVmDeployer extends BaseDeployer {
         cmd.push("-n", name);
         cmd.push("--cloud-init", cloudInitFile);
         cmd.push("22.04");
-        const [code, output, error] = await execCmd2(cmd);
+        const [code, output, error] = await execCmd2(cmd, {stdout: "inherit"});
         return [code, output, error];
     }
 

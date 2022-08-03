@@ -122,6 +122,19 @@ export async function loadExternalKey(type, env = null) {
     return keyConf.extKeys.find(extKey => extKey.type === type);
 }
 
+export function formatBinary(bytes, units="Bytes", decimals = 2) {
+    if (bytes === 0) return `0 ${units}`;
+    const
+        k = 1024,
+        dm = decimals < 0 ? 0 : decimals,
+        sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+        o = sizes.indexOf(units),
+        i = Math.floor(Math.log(bytes) / Math.log(k))
+    ;
+    if ( o === -1 ) throw new Error(`Unit must be one of: ${sizes.map(s=>`'${s}'`).join(", ")}`);
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i+o];
+}
+
 export function sortByTextField(arr, prop, defaultVal = "") {
     return arr.sort((a,b) => (a[prop]||defaultVal).localeCompare(b[prop]||defaultVal));
 }
@@ -129,7 +142,10 @@ export function sortByTextField(arr, prop, defaultVal = "") {
 export function tablifyOptions(objArr, fields=[], valueFn=(v)=>v.value, disabledFn=(o)=>o.disabled, seperator=" | ") {
     for (let x = 0; x < fields.length; x++) {
         const field = fields[x];
-        field._maxLen = Math.max(...objArr.map(obj => (obj[field.name]||"").length ));
+        field._maxLen = Math.max(...objArr.map(obj => {
+            if ( field.formatter ) return field.formatter(obj[field.name]||"", obj, field).length;
+            return (obj[field.name]||"").length;
+        }));
         field.defaultValue = field.defaultValue || "";
         field._nameTemplate = `obj.${field.name}`;
         if ( typeof field.defaultValue === "function" ) {

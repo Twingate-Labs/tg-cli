@@ -201,7 +201,7 @@ export class GcpVmDeployer extends BaseDeployer {
         await super.deploy();
         await this.checkAvailable();
         const
-            machineType = this.cliOptions.size || "n1-standard-1",
+            machineType = this.cliOptions.machineType || "n1-standard-1",
             project = await this.getCurrentProject(),
             remoteNetwork = await this.selectRemoteNetwork(),
             connector = await this.selectConnector(remoteNetwork),

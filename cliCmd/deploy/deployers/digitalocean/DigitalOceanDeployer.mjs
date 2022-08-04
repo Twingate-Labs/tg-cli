@@ -143,9 +143,10 @@ export class DigitalOceanDeployer extends BaseDeployer {
         const publicKey = await Deno.readTextFile(`${keyName}.pub`);
         const cmd = this.getDoComputeCommand("ssh-key", "create", {name: keyName});
         cmd.push("--public-key", publicKey);
-        const response = JSON.parse(await execCmd(cmd));
+        const output = await execCmd(cmd);
+        const response = JSON.parse(output)[0];
         Log.info(`Created key '${response.name}' with id '${response.id}'`)
-        return response.name;
+        return response;
     }
 
     async selectKeyPair(defaultKeyName) {
@@ -165,15 +166,14 @@ export class DigitalOceanDeployer extends BaseDeployer {
         if ( useKeyPair === "SKIP" ) return null;
         else if ( useKeyPair === "NEW" ) {
             const keyName = await Input.prompt({message: "Key name", default: defaultKeyName});
-            await this.createSshKey(keyName);
-            return keyName;
+            return await this.createSshKey(keyName);
         }
         else {
-            const keyName = await Select.prompt({
+            const keyFingerprint = await Select.prompt({
                 message: "Choose Key Pair",
-                options: keyPairs.map(keyPair => keyPair.name)
+                options: keyPairs.map(keyPair => ({name: keyPair.name, value: keyPair.fingerprint}))
             });
-            return keyName;
+            return keyPairs.find(keyPair => keyPair.fingerprint === keyFingerprint);
         }
     }
 
@@ -209,7 +209,7 @@ export class DigitalOceanDeployer extends BaseDeployer {
         cmd.push("--region", region.slug);
         cmd.push("--size", size);
         cmd.push("--tag-name", "twingate");
-        if ( sshKey !== null ) cmd.push("--ssh-keys", sshKey);
+        if ( sshKey !== null ) cmd.push("--ssh-keys", sshKey.id);
         cmd.push("--user-data", cloudConfig);
         cmd.push("--wait");
         if ( vpcUuid !== null ) cmd.push("--vpc-uuid", vpcUuid);
@@ -268,7 +268,7 @@ export class DigitalOceanDeployer extends BaseDeployer {
                 Log.info(Colors.italic(`tg resource create "${remoteNetwork.name}" "Connector host ${droplet.name}" "${droplet.privateIp.ip_address}" Everyone`));
                 Log.info(`Once done and authenticated to Twingate you can connect to the instance via SSH using the following command:`);
                 if (sshKey) {
-                    Log.info(`${Colors.italic(`ssh -i ${sshKey} root@${droplet.privateIp.ip_address}`)}`);
+                    Log.info(`${Colors.italic(`ssh -i ${sshKey.name} root@${droplet.privateIp.ip_address}`)}`);
                 }
                 else {
                     Log.info(`${Colors.italic(`ssh root@${droplet.privateIp.ip_address}`)}`);

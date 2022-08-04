@@ -45,7 +45,7 @@ export class BaseDeployer {
     }
 
     async generateSshKey(name) {
-        const cmd = ["ssh-keygen", "-t", "ed25519", "-C", name, "-f", name, "-q", "-N", '""'];
+        const cmd = ["ssh-keygen", "-t", "ed25519", "-C", name, "-f", name, "-q", "-N", ''];
         const [code, output, error] = await execCmd2(cmd, {stdout: "inherit"});
         if ( code !== 0 ) Log.error(`ssh-keygen returned: ${error}`);
         return code === 0;

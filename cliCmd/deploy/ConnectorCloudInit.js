@@ -27,7 +27,7 @@ export class ConnectorCloudInit {
             [ "systemctl", "enable", "twingate-connector.service" ],
             [ "systemctl", "start", "--no-block", "twingate-connector.service" ]
         ];
-        // echo "ListenAddress $(ip route get 8.8.8.8 | awk '{print $7; exit}')" >> /etc/ssh/sshd_config.d/ListenLocal
+        // echo "ListenAddress $(ip addr show eth1 | awk '/inet / {print $2}' | cut -d/ -f1)" >> /etc/ssh/sshd_config.d/ListenPrivateIp.conf
         this.files = [
             {
               "content": "#!/bin/bash\nsudo touch /etc/twingate/connector.debug\nsudo systemctl restart twingate-connector\n",
@@ -84,10 +84,9 @@ export class ConnectorCloudInit {
         }, options);
 
         if ( options.sshLocalOnly ) {
-            this.addFile({
-                content: "ListenAddress 127.0.0.1\n",
-                path: "/etc/ssh/sshd_config.d/ListenLocal.conf"
-            })
+            this.runCommands.splice(0, 0,[
+                "bash", "-c", `echo "ListenAddress $(ip addr show eth1 | awk '/inet / {print $2}' | cut -d/ -f1)" >> /etc/ssh/sshd_config.d/ListenPrivateIp.conf`
+            ]);
         }
         if ( options.autoUpdate) {
             this.addFile({

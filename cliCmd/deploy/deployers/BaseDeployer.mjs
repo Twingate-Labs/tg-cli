@@ -1,6 +1,6 @@
 import {Input, Select} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
-import {execCmd, loadClientForCLI, sortByTextField} from "../../../utils/smallUtilFuncs.mjs";
+import {execCmd, execCmd2, loadClientForCLI, sortByTextField} from "../../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../../utils/log.js";
 
 export class BaseDeployer {
@@ -45,9 +45,10 @@ export class BaseDeployer {
     }
 
     async generateSshKey(name) {
-        const cmd = ["ssh-keygen", "-t", "ed25519", "-C", name, "-f", `id_ed25519_tg-${name}`, "-q", "-N", '""'];
-        const output = await execCmd(cmd, {returnOnNonZeroError: true});
-        return typeof output === "string";
+        const cmd = ["ssh-keygen", "-t", "ed25519", "-C", name, "-f", name, "-q", "-N", '""'];
+        const [code, output, error] = await execCmd2(cmd, {stdout: "inherit"});
+        if ( code !== 0 ) Log.error(`ssh-keygen returned: ${error}`);
+        return code === 0;
     }
 
     async selectRemoteNetwork() {

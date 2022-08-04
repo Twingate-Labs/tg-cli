@@ -144,7 +144,7 @@ export class AwsEc2Deployer extends AwsBaseDeployer {
         table.push(["Private Hostname", instance.PrivateDnsName]);
         table.push(["Security Group", `${instance.SecurityGroups[0].GroupId} (${instance.SecurityGroups[0].GroupName})`]);
         table.render();
-        Log.info(`\nPlease allow a few minutes for the instance to initialize. You should then be able to add the private IP as a resource in Twingate.`);
+        Log.info(`Please allow a few minutes for the instance to initialize. You should then be able to add the private IP as a resource in Twingate.`);
         Log.info(`You can do this via the Admin Console UI or via the CLI:`);
         Log.info(Colors.italic(`tg resource create "${rn.name}" "Connector host ${instanceName}" "${instance.PrivateIpAddress}"`));
         if (options.keyName) {

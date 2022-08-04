@@ -27,7 +27,7 @@ export class ConnectorCloudInit {
             [ "systemctl", "enable", "twingate-connector.service" ],
             [ "systemctl", "start", "--no-block", "twingate-connector.service" ]
         ];
-        // echo "Listen Address $(ip route get 8.8.8.8 | awk '{print $7; exit}')" >> /etc/ssh/sshd_config.d/ListenLocal
+        // echo "ListenAddress $(ip route get 8.8.8.8 | awk '{print $7; exit}')" >> /etc/ssh/sshd_config.d/ListenLocal
         this.files = [
             {
               "content": "#!/bin/bash\nsudo touch /etc/twingate/connector.debug\nsudo systemctl restart twingate-connector\n",
@@ -67,7 +67,7 @@ export class ConnectorCloudInit {
     setDynamicLabels(labels) {
         const tgLabels = [];
         for (const [label, value] of Object.entries(labels)) {
-          tgLabels.push(`export TWINGATE_LABEL_${label.toUpperCase()}=${value}`);
+          if ( value !== null ) tgLabels.push(`export TWINGATE_LABEL_${label.toUpperCase()}=${value}`);
         }
 
         this.addFile({
@@ -83,6 +83,12 @@ export class ConnectorCloudInit {
             autoUpdate: true
         }, options);
 
+        if ( options.sshLocalOnly ) {
+            this.addFile({
+                content: "ListenAddress 127.0.0.1\n",
+                path: "/etc/ssh/sshd_config.d/ListenLocal.conf"
+            })
+        }
         if ( options.autoUpdate) {
             this.addFile({
                 "content": "\nUnattended-Upgrade::Origins-Pattern {\n  \"site=packages.twingate.com\";\n};\n",

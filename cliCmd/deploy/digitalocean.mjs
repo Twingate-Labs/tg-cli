@@ -6,6 +6,9 @@ export const deployDoVmCommand = new Command()
     .option("--size <string>", "Default machine size", {
         default: "s-1vcpu-2gb"
     })
+    .option("--droplet-image <string>", "Default image to use (only default option is supported)", {
+        default: "ubuntu-22-04-x64"
+    })
     .action(async (options) => await (new DigitalOceanDeployer(options)).deploy());
 
 export const deployDoCommand = new Command()

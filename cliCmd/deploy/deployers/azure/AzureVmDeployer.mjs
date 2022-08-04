@@ -31,6 +31,7 @@ export class AzureVmDeployer extends AzureBaseDeployer {
         }
         return JSON.parse(output);
     }
+
     async selectKeyPair(resourceGroupName) {
         const keyPairs = await this.getKeyPairs(resourceGroupName);
               //sshKeygenAvailable = await this.checkSshKeygenAvailable();

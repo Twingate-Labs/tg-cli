@@ -23,6 +23,7 @@ import {
     getGroupFromResourceCommands,
     getResourceFromGroupCommands,
     getAllUserEmailCommands,
+    getAllGroupResourceCommands
 } from "./getCmd.mjs";
 
 export function getTopLevelCommand(name) {
@@ -77,6 +78,9 @@ export function getTopLevelCommand(name) {
 
     let serviceAccountKeyCreate = getServiceAccountKeyCreateCommands(name)
     if ( serviceAccountKeyCreate !== null ) cmd = cmd.command("key_create", serviceAccountKeyCreate)
+
+    let getAllGroupResource = getAllGroupResourceCommands(name)
+    if ( getAllGroupResource !== null ) cmd = cmd.command("get_all_resource", getAllGroupResource)
 
 
     switch (name) {

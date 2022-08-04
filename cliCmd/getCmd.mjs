@@ -88,11 +88,34 @@ export function getAllUserEmailCommands(name) {
             cmd = new Command()
                 .description(`Get email of all users`)
                 .hidden()
-                .action(async (options, groupId) => {
+                .action(async (options) => {
                     const {networkName, apiKey, client} = await loadClientForCLI(options);
                     options.apiKey = apiKey;
                     options.accountName = networkName;
                     let query = client.getTopLevelKVQuery("UserEmails", "users", "email", "id");
+                    let results = await client.fetchAllPages(query)
+                    results = Object.fromEntries(results.map(o => [o.key, o.value]))
+                    console.dir(JSON.stringify(results));
+                });
+            break;
+    }
+    return cmd;
+}
+
+
+
+export function getAllGroupResourceCommands(name) {
+    let cmd = null;
+    switch (name) {
+        case "group":
+            cmd = new Command()
+                .description(`Get resources of all groups`)
+                .hidden()
+                .action(async (options) => {
+                    const {networkName, apiKey, client} = await loadClientForCLI(options);
+                    options.apiKey = apiKey;
+                    options.accountName = networkName;
+                    let query = client.getTopLevelKVQuery("groupResources", "groups", "id", "resources{edges{node{address{value} name}}}");
                     let results = await client.fetchAllPages(query)
                     results = Object.fromEntries(results.map(o => [o.key, o.value]))
                     console.dir(JSON.stringify(results));

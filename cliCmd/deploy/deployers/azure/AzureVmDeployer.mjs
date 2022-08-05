@@ -56,18 +56,19 @@ export class AzureVmDeployer extends AzureBaseDeployer {
             const keyName = await Select.prompt({
                 message: "Choose Key Pair",
                 options: keyPairs.map(keyPair => ({
-                    name: keyPair.KeyName,
-                    value: keyPair.KeyName
+                    name: keyPair.name,
+                    value: keyPair.name
                 }))
             });
             return keyName;
         }
     }
 
-    async createVm(resourceGroupName, vnetName, subnetName, keyName, name, size, customData, assignPublicIp=false) {
+    async createVm(resourceGroupName, vnetName, vnetLocation, subnetName, keyName, name, size, customData, assignPublicIp=false) {
         const cmd = this.getAzureCommand("vm", "create");
         cmd.push("-g", resourceGroupName);
         cmd.push("--vnet-name", vnetName);
+        cmd.push("--location", vnetLocation);
         cmd.push("--name", name);
         cmd.push("--accept-term");
         // See https://docs.microsoft.com/en-gb/azure/virtual-machines/automatic-vm-guest-patching#supported-os-images
@@ -111,8 +112,8 @@ export class AzureVmDeployer extends AzureBaseDeployer {
             remoteNetwork = await this.selectRemoteNetwork(),
             connector = await this.selectConnector(remoteNetwork),
             resourceGroup = await this.selectResourceGroup(),
-            location = resourceGroup.location,
             vnet = await this.selectVirtualNetwork(resourceGroup.name),
+            location = vnet.location,
             subnet = await this.selectSubnet(vnet.subnets),
             keyName = await this.selectKeyPair(resourceGroup.name),
             assignPublicIp = subnet.natGateway == null,
@@ -135,7 +136,7 @@ export class AzureVmDeployer extends AzureBaseDeployer {
 
         Log.info("Creating VM, please wait.")
         
-        const instance = await this.createVm(resourceGroup.name, vnet.name, subnet.name, keyName, hostname, size, cloudConfig.getConfig(), assignPublicIp);
+        const instance = await this.createVm(resourceGroup.name, vnet.name, location, subnet.name, keyName, hostname, size, cloudConfig.getConfig(), assignPublicIp);
 
         Log.success(`Created Azure VM instance!\n`);
         const table = new Table();
@@ -144,5 +145,14 @@ export class AzureVmDeployer extends AzureBaseDeployer {
         table.push(["Private IP", instance.privateIpAddress]);
         if ( instance.publicIpAddress !== "" ) table.push(["Public IP", instance.publicIpAddress]);
         table.render();
+
+        Log.info(`Please allow a few minutes for the instance to initialize. You should then be able to add the private IP as a resource in Twingate.`);
+        Log.info(`You can do this via the Admin Console UI or via the CLI:`);
+        Log.info(Colors.italic(`tg resource create "${remoteNetwork.name}" "Connector host ${hostname}" "${instance.privateIpAddress}" Everyone`));
+        Log.info(`Once done and authenticated to Twingate you can connect to the instance via SSH using the following command:`);
+        Log.info(`${Colors.italic(`ssh ubuntu@${instance.privateIpAddress}`)}`);
+
+
+        return;
     }
 }

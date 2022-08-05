@@ -74,9 +74,15 @@ export class AzureBaseDeployer extends BaseDeployer {
             return vnets[0];
         }
         const fields = [
-            {name: "name"}
+            {name: "location"},
+            {name: "name"},
+            {name: "subnets", formatter: (v) => {
+                    if ( v.length === 0 ) return "No subnets";
+                    else if ( v.length === 1 ) return "1 subnet";
+                    else return `${v.length} subnets`;
+                }}
         ]
-        const options = tablifyOptions(vnets, fields, (v) => v.id);
+        const options = tablifyOptions(vnets, fields, (v) => v.id, (v) => v.subnets.length === 0);
         const vnetId = await Select.prompt({
             message: "Select Virtual Network",
             options
@@ -85,6 +91,10 @@ export class AzureBaseDeployer extends BaseDeployer {
     }
 
     async selectSubnet(subnets) {
+        if ( subnets.length === 1 ) {
+            Log.info(`Using subnet '${Colors.italic(subnets[0].name)}'`);
+            return subnets[0];
+        }
         const fields = [
             {name: "addressPrefix"},
             {name: "name"},

@@ -5,6 +5,7 @@ import {deployLocalCommand} from "./local.mjs";
 import {deployGcpCommand} from "./gcp.mjs";
 import {deployDoCommand} from "./digitalocean.mjs";
 import {deployOciCommand} from "./oci.mjs";
+import {deployHetznerCommand} from "./hetzner.mjs";
 
 export const deployCmd = new Command()
     .option("-y, --assume-yes [boolean]", "Automatic yes to prompts; assume 'yes' as answer to all prompts", {global: true})
@@ -15,6 +16,7 @@ export const deployCmd = new Command()
     .command("gcloud", deployGcpCommand)
     .command("oci", deployOciCommand)
     .command("do", deployDoCommand)
+    .command("hetzner", deployHetznerCommand)
     .command("local", deployLocalCommand)
     ;
 

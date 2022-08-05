@@ -120,7 +120,7 @@ export class OracleVmDeployer extends OracleBaseDeployer {
         cmd.push("--availability-domain", availabilityDomainName);
         const metadata = {user_data: b64encode(cloudConfig)};
         cmd.push("--metadata", JSON.stringify(metadata));
-        cmd.push("--wait-for-state", "PROVISIONING");
+        cmd.push("--wait-for-state", "RUNNING");
         const output = await execCmd(cmd);
         let instance = JSON.parse(output).data;
         return instance;
@@ -163,7 +163,9 @@ export class OracleVmDeployer extends OracleBaseDeployer {
                     ad: availabilityDomain["name"],
                     egress_ip: "$(curl -s https://checkip.amazonaws.com)"
                 })
-                .configure()
+                .configure({
+                    sshLocalOnly: "hostname -I"
+                })
         ;
 
         Log.info("Creating VM, please wait.")

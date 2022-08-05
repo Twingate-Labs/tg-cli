@@ -9,7 +9,7 @@ export class OracleBaseDeployer extends BaseDeployer {
     constructor(cliOptions) {
         super(cliOptions);
         this.cliCommand = "oci";
-        this.imageId = cliOptions.imageId || "ocid1.image.oc1.uk-london-1.aaaaaaaapjxds2saa75y4omgjantrlufeyqxqa42ptdmeok2bj73anj6g37q";
+        this.imageId = cliOptions.imageId;// || "ocid1.image.oc1.uk-london-1.aaaaaaaapjxds2saa75y4omgjantrlufeyqxqa42ptdmeok2bj73anj6g37q";
         // oci compute image list --operating-system "Canonical Ubuntu" --operating-system-version "22.04 Minimal" --lifecycle-state AVAILABLE -c ...
         // ocid1.image.oc1.uk-london-1.aaaaaaaapjxds2saa75y4omgjantrlufeyqxqa42ptdmeok2bj73anj6g37q
     }
@@ -61,7 +61,12 @@ export class OracleBaseDeployer extends BaseDeployer {
         cmd.push("--vcn-id", vcnId);
         cmd.push("-c", this.compartment.id);
         const output = await execCmd(cmd);
-        const subnets = JSON.parse(output);
+        let subnets = null;
+        try {
+            subnets = JSON.parse(output);
+        }
+        catch (e) {}
+
         if ( typeof subnets !== "object") {
             Log.error(`Unable to fetch Subnets: ${output}`);
             throw new Error("Not able to get Subnets");
@@ -172,7 +177,9 @@ export class OracleBaseDeployer extends BaseDeployer {
     }
 
     async selectShape(vcnId) {
-        const shapes = await this.getShapes(vcnId);
+        let shapes = await this.getShapes(vcnId);
+        // We don't support customisation yet...
+        shapes = shapes.filter(shape => !shape["ocpu-options"]);
         if ( shapes.length === 0 ) {
             Log.error("No Shapes available");
             throw new Error("Cannot continue - no shapes");
@@ -181,18 +188,21 @@ export class OracleBaseDeployer extends BaseDeployer {
             Log.info(`Using Shape '${Colors.italic(shapes[0].shape)}'`);
             return shapes[0];
         }
+        const defaultShape = shapes.find(shape => shape["billing-type"] === "ALWAYS_FREE");
         const fields = [
+            {name: "billing-type"},
             {name: "shape"},
             {name: "processor-description"},
-            {name: "ocpus"},
+            {name: "ocpus", formatter: (v) => (v+" CPU")},
             {name: "memory-in-gbs", formatter: (v) => (formatBinary(v, "GB"))},
-            {name: "networking-bandwidth-in-gbps", formatter: (v) => (formatBinary(v, "GB"))}
+            {name: "networking-bandwidth-in-gbps", formatter: (v) => (v + " Gbps")}
         ]
         const options = tablifyOptions(shapes, fields, (v) => v.shape);
         const shapeId = await Select.prompt({
             message: "Select Shape",
             options,
-            hint: "Only available Shapes are shown"
+            hint: "Only available Shapes are shown",
+            default: defaultShape ? defaultShape.shape : undefined
         });
         return shapes.find(shape => shape.shape === shapeId);
     }

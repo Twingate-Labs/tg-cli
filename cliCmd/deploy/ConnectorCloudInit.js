@@ -81,13 +81,14 @@ export class ConnectorCloudInit {
     configure(options = {}) {
         Object.assign(options, {
             autoUpdate: true,
-            sshLocalOnly: true,
+            sshLocalOnly: false,
             autoRebootOnUpdate: true
         }, options);
 
         if ( options.sshLocalOnly ) {
+            const localCommand = (typeof options.sshLocalOnly === "string" ) ? options.sshLocalOnly : "ip addr show eth1 | awk '/inet / {print $2}' | cut -d/ -f1";
             this.runCommands.splice(0, 0,[
-                "bash", "-c", `echo "ListenAddress $(ip addr show eth1 | awk '/inet / {print $2}' | cut -d/ -f1)" >> /etc/ssh/sshd_config.d/ListenPrivateIp.conf`
+                "bash", "-c", `echo "ListenAddress $(${localCommand})" >> /etc/ssh/sshd_config.d/ListenPrivateIp.conf`
             ]);
         }
         if ( options.autoUpdate) {

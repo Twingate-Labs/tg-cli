@@ -2,11 +2,13 @@ import {Input, Select} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
 import {execCmd, execCmd2, loadClientForCLI, sortByTextField} from "../../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../../utils/log.js";
+import * as Path from "https://deno.land/std/path/mod.ts";
 
 export class BaseDeployer {
     constructor(cliOptions) {
         this.cliOptions = cliOptions;
         this.cliCommand = null;
+        this.sshKeyDir = cliOptions.sshKeyDir || ".";
     }
 
     async checkAvailable() {
@@ -45,7 +47,8 @@ export class BaseDeployer {
     }
 
     async generateSshKey(name) {
-        const cmd = ["ssh-keygen", "-t", "ed25519", "-C", name, "-f", name, "-q", "-N", ''];
+        const filePath = Path.resolve(this.sshKeyDir, name);
+        const cmd = ["ssh-keygen", "-t", "ed25519", "-C", name, "-f", filePath, "-q", "-N", ''];
         const [code, output, error] = await execCmd2(cmd, {stdout: "inherit"});
         if ( code !== 0 ) Log.error(`ssh-keygen returned: ${error}`);
         return code === 0;

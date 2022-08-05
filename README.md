@@ -33,6 +33,10 @@ Mac
   *  ```/path/to/tg --help``` e.g. ```/apps/tg --help``` or 
   *  ```cd \path\to\tg``` followed by ```./tg --help```
 
+Compiling from source
+===========================
+* Ensure [deno](https://deno.land/#installation) is installed  
+* Execute `deno compile --allow-all --unstable --import-map ./import_map.json --output ./tg ./tg.js`
 
 Example Commands
 ===========================

@@ -80,7 +80,9 @@ export class ConnectorCloudInit {
 
     configure(options = {}) {
         Object.assign(options, {
-            autoUpdate: true
+            autoUpdate: true,
+            sshLocalOnly: true,
+            autoRebootOnUpdate: true
         }, options);
 
         if ( options.sshLocalOnly ) {
@@ -91,6 +93,13 @@ export class ConnectorCloudInit {
         if ( options.autoUpdate) {
             this.addFile({
                 "content": "\nUnattended-Upgrade::Origins-Pattern {\n  \"site=packages.twingate.com\";\n};\n",
+                "append": true,
+                "path": "/etc/apt/apt.conf.d/50unattended-upgrades"
+            });
+        }
+        if ( options.autoRebootOnUpdate ) {
+            this.addFile({
+                "content": "\nUnattended-Upgrade::Automatic-Reboot-Time \"02:00\";\n",
                 "append": true,
                 "path": "/etc/apt/apt.conf.d/50unattended-upgrades"
             });

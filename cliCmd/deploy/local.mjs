@@ -19,7 +19,7 @@ export const deployCloudInitCommand = new Command()
     .action(async (options) => await (new CloudInitDeployer(options)).deploy());
 
 export const deployLocalCommand = new Command()
-    .description("Deploy Twingate on local machine.")
+    .description("Deploy Twingate connector locally/on-prem.")
     .command("vm", deployLocalVmCommand)
     .command("container", deployLocalContainerCommand)
     .command("cloudinit", deployCloudInitCommand)

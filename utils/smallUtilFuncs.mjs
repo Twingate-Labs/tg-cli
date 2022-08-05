@@ -147,7 +147,7 @@ export function tablifyOptions(objArr, fields=[], valueFn=(v)=>v.value, disabled
             return (obj[field.name]||"").length;
         }));
         field.defaultValue = field.defaultValue || "";
-        field._nameTemplate = `obj.${field.name}`;
+        field._nameTemplate = `obj['${field.name}']`;
         if ( typeof field.defaultValue === "function" ) {
             field._nameTemplate += ` || fields[${x}].defaultValue(obj, fields[${x}])`;
         }

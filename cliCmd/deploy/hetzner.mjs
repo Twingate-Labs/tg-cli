@@ -11,7 +11,7 @@ export const deployHCloudVmCommand = new Command()
         default: "ubuntu-22-04-x64"
     })
      */
-    .action(async (options) => await (new HCloudDeployer(options)).deploy());
+    .action(async (options) => (await (new HCloudDeployer(options)).deploy()));
 
 export const deployHetznerCommand = new Command()
     .description("Deploy Twingate on Hetzner. Requires hcloud CLI to be installed.")

@@ -214,6 +214,11 @@ export async function execCmd(cmd, opts={}) {
 }
 
 export async function execCmd2(cmd, opts={}) {
+    let tee = false;
+    if ( opts.stdout === "tee") {
+        tee = true;
+        opts.stdout = "piped";
+    }
     const runCommand = Object.assign({
             cmd,
             stdout: "piped",
@@ -221,9 +226,26 @@ export async function execCmd2(cmd, opts={}) {
         }, opts),
         p = Deno.run(runCommand),
         { code } = await p.status(),
-        decoder = new TextDecoder(),
-        output = runCommand.stdout === "piped" ? decoder.decode(await p.output()) : null
+        decoder = new TextDecoder()
     ;
+    let output = "";
+    const buff = new Uint8Array(1);
+    if ( tee ) {
+        while ( true ) {
+            try {
+                let result = await p.stdout.read(buff);
+                if (!result) break;
+                output += decoder.decode(buff);
+                await Deno.stdout.write(buff);
+            }
+            catch (e) {
+                break;
+            }
+        }
+    }
+    else {
+        output = runCommand.stdout === "piped" ? decoder.decode(await p.output()) : null
+    }
     let error = runCommand.stderr === "piped" ? decoder.decode(await p.stderrOutput()) : null;
     if ( opts.stdErrToArray === true && typeof error === "string") error = error.split(/\r?\n/);
     return [code, output, error];

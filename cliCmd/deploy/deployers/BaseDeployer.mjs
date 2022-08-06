@@ -62,13 +62,14 @@ export class BaseDeployer {
         if (remoteNetworks.length === 0) {
             const remoteNetworkName = await Input.prompt({
                 message: "Remote Network name",
-                hint: "There are no Remote Networks in your Twingate account. Please enter a name to create one.",
+                hint: "There are no Remote Networks in your Twingate account. Please enter a name to create one."
             });
             remoteNetwork = await client.createRemoteNetwork(remoteNetworkName);
         } else {
             const remoteNetworkId = await Select.prompt({
                 message: "Choose Remote Network",
-                options: sortByTextField(remoteNetworks, "name").map(rn => ({name: rn.name, value: rn.id}))
+                options: sortByTextField(remoteNetworks, "name").map(rn => ({name: rn.name, value: rn.id})),
+                search: true
             });
             remoteNetwork = remoteNetworks.find(remoteNetwork => remoteNetwork.id === remoteNetworkId);
         }

@@ -216,6 +216,8 @@ export class DigitalOceanDeployer extends BaseDeployer {
         let [code, output, error] = await execCmd2(cmd);
         if ( code === 0 ) {
             output = JSON.parse(output)[0];
+            output.privateIp = output.networks.v4.find(network => network.type === "private");
+            output.publicIp = output.networks.v4.find(network => network.type === "public");
         }
         return [code, output, error];
     }
@@ -252,9 +254,7 @@ export class DigitalOceanDeployer extends BaseDeployer {
             if ( code !== 0 ) throw new Error(error);
             Log.success(`Created Droplet VM!\n`);
             if ( typeof droplet === "object") {
-                const a = 1;
-                droplet.privateIp = droplet.networks.v4.find(network => network.type === "private");
-                droplet.publicIp = droplet.networks.v4.find(network => network.type === "public");
+
                 const table = new Table();
                 table.push(["Id", droplet.id]);
                 table.push(["Name", droplet.name]);

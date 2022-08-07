@@ -1,5 +1,5 @@
 import {BaseDeployer} from "../BaseDeployer.mjs";
-import {Input, Select, Checkbox} from "https://deno.land/x/cliffy/prompt/mod.ts";
+import {Input, Select, Checkbox, Confirm} from "https://deno.land/x/cliffy/prompt/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
 import {execCmd, execCmd2, formatBinary, sortByTextField, tablifyOptions} from "../../../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../../../utils/log.js";
@@ -253,6 +253,23 @@ export class HCloudDeployer extends BaseDeployer {
         }
     }
 
+    async selectSetupAsNatRouter(networks) {
+        if ( networks.length === 0 ) return false;
+        return await Confirm.prompt({
+            message: "Configure as NAT router?",
+            default: true,
+            hint: "If yes (default) then other machines on your private network can use this machine to route outbound traffic."
+        });
+    }
+
+    async selectEnableFirewall() {
+        return await Confirm.prompt({
+            message: "Enable firewall?",
+            default: true,
+            hint: "If yes (default) then sets up ufw to allow ssh only."
+        });
+    }
+
     async createVm(dataCenter, location, name, networks=[], placementGroup = null, primaryIpv4 = null, sshKey, serverType, cloudConfigFile) {
         const cmd = this.getHCloudCommand("server", "create", {output: null});
         cmd.push("--datacenter", dataCenter);
@@ -298,9 +315,16 @@ export class HCloudDeployer extends BaseDeployer {
             placementGroup = await this.selectPlacementGroup(),
             primaryIpv4 = null, // TODO
             sshKey = await this.selectKeyPair(hostname),
+            setupAsNatRouter = false, //await this.selectSetupAsNatRouter(networks),
+            enableFirewall = await this.selectEnableFirewall(),
             tokens = await this.client.generateConnectorTokens(connector.id),
             accountUrl = `https://${this.cliOptions.accountName}.twingate.com`,
-            cloudConfig = new ConnectorCloudInit()
+            cloudConfig = new ConnectorCloudInit({
+                    // https://docs.hetzner.com/cloud/networks/server-configuration
+                    // ens10 - CX and CCX*1 (Intel CPU)
+                    // enp7s0 - CPX and CCX*2 (AMD CPU)
+                    privateInterface: /^CX.*|CCX.+1$/.test(server.name) ? "ens10" : "enp7s0"
+                })
                 .setStaticConfiguration(accountUrl, tokens, {LOG_ANALYTICS: "v1"})
                 .setDynamicLabels({
                     hostname,
@@ -310,7 +334,11 @@ export class HCloudDeployer extends BaseDeployer {
                     zone: dataCenter.network_zone,
                     egress_ip: "$(curl -s https://checkip.amazonaws.com)"
                 })
-                .configure(),
+                .configure({
+                    setupAsNatRouter,
+                    enableFirewall,
+                    sshLocalOnly: networks.length > 0
+                }),
             cloudConfigFile = await Deno.makeTempFile({dir: "./", prefix: `CloudConfig-${hostname}`, suffix: ".yaml"})
         ;
 

@@ -3,6 +3,10 @@ import jsYaml from "../../thirdParty/jsYaml/jsYaml.mjs";
 export class ConnectorCloudInit {
     constructor(options) {
         this.options = options;
+
+        this.publicInterface = options.publicInterface || "eth0";
+        this.privateInterface = options.privateInterface || "eth1";
+        this.privateIp = `$(ip addr show ${this.privateInterface} | awk '/inet / {print $2}' | cut -d/ -f1)`;
         this.init = {
           "apt": {
             "sources": {
@@ -13,14 +17,15 @@ export class ConnectorCloudInit {
           },
           "package_update": true,
           "package_upgrade": true,
-          "packages": [
-            "twingate-connector",
-            "chrony"
-          ],
+          "packages": [],
           "write_files": [],
           "runcmd": []
         };
 
+        this.packages = [
+            "twingate-connector",
+            "chrony"
+        ];
         this.runCommands = [
             [ "systemctl", "daemon-reload" ],
             [ "twingate_refresh_conf" ],
@@ -79,16 +84,17 @@ export class ConnectorCloudInit {
     }
 
     configure(options = {}) {
-        Object.assign(options, {
+        options = Object.assign( {
+            setupAsNatRouter: false,
+            enableFirewall: false,
             autoUpdate: true,
             sshLocalOnly: false,
             autoRebootOnUpdate: true
         }, options);
 
-        if ( options.sshLocalOnly ) {
-            const localCommand = (typeof options.sshLocalOnly === "string" ) ? options.sshLocalOnly : "ip addr show eth1 | awk '/inet / {print $2}' | cut -d/ -f1";
+        if ( options.sshLocalOnly && this.privateIp ) {
             this.runCommands.splice(0, 0,[
-                "bash", "-c", `echo "ListenAddress $(${localCommand})" >> /etc/ssh/sshd_config.d/ListenPrivateIp.conf`
+                "bash", "-c", `echo "ListenAddress ${this.privateIp}" >> /etc/ssh/sshd_config.d/ListenPrivateIp.conf`
             ]);
         }
         if ( options.autoUpdate) {
@@ -105,6 +111,28 @@ export class ConnectorCloudInit {
                 "path": "/etc/apt/apt.conf.d/50unattended-upgrades"
             });
         }
+
+        if ( options.setupAsNatRouter ) {
+            this.packages.push("iptables-persistent");
+            // Setup systemd resolve to listen also on the private interface
+            this.runCommands.push(
+                ["sed", "-i", `s/#DNSStubListenerExtra=/DNSStubListenerExtra=${this.privateIp}/`, "/etc/systemd/resolved.conf"],
+                ["systemctl", "restart", "systemd-resolved"],
+                ["iptables", "-t", "nat", "-A", "POSTROUTING", "-o", this.publicInterface, "-j", "MASQUERADE"],
+                ["iptables", "-A", "FORWARD", "-i", this.publicInterface, "-o", this.privateInterface, "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"],
+                ["iptables", "-A", "FORWARD", "-i", this.publicInterface, "-o", this.privateInterface, "-j", "ACCEPT"]
+                ["iptables-save > /etc/iptables/rules.v4"]
+            );
+        }
+
+        if ( options.enableFirewall ) {
+            this.runCommands.push(
+                ["ufw", "default", "deny", "incoming"],
+                ["ufw", "default", "allow", "outgoing"],
+                ["ufw", "allow", "ssh"],
+                ["ufw", "enable"]
+            );
+        }
         return this;
     }
 
@@ -116,12 +144,19 @@ export class ConnectorCloudInit {
         return this.files;
     }
 
+
+    getPackages() {
+        return this.packages;
+    }
+
+
     getRunCommands() {
         return this.runCommands;
     }
 
     getConfigJson() {
         return Object.assign({}, this.init, {
+            packages: this.getPackages(),
             write_files: this.getFileContent(),
             runcmd: this.getRunCommands()
         });

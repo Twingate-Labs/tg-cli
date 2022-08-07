@@ -152,7 +152,9 @@ export class OracleVmDeployer extends OracleBaseDeployer {
             hostname = `tg-${connector.name}`,
             tokens = await this.client.generateConnectorTokens(connector.id),
             accountUrl = `https://${this.cliOptions.accountName}.twingate.com`,
-            cloudConfig = new ConnectorCloudInit()
+            cloudConfig = new ConnectorCloudInit({
+                    privateIp: `$(hostname -I)`
+                })
                 .setStaticConfiguration(accountUrl, tokens, {LOG_ANALYTICS: "v1"})
                 .setDynamicLabels({
                     hostname,
@@ -164,7 +166,7 @@ export class OracleVmDeployer extends OracleBaseDeployer {
                     egress_ip: "$(curl -s https://checkip.amazonaws.com)"
                 })
                 .configure({
-                    sshLocalOnly: "hostname -I"
+                    sshLocalOnly: true
                 })
         ;
 

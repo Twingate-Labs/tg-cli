@@ -120,7 +120,7 @@ export class HCloudDeployer extends BaseDeployer {
     async getPlacementGroups() {
         const cmd = this.getHCloudCommand("placement-group", "list");
         const placementGroups = JSON.parse(await execCmd(cmd));
-        return placementGroups
+        return placementGroups || [];
     }
 
     async selectServerType() {

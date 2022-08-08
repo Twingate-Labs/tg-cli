@@ -90,6 +90,7 @@ export class BaseDeployer {
         let connector = null;
         if (connectors.length === 0) {
             connector = await client.createConnector(remoteNetwork.id);
+            Log.info(`Created new connector: ${Colors.italic(connector.name)}`)
         } else if (connectors.length === 1) {
             connector = connectors[0];
             Log.info(`Using connector: ${Colors.italic(connector.name)}`);

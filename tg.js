@@ -36,8 +36,7 @@ async function main(args) {
         })
         .action(async (options) => {
             Log.success(`This is the Twingate CLI tool, ${Colors.italic('tg')}`);
-            `
-  __          
+`  __          
 _/  |_  ____  
 \\   __\\/ ___\\ 
  |  | / /_/  >

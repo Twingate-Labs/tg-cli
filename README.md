@@ -29,6 +29,7 @@ Mac
 ===========================
 * Open Mac Terminal
 * Execute ```xattr -d com.apple.quarantine /path/to/tg``` to remove the quarantine bit.
+* Execute ```chmod +x /path/to/tg``` to make the app executable.
 * Test
   *  ```/path/to/tg --help``` e.g. ```/apps/tg --help``` or 
   *  ```cd \path\to\tg``` followed by ```./tg --help```

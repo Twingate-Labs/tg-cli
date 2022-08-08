@@ -11,6 +11,7 @@ import {
     scriptCmd,
     getTopLevelCommand,
 } from "./cliCmd/cmd.mjs";
+import * as Colors from "https://deno.land/std/fmt/colors.ts";
 import {deployCmd} from "./cliCmd/deploy/index.mjs";
 import {VERSION} from "./version.js";
 
@@ -32,6 +33,23 @@ async function main(args) {
             //hidden: true,
             default: Deno.env.get("LOG_LEVEL") || "INFO",
             action: (options) => Deno.env.set("LOG_LEVEL", options.logLevel)
+        })
+        .action(async (options) => {
+            Log.success(`This is the Twingate CLI tool, ${Colors.italic('tg')}`);
+            `
+  __          
+_/  |_  ____  
+\\   __\\/ ___\\ 
+ |  | / /_/  >
+ |__| \\___  / 
+     /_____/  
+`.split("\n").map(Log.info);
+            Log.info(`No parameters specified, please try:`);
+            Log.info(Colors.italic(`tg --help`));
+            Log.info(`For a list of possible commands.`);
+            Log.info("");
+            Log.info(`For assistance with this tool please visit https://github.com/twingate-labs/tg-cli`);
+            return 0;
         })
         .command("export", exportCmd)
         .command("import", importCmd)

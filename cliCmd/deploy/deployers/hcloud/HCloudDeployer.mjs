@@ -280,6 +280,8 @@ export class HCloudDeployer extends BaseDeployer {
         for ( const network of networks) cmd.push("--network", network.name);
         if ( placementGroup != null ) cmd.push("--placement-group", placementGroup.name);
         if ( primaryIpv4 != null ) cmd.push("--primary-ipv4", primaryIpv4);
+        // Disable IPv6
+        cmd.push("--without-ipv6");
         if ( sshKey != null) cmd.push("--ssh-key", sshKey);
         cmd.push("--type", serverType);
         cmd.push("--user-data-from-file", cloudConfigFile);

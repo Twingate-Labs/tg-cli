@@ -97,7 +97,7 @@ export class HCloudDeployer extends BaseDeployer {
     async getKeyPairs() {
         const cmd = this.getHCloudCommand("ssh-key", "list");
         const output = await execCmd(cmd);
-        return JSON.parse(output);
+        return JSON.parse(output) || [];
     }
 
     async selectDataCenter() {
@@ -323,7 +323,7 @@ export class HCloudDeployer extends BaseDeployer {
                     // https://docs.hetzner.com/cloud/networks/server-configuration
                     // ens10 - CX and CCX*1 (Intel CPU)
                     // enp7s0 - CPX and CCX*2 (AMD CPU)
-                    privateInterface: /^CX.*|CCX.+1$/.test(server.name) ? "ens10" : "enp7s0"
+                    privateInterface: /^CX.*|CCX.+1$/i.test(server.name) ? "ens10" : "enp7s0"
                 })
                 .setStaticConfiguration(accountUrl, tokens, {LOG_ANALYTICS: "v1"})
                 .setDynamicLabels({

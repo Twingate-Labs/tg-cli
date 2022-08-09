@@ -97,7 +97,7 @@ export class ConnectorCloudInit {
 
         if ( options.sshLocalOnly && this.privateIp ) {
             this.runCommands.splice(0, 0,
-            ["bash", "-c", `echo "ListenAddress ${this.privateIp}" >> /etc/ssh/sshd_config.d/ListenPrivateIp.conf`],
+            ["bash", "-c", `echo "ListenAddress ${this.privateIp}" > /etc/ssh/sshd_config.d/ListenPrivateIp.conf`],
                   ["systemctl", "restart", "ssh"]
             );
         }

@@ -1,12 +1,15 @@
 import jsYaml from "../../thirdParty/jsYaml/jsYaml.mjs";
 
 export class ConnectorCloudInit {
-    constructor(options) {
+    constructor(options={}) {
         this.options = options;
 
         this.publicInterface = options.publicInterface || "eth0";
         this.privateInterface = options.privateInterface || "eth1";
-        this.privateIp = `$(ip addr show ${this.privateInterface} | awk '/inet / {print $2}' | cut -d/ -f1)`;
+        // Below works for at least Hetzner
+        this.privateIp = options.privateIp || `$(ip addr show ${this.privateInterface} | awk '/inet / {print $2}' | cut -d/ -f1)`;
+        // For DO we need something like
+        // $(curl -s http://169.254.169.254/metadata/v1/interfaces/private/0/ipv4/address)
         this.init = {
           "apt": {
             "sources": {
@@ -93,9 +96,10 @@ export class ConnectorCloudInit {
         }, options);
 
         if ( options.sshLocalOnly && this.privateIp ) {
-            this.runCommands.splice(0, 0,[
-                "bash", "-c", `echo "ListenAddress ${this.privateIp}" >> /etc/ssh/sshd_config.d/ListenPrivateIp.conf`
-            ]);
+            this.runCommands.splice(0, 0,
+            ["bash", "-c", `echo "ListenAddress ${this.privateIp}" >> /etc/ssh/sshd_config.d/ListenPrivateIp.conf`],
+                  ["systemctl", "restart", "ssh"]
+            );
         }
         if ( options.autoUpdate) {
             this.addFile({

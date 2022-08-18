@@ -53,7 +53,7 @@ export class OracleVmDeployer extends OracleBaseDeployer {
             const keyCreated = await this.generateSshKey(keyName);
             if ( !keyCreated ) throw new Error("Could not create ssh key");
             const publicKey = await Deno.readTextFile(`${keyName}.pub`);
-            return {name: keyName, path: Path.resolve(this.sshKeyDir, name)};
+            return {name: keyName, path: Path.resolve(this.sshKeyDir, keyName)};
         }
         else {
             const keyName = await Select.prompt({

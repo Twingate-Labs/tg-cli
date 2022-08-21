@@ -11,6 +11,21 @@ export class AzureBaseDeployer extends BaseDeployer {
         this.cliCommand = "az";
     }
 
+    async checkAvailable() {
+        // TODO : we don't call super because for some reason AZ CloudShell doesn't like
+        // the 'command' command when executed from Deno.
+
+        const output = await execCmd(this.getAzureCommand("account", "show"), {returnOnNonZeroError: true});
+        if (typeof output !== "string") {
+            const errorMsg = `'${this.cliCommand}' CLI not detected on path. Please check that it is installed.`;
+            Log.error(errorMsg);
+            throw new Error(errorMsg);
+        }
+        const account = JSON.parse(output);
+        Log.info(`Using Azure subscription: '${Colors.italic(account.name)}'`);
+        return true;
+    }
+
     getAzureCommand(command, subCommand = null, options = {}) {
         const cliOptions = this.cliOptions;
         let cmd = [this.cliCommand, command];

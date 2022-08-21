@@ -110,7 +110,7 @@ export class OracleVmDeployer extends OracleBaseDeployer {
 
     async createVm(name, availabilityDomainName, shapeId, imageId, subnetId, sshKey, cloudConfig) {
         const cmd = this.getOciCommand("compute", ["instance", "launch"]);
-        if ( sshKey != null ) cmd.push("--ssh-authorized-keys-file", sshKey.path);
+        if ( sshKey != null ) cmd.push("--ssh-authorized-keys-file", `${sshKey.path}.pub`);
         cmd.push("-c", this.compartment.id);
         cmd.push("--shape", shapeId);
         cmd.push("--subnet-id", subnetId);

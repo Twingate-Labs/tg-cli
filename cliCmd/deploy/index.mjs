@@ -20,5 +20,4 @@ export const deployCmd = new Command()
     .command("hetzner", deployHetznerCommand)
     .command("linode", deployLinodeCommand)
     .command("local", deployLocalCommand)
-    ;
-
+;

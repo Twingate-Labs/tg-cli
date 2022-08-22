@@ -53,7 +53,7 @@ export class OracleVmDeployer extends OracleBaseDeployer {
             const keyCreated = await this.generateSshKey(keyName);
             if ( !keyCreated ) throw new Error("Could not create ssh key");
             const publicKey = await Deno.readTextFile(`${keyName}.pub`);
-            return {name: keyName, path: Path.resolve(this.sshKeyDir, name)};
+            return {name: keyName, path: Path.resolve(this.sshKeyDir, keyName)};
         }
         else {
             const keyName = await Select.prompt({
@@ -110,7 +110,7 @@ export class OracleVmDeployer extends OracleBaseDeployer {
 
     async createVm(name, availabilityDomainName, shapeId, imageId, subnetId, sshKey, cloudConfig) {
         const cmd = this.getOciCommand("compute", ["instance", "launch"]);
-        if ( sshKey != null ) cmd.push("--ssh-authorized-keys-file", sshKey.path);
+        if ( sshKey != null ) cmd.push("--ssh-authorized-keys-file", `${sshKey.path}.pub`);
         cmd.push("-c", this.compartment.id);
         cmd.push("--shape", shapeId);
         cmd.push("--subnet-id", subnetId);

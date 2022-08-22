@@ -54,6 +54,11 @@ const listCmdConfig = {
         typeName: "ServiceAccount",
         fetchFn: "fetchAllServiceAccounts",
         listFieldOpts: {}
+    },
+    "policy": {
+        typeName: "SecurityPolicy",
+        fetchFn: "fetchAllSecurityPolicies",
+        listFieldOpts: {}
     }
 }
 
@@ -64,7 +69,7 @@ export function getListCommand(name) {
     const LogLevelType = new EnumType(Object.keys(LOG_LEVELS));
     return new Command()
         .arguments("")
-        .description(`Get list of ${name}s`)
+        .description(`Get list of ${name}s`.replace("ys", "ies"))
         .type("format", OutputFormat)
         .type("LogLevel", LogLevelType)
         .option("-o, --output-format <format:format>", "Output format", {default: "table"})

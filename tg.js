@@ -17,7 +17,7 @@ import {VERSION} from "./version.js";
 
 async function main(args) {
 
-    const topLevelCommands = ["resource", "group", "user", "network", "connector", "device", "service"];
+    const topLevelCommands = ["resource", "group", "user", "network", "connector", "device", "service", "policy"];
     const LogLevelType = new EnumType(Object.keys(LOG_LEVELS));
     let cmd = new Command()
         .name("tg")

@@ -166,6 +166,18 @@ export class TwingateApiClient {
                 {name: "resources", type: "Connection", typeName: "Resource"},
                 {name: "keys", type: "Object", typeName: "Key"}
             ]
+        },
+        "SecurityPolicy": {
+            isNode: true,
+            queryNodeField: "securityPolicies",
+            queryConnectionField: "securityPolicies",
+            fields: [
+                {name: "name", type: "string", isLabel: true},
+                {name: "createdAt", type: "datetime"},
+                {name: "updatedAt", type: "datetime"},
+                {name: "groups", type: "Connection", typeName: "Group"},
+                {name: "policyType", type: "SecurityPolicyType"}
+            ]
         }
         // END nodes
     }
@@ -523,6 +535,10 @@ export class TwingateApiClient {
 
     async fetchAllGroups(opts) {
         return this._fetchAllNodesOfType("Group", opts);
+    }
+
+    async fetchAllSecurityPolicies(opts) {
+        return this._fetchAllNodesOfType("SecurityPolicy", opts);
     }
     //</editor-fold>
 

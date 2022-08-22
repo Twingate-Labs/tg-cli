@@ -1,6 +1,5 @@
 import {Log} from "./utils/log.js";
 
-
 const _capitalise = (s) => `${s[0].toUpperCase()}${s.slice(1)}`;
 const delay = async (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -24,7 +23,8 @@ export class TwingateApiClient {
         RemoteNetwork: "UmVtb3RlTmV0d29yazo",// btoa("RemoteNetwork:").replace(/=$/, ""),
         Group: "R3JvdXA6", // btoa("Group:").replace(/=$/, "")
         Resource: "UmVzb3Vy",
-        User: "VXNlcjox"
+        User: "VXNlcjox",
+        SecurityPolicy: "U2VjdXJp"
     }
 
     static Schema = {
@@ -630,6 +630,18 @@ export class TwingateApiClient {
         return resourceResponse.resourceUpdate.entity;
     }
 
+    async assignGroupToPolicy(groupId, securityPolicyId){
+        const assignGroupToPolicyQuery = "mutation attachGroupToPolicy($groupId:ID!, $securityPolicyId: ID!){groupUpdate(id:$groupId,securityPolicyId: $securityPolicyId){error entity{id name securityPolicy{id name}}}}";
+        let resourceResponse = await this.exec(assignGroupToPolicyQuery, {groupId, securityPolicyId} );
+        return resourceResponse.groupUpdate.entity;
+    }
+
+    async addGroupToPolicy(securityPolicyId, groupIds){
+        const assignGroupToPolicyQuery = "mutation addGroupToPolicy($securityPolicyId:ID!, $groupIds:[ID]){securityPolicyUpdate(id: $securityPolicyId, addedGroupIds:$groupIds){error entity{id name groups{edges{node{id name}}}}}}";
+        let resourceResponse = await this.exec(assignGroupToPolicyQuery, {securityPolicyId, groupIds} );
+        return resourceResponse.securityPolicyUpdate.entity;
+    }
+
     async addResourceToGroup(groupId, resourceIds){
         const addResourceToGroupQuery = "mutation AddResourceToGroup($groupId:ID!,$resourceIds:[ID]){groupUpdate(id:$groupId,addedResourceIds:$resourceIds){error entity{id name resources{edges{node{id name}}}}}}";
         let groupsResponse = await this.exec(addResourceToGroupQuery, {groupId, resourceIds} );
@@ -735,6 +747,15 @@ export class TwingateApiClient {
         const query = "query RemoteNetworkByName($name:String){remoteNetworks(filter:{name:{eq:$name}}){edges{node{id}}}}";
         let response = await this.exec(query, {name: ""+name.trim()});
         let result = response.remoteNetworks;
+        if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
+        return result.edges[0].node.id;
+    }
+
+    //todo: waiting for feature request
+    async lookupSecurityPolicyByName(name) {
+        const query = "query SecurityPolicyByName($name:String){securityPolicies(filter:{name:{eq:$name}}){edges{node{id}}}}";
+        let response = await this.exec(query, {name: ""+name.trim()});
+        let result = response.securityPolicies;
         if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
         return result.edges[0].node.id;
     }

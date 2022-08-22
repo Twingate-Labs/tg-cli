@@ -18,6 +18,7 @@ import {
     getRemoveGroupFromResourceCommands, getRemoveResourceFromGroupCommands
 } from "./cmdGroupResource.mjs"
 import {getServiceAccountKeyCreateCommands} from "./serviceAccountKey.mjs";
+import { AddGroupToPolicyCommands, setGroupPolicyCommands} from "./cmdPolicyGroup.mjs"
 import {
     getUserGroupCommands,
     getGroupFromResourceCommands,
@@ -81,6 +82,13 @@ export function getTopLevelCommand(name) {
 
     let getAllGroupResource = getAllGroupResourceCommands(name)
     if ( getAllGroupResource !== null ) cmd = cmd.command("get_all_resource", getAllGroupResource)
+
+    let getSetGroupPolicy = setGroupPolicyCommands(name)
+    if ( getSetGroupPolicy !== null ) cmd = cmd.command("set_policy", getSetGroupPolicy)
+
+    let AddGroupToPolicy = AddGroupToPolicyCommands(name)
+    if ( AddGroupToPolicy !== null ) cmd = cmd.command("add_group", AddGroupToPolicy)
+
 
 
     switch (name) {

@@ -92,7 +92,8 @@ export class ConnectorCloudInit {
             enableFirewall: false,
             autoUpdate: true,
             sshLocalOnly: false,
-            autoRebootOnUpdate: true
+            autoRebootOnUpdate: true,
+            sshDisablePasswordAuthentication: false
         }, options);
 
         if ( options.sshLocalOnly && this.privateIp ) {
@@ -101,6 +102,17 @@ export class ConnectorCloudInit {
                   ["systemctl", "restart", "ssh"]
             );
         }
+
+        if (options.sshDisablePasswordAuthentication){
+            this.addFile({
+                "content": "PasswordAuthentication no",
+                "path": "/etc/ssh/sshd_config.d/DisablePasswordAuthentication.conf"
+            });
+            this.runCommands.push(["systemctl", "restart", "ssh"])
+        }
+
+
+
         if ( options.autoUpdate) {
             this.addFile({
                 "content": "\nUnattended-Upgrade::Origins-Pattern {\n  \"site=packages.twingate.com\";\n};\n",

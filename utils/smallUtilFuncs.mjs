@@ -276,3 +276,16 @@ export function tryProcessPortRestrictionString(restrictions) {
     return restrictions.split(",").map(singleRestrictionToObj);
 }
 
+
+export function generateRandomHexString(length) {
+    if (length % 2 == 1) {
+        throw new Deno.errors.InvalidData("Only even sizes are supported");
+    }
+    const buf = new Uint8Array(length / 2);
+    crypto.getRandomValues(buf);
+    let ret = "";
+    for (let i = 0; i < buf.length; ++i) {
+        ret += ("0" + buf[i].toString(16)).slice(-2);
+    }
+    return ret;
+}

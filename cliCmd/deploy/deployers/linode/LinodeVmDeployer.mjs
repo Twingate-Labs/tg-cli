@@ -307,18 +307,19 @@ cloud-init modules --mode=final
         return output[0].id
     }
 
-    async createVm(hostname, size, region, vpcs, root_pass, authorized_key, stackscript, cloudConfig) {
+    async createVm(hostname, size, region, vpcs, root_pass, authorized_key, stackscript, cloudConfig, disablePasswordAuth) {
         const cmd = this.getLinodeCommand("linodes", "create");
         cmd.push("--label", hostname)
         cmd.push("--type", size)
         cmd.push("--image", this.image)
         cmd.push("--region", region.id)
         cmd.push("--root_pass", root_pass)
-        cmd.push("--authorized_keys", authorized_key)
+        if (disablePasswordAuth){
+            cmd.push("--authorized_keys", authorized_key.key)
+        }
         cmd.push("--stackscript_id", stackscript)
         cmd.push("--stackscript_data", JSON.stringify({user_data: b64encode(cloudConfig)}))
         cmd.push("--private_ip", true)
-
         if (vpcs.vlanAvailable === true){
             if (vpcs.checkedVpcs.length === 0){
                 cmd.push("--interfaces.purpose", "public" )
@@ -363,6 +364,7 @@ cloud-init modules --mode=final
             accountUrl = !this.cliOptions.accountName.includes("stg.opstg.com") ? `https://${this.cliOptions.accountName}.twingate.com`: `https://${this.cliOptions.accountName}`,
             script = this.getStackScript(),
             stackScript = await this.getOrCreateStackScript(script),
+            disablePasswordAuth = sshKey !== null,
             cloudConfig = new ConnectorCloudInit({
                 privateIp: `$(hostname -I)`
             })
@@ -374,7 +376,7 @@ cloud-init modules --mode=final
                 })
                 .configure({
                     // sshLocalOnly: true, // disabled because we are using the Linode firewall
-                    sshDisablePasswordAuthentication: true
+                    sshDisablePasswordAuthentication: disablePasswordAuth
                 })
 
         Log.info("Creating VM, please wait.");
@@ -382,7 +384,7 @@ cloud-init modules --mode=final
         cloudConfig.init.hostname = hostname;
 
         try {
-            const createVmOut = JSON.parse(await this.createVm(hostname, size, region, vpcs, root_pass, sshKey.key, stackScript, cloudConfig.getConfig()))
+            const createVmOut = JSON.parse(await this.createVm(hostname, size, region, vpcs, root_pass, sshKey, stackScript, cloudConfig.getConfig(), disablePasswordAuth))
             const firewall = JSON.parse(await this.createFirewall(hostname))[0].id
             const attachFirewallOut = JSON.parse(await this.attachFirewall(firewall, createVmOut[0].id))
             Log.info("VM created.");
@@ -397,7 +399,12 @@ cloud-init modules --mode=final
             Log.info(`You can do this via the Admin Console UI or via the CLI:`);
             Log.info(Colors.italic(`tg resource create "${remoteNetwork.name}" "Connector host ${createVmOut[0].label}" "${createVmOut[0].ipv4[1]}" Everyone`));
             Log.info(`Once done and authenticated to Twingate you can connect to the instance via SSH using the following command:`);
-            Log.info(`${Colors.italic(`ssh -i ${sshKey.name} root@${createVmOut[0].ipv4[1]}`)}`);
+            if (disablePasswordAuth) {
+                Log.info(`${Colors.italic(`ssh -i ${sshKey.name} root@${createVmOut[0].ipv4[1]}`)}`);
+            } else {
+                Log.info(`${Colors.italic(`ssh root@$${createVmOut[0].ipv4[1]}`)}`);
+                Log.info(`${Colors.italic(`The root password is stored at ${hostname}.root`)}`);
+            }
 
         }
         catch (e) {

@@ -31,7 +31,7 @@ export function getTopLevelCommand(name) {
 
     let cmd = new Command()
         .arguments('')
-        .description(`Twingate ${name}s`)
+        .description(`Twingate ${name}s`.replace("ys", "ies"))
         .command("list", getListCommand(name))
     ;
 

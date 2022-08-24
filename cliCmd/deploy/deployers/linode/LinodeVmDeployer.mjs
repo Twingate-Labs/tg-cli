@@ -427,7 +427,7 @@ cloud-init modules --mode=final
             if (disablePasswordAuth) {
                 Log.info(`${Colors.italic(`ssh -i ${sshKey.name} root@${addressOut}`)}`);
             } else {
-                Log.info(`${Colors.italic(`ssh root@$${addressOut}`)}`);
+                Log.info(`${Colors.italic(`ssh root@${addressOut}`)}`);
                 Log.info(`${Colors.italic(`The root password is stored at ${hostname}.root`)}`);
             }
 

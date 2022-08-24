@@ -136,29 +136,36 @@ cloud-init modules --mode=final
         if (!vlanAvailable) return vlanAvailable
 
         const vpcs = await this.getVpcs(region)
+        vpcs.push({label: `Create new Vlan`})
         const fields = [
-            {name: "region"},
             {name: "label"},
         ]
-        const options = tablifyOptions(vpcs, fields, (v) => v.label);
-        options.forEach(o => o.checked = false);
+
+        const options = tablifyOptions(vpcs, fields, (v) => v.label)
 
         // todo: to be reviewed
-        let checkedVpcs = []
-        let newVlan = ""
-        if (options.length !== 0) {
-            checkedVpcs = await Checkbox.prompt({
-                message: "Select Vlans",
-                options,
-                minOptions: 0,
-                maxOptions: 2,
-                hint: "Use spacebar to select or deselect and enter key to confirm. Maximum 2 Vlans is allowed. Select 0 to create a new Vlan."
-            });
+        let vlan = await Select.prompt({
+            message: "Select Vlan",
+            options,
+            default: "Create new Vlan"
+        })
+
+        if (vlan === "Create new Vlan"){
+            vlan = await Input.prompt({message: "Create new Vlan", default: hostname})
         }
-        if (checkedVpcs.length === 0){
-            newVlan = await Input.prompt({message: "Create new Vlan", default: hostname})
+
+        return {vlanAvailable, vlan};
+    }
+
+    async inputIpam(vpcs) {
+        if (vpcs.vlanAvailable === true){
+            let ipam = await Input.prompt({message: "IPAM", hint: "Must have CIDR /8, /16 or /24 and your resources should be within the same CIDR range. For example, 10.1.1.1/24 or 10.1.1.2/24"});
+            var re = new RegExp("^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/(8|16|24))$");
+            while (!re.test(ipam)){
+                ipam = await Input.prompt({message: "Invalid IPAM", hint: "Must have CIDR /8, /16 or /24 and your resources should be within the same CIDR range. For example, 10.1.1.1/24 or 10.1.1.2/24"});
+            }
+            return ipam
         }
-        return {vlanAvailable, checkedVpcs, newVlan};
     }
 
     async checkRegionVlan(region){
@@ -271,14 +278,26 @@ cloud-init modules --mode=final
     }
 
 
-    async createFirewall(instanceName) {
+    async createFirewall(instanceName, ipam, vpcs) {
+        const cidrMapping = {
+            "8": {count: 1, remainder: ".0.0.0"},
+            "16": {count: 2, remainder: ".0.0"},
+            "24": {count: 3, remainder: ".0"}
+        }
         const cmd = this.getLinodeCommand("firewalls", "create");
         cmd.push("--label", instanceName)
         cmd.push("--rules.inbound_policy", "DROP")
         cmd.push("--rules.outbound_policy", "ACCEPT")
+        if (vpcs.vlanAvailable) {
+            let [address, cidr] = ipam.split("/")
+            address = `${address.split(".").slice(0,cidrMapping[cidr].count).join(".")}${cidrMapping[cidr].remainder}/${cidr}`
+            cmd.push("--rules.inbound", `[{"protocol": "TCP", "ports": "1-65535", "addresses": {"ipv4": ["${address}"]}, "action": "ACCEPT"}, {"protocol": "UDP", "ports": "1-65535", "addresses": {"ipv4": ["${address}"]}, "action": "ACCEPT"}, {"protocol": "ICMP", "addresses": {"ipv4": ["${address}"]}, "action": "ACCEPT"}]`)
+            Log.info(`Creating firewall to drop all inbound traffic besides CIDR range ${address}`)
+        } else {
+            Log.info("Creating firewall to drop all inbound traffic.")
+        }
         const output = await execCmd(cmd);
         return output
-
     }
 
     async attachFirewall(firewallId, instanceId){
@@ -307,33 +326,27 @@ cloud-init modules --mode=final
         return output[0].id
     }
 
-    async createVm(hostname, size, region, vpcs, root_pass, authorized_key, stackscript, cloudConfig) {
+    async createVm(hostname, size, region, vpcs, ipam, root_pass, authorized_key, stackscript, cloudConfig, disablePasswordAuth) {
         const cmd = this.getLinodeCommand("linodes", "create");
         cmd.push("--label", hostname)
         cmd.push("--type", size)
         cmd.push("--image", this.image)
         cmd.push("--region", region.id)
         cmd.push("--root_pass", root_pass)
-        cmd.push("--authorized_keys", authorized_key)
+        if (disablePasswordAuth){
+            cmd.push("--authorized_keys", authorized_key.key)
+        }
         cmd.push("--stackscript_id", stackscript)
         cmd.push("--stackscript_data", JSON.stringify({user_data: b64encode(cloudConfig)}))
-        cmd.push("--private_ip", true)
-
         if (vpcs.vlanAvailable === true){
-            if (vpcs.checkedVpcs.length === 0){
-                cmd.push("--interfaces.purpose", "public" )
-                cmd.push("--interfaces.label", "")
-                cmd.push("--interfaces.purpose", "vlan" )
-                cmd.push("--interfaces.label", vpcs.newVlan)
-            } else {
-                cmd.push("--interfaces.purpose", "public" )
-                cmd.push("--interfaces.label", "")
-                for (const vpc of vpcs.checkedVpcs){
-                    cmd.push("--interfaces.purpose", "vlan" )
-                    cmd.push("--interfaces.label", vpc)
-                }
-
-            }
+            cmd.push("--interfaces.purpose", "public" )
+            cmd.push("--interfaces.label", "")
+            cmd.push("--interfaces.ipam_address", "")
+            cmd.push("--interfaces.purpose", "vlan" )
+            cmd.push("--interfaces.label", vpcs.vlan)
+            cmd.push("--interfaces.ipam_address", ipam)
+        } else {
+            cmd.push("--private_ip", true)
         }
 
         const output = await execCmd(cmd);
@@ -357,12 +370,14 @@ cloud-init modules --mode=final
             size = await this.selectSize(instanceType),
             hostname = `tg-${connector.name}`,
             vpcs = await this.selectVpc(region, hostname),
+            ipam = await this.inputIpam(vpcs),
             sshKey = await this.selectKeyPair(hostname),
             root_pass = generateRandomHexString(50),
             tokens = await this.client.generateConnectorTokens(connector.id),
             accountUrl = !this.cliOptions.accountName.includes("stg.opstg.com") ? `https://${this.cliOptions.accountName}.twingate.com`: `https://${this.cliOptions.accountName}`,
             script = this.getStackScript(),
             stackScript = await this.getOrCreateStackScript(script),
+            disablePasswordAuth = sshKey !== null,
             cloudConfig = new ConnectorCloudInit({
                 privateIp: `$(hostname -I)`
             })
@@ -374,7 +389,7 @@ cloud-init modules --mode=final
                 })
                 .configure({
                     // sshLocalOnly: true, // disabled because we are using the Linode firewall
-                    sshDisablePasswordAuthentication: true
+                    sshDisablePasswordAuthentication: disablePasswordAuth
                 })
 
         Log.info("Creating VM, please wait.");
@@ -382,22 +397,39 @@ cloud-init modules --mode=final
         cloudConfig.init.hostname = hostname;
 
         try {
-            const createVmOut = JSON.parse(await this.createVm(hostname, size, region, vpcs, root_pass, sshKey.key, stackScript, cloudConfig.getConfig()))
-            const firewall = JSON.parse(await this.createFirewall(hostname))[0].id
+            const createVmOut = JSON.parse(await this.createVm(hostname, size, region, vpcs, ipam, root_pass, sshKey, stackScript, cloudConfig.getConfig(), disablePasswordAuth))
+            const firewall = JSON.parse(await this.createFirewall(hostname, ipam, vpcs))[0].id
             const attachFirewallOut = JSON.parse(await this.attachFirewall(firewall, createVmOut[0].id))
             Log.info("VM created.");
             const table = new Table();
             table.push(["Id", createVmOut[0].id])
             table.push(["Name", createVmOut[0].label])
             table.push(["Region", createVmOut[0].region])
-            table.push(["Private IPv4", createVmOut[0].ipv4[1]])
+            if (!vpcs.vlanAvailable){
+                table.push(["Private IPv4", createVmOut[0].ipv4[1]])
+            }
             table.push(["Public IPv4", createVmOut[0].ipv4[0]])
             table.push(["Public IPv6", createVmOut[0].ipv6])
+            table.render();
+
+            let addressOut = ""
             Log.info(`Please allow a few minutes for the instance to initialize. You should then be able to add the private IP as a resource in Twingate.`);
             Log.info(`You can do this via the Admin Console UI or via the CLI:`);
-            Log.info(Colors.italic(`tg resource create "${remoteNetwork.name}" "Connector host ${createVmOut[0].label}" "${createVmOut[0].ipv4[1]}" Everyone`));
+            if (!vpcs.vlanAvailable){
+                Log.info(Colors.italic(`tg resource create "${remoteNetwork.name}" "Connector host ${createVmOut[0].label}" "${createVmOut[0].ipv4[1]}" Everyone`));
+                addressOut = createVmOut[0].ipv4[1]
+            } else {
+                Log.info(Colors.italic(`tg resource create "${remoteNetwork.name}" "Connector host ${createVmOut[0].label}" "${ipam.split("/")[0]}" Everyone`));
+                addressOut = ipam.split("/")[0]
+            }
             Log.info(`Once done and authenticated to Twingate you can connect to the instance via SSH using the following command:`);
-            Log.info(`${Colors.italic(`ssh -i ${sshKey.name} root@${createVmOut[0].ipv4[1]}`)}`);
+
+            if (disablePasswordAuth) {
+                Log.info(`${Colors.italic(`ssh -i ${sshKey.name} root@${addressOut}`)}`);
+            } else {
+                Log.info(`${Colors.italic(`ssh root@$${addressOut}`)}`);
+                Log.info(`${Colors.italic(`The root password is stored at ${hostname}.root`)}`);
+            }
 
         }
         catch (e) {

@@ -10,6 +10,7 @@ import {Log} from "./log.js";
 import {Input} from "https://deno.land/x/cliffy@v0.20.1/prompt/input.ts";
 import {VERSION} from "../version.js";
 
+
 export function genFileNameFromNetworkName(networkName, extension = "xlsx") {
     const
         d = new Date(),
@@ -288,4 +289,17 @@ export function generateRandomHexString(length) {
         ret += ("0" + buf[i].toString(16)).slice(-2);
     }
     return ret;
+}
+
+import { readerFromStreamReader } from "https://deno.land/std/io/mod.ts";
+
+export async function downloadFile(url, filename){
+    const rsp = await fetch(url);
+    const rdr=rsp.body?.getReader();
+    if(rdr) {
+        const r=readerFromStreamReader(rdr);
+        const f=await Deno.open(filename, {create: true, write: true});
+        await Deno.copy(r, f);
+        f.close();
+    }
 }

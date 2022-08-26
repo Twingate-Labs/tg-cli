@@ -17,7 +17,7 @@ export class AwsTagSyncDeployer extends AwsBaseDeployer {
         }
         const stackName = "tg-aws-tag-sync"
         const region = this.cliOptions.region
-        const s3Bucket = await this.selectS3Bucket(stackName)
+        const s3Bucket = await this.selectS3Bucket(stackName, region)
         // await this.downloadRelease()
         const accountUrl = !this.cliOptions.accountName.includes("stg.opstg.com") ? `${this.cliOptions.accountName}.twingate.com`: `${this.cliOptions.accountName}`
         await this.uploadToS3Bucket(s3Bucket)
@@ -114,7 +114,7 @@ export class AwsTagSyncDeployer extends AwsBaseDeployer {
         return output
     }
 
-    async selectS3Bucket(stackName) {
+    async selectS3Bucket(stackName, region) {
         const buckets = (await this.getAllS3Bucket()).Buckets
         buckets.push({Name: `Create new S3 Bucket`})
         const fields = [
@@ -127,11 +127,15 @@ export class AwsTagSyncDeployer extends AwsBaseDeployer {
         let s3Bucket = await Select.prompt({
             message: "Select S3 Bucket to store deployment package",
             options,
-            default: "Create new S3 Bucket"
+            default: "Create new S3 Bucket",
+            hint: `Make sure the selected S3 Bucket is in region ${region}`
         })
 
         if (s3Bucket === "Create new S3 Bucket"){
-            s3Bucket = await Input.prompt({message: "Create new S3 Bucket", default: stackName})
+            s3Bucket = await Input.prompt({
+                message: `Create new S3 Bucket in region ${region}`,
+                default: stackName
+            })
             await this.createS3Bucket(s3Bucket)
         }
 
@@ -171,7 +175,7 @@ export class AwsTagSyncDeployer extends AwsBaseDeployer {
         let status = "CREATE_IN_PROGRESS"
         let cmd = ""
         let output = ""
-        //todo: stacks with the same name need to be handled here
+
         while (status === "CREATE_IN_PROGRESS") {
             await sleep(5)
             cmd = this.getAwsCloudFormationCommand("describe-stacks")

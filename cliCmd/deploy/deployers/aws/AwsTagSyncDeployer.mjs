@@ -18,8 +18,8 @@ export class AwsTagSyncDeployer extends AwsBaseDeployer {
         const stackName = "tg-aws-tag-sync"
         const region = this.cliOptions.region
         const s3Bucket = await this.selectS3Bucket(stackName)
-        await this.downloadRelease()
-        const accountUrl = !this.cliOptions.accountName.includes("stg.opstg.com") ? `https://${this.cliOptions.accountName}.twingate.com`: `https://${this.cliOptions.accountName}`
+        // await this.downloadRelease()
+        const accountUrl = !this.cliOptions.accountName.includes("stg.opstg.com") ? `${this.cliOptions.accountName}.twingate.com`: `${this.cliOptions.accountName}`
         await this.uploadToS3Bucket(s3Bucket)
         const stackId = await this.createCloudFormation(stackName, s3Bucket, accountUrl, region)
         const stackStatus = await this.getStackStatus(stackId, stackName, region)

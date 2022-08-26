@@ -1,7 +1,7 @@
 import {Command} from "https://deno.land/x/cliffy/command/mod.ts";
 import {AwsEc2Deployer} from "./deployers/aws/AwsEc2Deployer.mjs";
 import {AwsEcsDeployer} from "./deployers/aws/AwsEcsDeployer.mjs";
-import {AwsTagSyncDeployer} from "./deployers/aws/awsTagSyncDeployer.mjs";
+import {AwsTagSyncDeployer} from "./deployers/aws/AwsTagSyncDeployer.mjs";
 
 // BEGIN Commands
 export const deployAwsEc2Command = new Command()

@@ -152,7 +152,9 @@ export class AwsTagSyncDeployer extends AwsBaseDeployer {
             })
             cmd = this.getAwsS3Command("get-bucket-location")
             cmd.push("--bucket", s3Bucket)
-            S3BucketRegion = JSON.parse(await execCmd(cmd)).LocationConstraint
+            if (s3Bucket !== "Create new S3 Bucket"){
+                S3BucketRegion = JSON.parse(await execCmd(cmd)).LocationConstraint
+            }
     }
 
         if (s3Bucket === "Create new S3 Bucket"){

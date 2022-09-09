@@ -12,45 +12,44 @@ export class BaseDeployer {
     }
 
     async checkAvailable() {
-        if ( typeof this.cliCommand !== "string" ) return null;
-        if (Deno.build.os === "windows") {
-            // TODO
-        } else {
-            const output = await execCmd(["command", "-v", this.cliCommand], {returnOnNonZeroError: true});
-            if (typeof output !== "string") {
-                const errorMsg = `'${this.cliCommand}' CLI not detected on path. Please check that it is installed.`;
-                Log.error(errorMsg);
-                throw new Error(errorMsg);
+        if (typeof this.cliCommand !== "string") {
+            return null;
+        }
+        try {
+            const [code, output, error] = await execCmd2([this.cliCommand, "--version"]);
+            if (code !== 0) {
+                throw new Error("CLI output returned: " + output);
             }
+        } catch (e) {
+            const errorMsg = `'${this.cliCommand}' CLI not detected on path. Please check that it is installed.`;
+            Log.error(errorMsg);
+            throw new Error(errorMsg);
+
         }
         return true;
     }
 
-    async checkSshKeygenAvailable(throwError=false) {
-        if ( Deno.build.os === "windows" ) {
-            // TODO
-        }
-        else {
-            const output = await execCmd(["command", "-v", "ssh-keygen"], {returnOnNonZeroError: true});
-            if (typeof output === "string") {
-                return true;
-            }
-            else if (throwError) {
+    async checkSshKeygenAvailable(throwError = false) {
+        try {
+            const [code, output, error] = await execCmd2(["ssh-keygen", "--usage"]);
+            return (code === 1);
+        } catch (e) {
+            if (throwError) {
                 const errorMsg = "ssh-keygen not detected on path. Please check that it is installed.";
                 Log.error(errorMsg);
                 throw new Error(errorMsg);
             }
-            else {
-                return false;
-            }
         }
+        return false;
     }
 
     async generateSshKey(name) {
         const filePath = Path.resolve(this.sshKeyDir, name);
         const cmd = ["ssh-keygen", "-t", "ed25519", "-C", name, "-f", filePath, "-q", "-N", ''];
         const [code, output, error] = await execCmd2(cmd, {stdout: "inherit"});
-        if ( code !== 0 ) Log.error(`ssh-keygen returned: ${error}`);
+        if (code !== 0) {
+            Log.error(`ssh-keygen returned: ${error}`);
+        }
         return code === 0;
     }
 

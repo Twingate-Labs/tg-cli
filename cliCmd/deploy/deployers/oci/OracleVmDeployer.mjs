@@ -33,18 +33,22 @@ export class OracleVmDeployer extends OracleBaseDeployer {
     }
 
     async selectKeyPair() {
-        const keyPairs = await this.getKeyPairs();
-              //sshKeygenAvailable = await this.checkSshKeygenAvailable();
+        const keyPairs = await this.getKeyPairs(),
+              sshKeygenAvailable = await this.checkSshKeygenAvailable();
+
+        let defaultOption = "NEW";
+        if ( keyPairs.length > 0 ) defaultOption = "EXISTING";
+        else if ( !sshKeygenAvailable ) defaultOption = "SKIP";
 
         const useKeyPair = await Select.prompt({
             message: "SSH Public Key",
             hint: "We recommend use of an SSH key pair",
             options: [
-                {name: `Use new`, value: "NEW"},
+                {name: `Use new${Colors.italic( !sshKeygenAvailable ? " (ssh-keygen not available)":"")}`, value: "NEW", disabled: !sshKeygenAvailable},
                 {name: `Use existing${Colors.italic(keyPairs.length === 0 ? " (none found)":"")}`, value: "EXISTING", disabled: keyPairs.length === 0},
                 {name: `No, skip ${Colors.italic('(not recommended)')}`, value: "SKIP"}
             ],
-            default: "NEW"
+            default: defaultOption
         });
         if ( useKeyPair === "SKIP" ) return null;
         else if ( useKeyPair === "NEW" ) {

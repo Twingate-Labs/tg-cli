@@ -11,12 +11,12 @@ export class BaseDeployer {
         this.sshKeyDir = cliOptions.sshKeyDir || ".";
     }
 
-    async checkAvailable() {
+    async checkAvailable(cmd = [this.cliCommand, "--version"]) {
         if (typeof this.cliCommand !== "string") {
             return null;
         }
         try {
-            const [code, output, error] = await execCmd2([this.cliCommand, "--version"]);
+            const [code, output, error] = await execCmd2(cmd);
             if (code !== 0) {
                 throw new Error("CLI output returned: " + output);
             }

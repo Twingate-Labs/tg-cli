@@ -15,7 +15,7 @@ export class DigitalOceanDeployer extends BaseDeployer {
     }
 
     async checkAvailable() {
-        await super.checkAvailable();
+        await super.checkAvailable([this.cliCommand, "--help"]);
         const cmd = this.getDoCommand("account", "get");
         const output = await execCmd(cmd, {returnOnNonZeroError: true});
         if ( typeof output === "number" ) {

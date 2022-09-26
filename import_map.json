@@ -1,9 +1,10 @@
 {
   "imports": {
-    "https://deno.land/std@0.113.0/": "https://deno.land/std@0.157.0/",
-    "https://deno.land/std@0.115.0/": "https://deno.land/std@0.157.0/",
-    "https://deno.land/std@0.122.0/": "https://deno.land/std@0.157.0/",
-    "https://deno.land/std@0.123.0/": "https://deno.land/std@0.157.0/",
-    "https://deno.land/std@0.155.0/": "https://deno.land/std@0.157.0/"
+    "https://deno.land/std@0.113.0/": "https://deno.land/std/",
+    "https://deno.land/std@0.115.0/": "https://deno.land/std/",
+    "https://deno.land/std@0.122.0/": "https://deno.land/std/",
+    "https://deno.land/std@0.123.0/": "https://deno.land/std/",
+    "https://deno.land/std@0.155.0/": "https://deno.land/std/",
+    "https://deno.land/x/cliffy/": "https://deno.land/x/cliffy@v0.24.3/"
   }
 }

@@ -7,7 +7,7 @@ import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {exists as fileExists} from "https://deno.land/std/fs/mod.ts";
 import {decryptData, encryptData} from "../crypto.mjs";
 import {Log} from "./log.js";
-import {Input} from "https://deno.land/x/cliffy@v0.20.1/prompt/input.ts";
+import {Input} from "https://deno.land/x/cliffy/prompt/input.ts";
 import {VERSION} from "../version.js";
 
 

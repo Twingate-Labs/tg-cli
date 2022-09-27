@@ -20,7 +20,7 @@ export function getAddGroupToResourceCommands(name) {
                 .arguments("<resourceNameOrId:string> [groupNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add groups to a resource`)
-                .action(async (options, resourceNameOrId, groupNamesOrIds) => {
+                .action(async (options, resourceNameOrId, ...groupNamesOrIds) => {
 
                     if (!groupNamesOrIds){
                         throw new Error(`Group names or IDs are not defined.`)
@@ -88,7 +88,7 @@ export function getRemoveGroupFromResourceCommands(name) {
                 .arguments("<resourceNameOrId:string> [groupNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Remove groups from a resource`)
-                .action(async (options, resourceNameOrId, groupNamesOrIds) => {
+                .action(async (options, resourceNameOrId, ...groupNamesOrIds) => {
 
                     if (!groupNamesOrIds){
                         throw new Error(`Group names or IDs are not defined.`)
@@ -157,7 +157,7 @@ export function getAddResourceToGroupCommands(name) {
                 .arguments("<groupNameOrId:string> [resourceNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add resources to a group`)
-                .action(async (options, groupNameOrId, resourceNamesOrIds) => {
+                .action(async (options, groupNameOrId, ...resourceNamesOrIds) => {
 
                     if (!resourceNamesOrIds){
                         throw new Error(`Resource names or IDs are not defined.`)
@@ -225,7 +225,7 @@ export function getRemoveResourceFromGroupCommands(name) {
                 .arguments("<groupNameOrId:string> [resourceNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add resources to a group`)
-                .action(async (options, groupNameOrId, resourceNamesOrIds) => {
+                .action(async (options, groupNameOrId, ...resourceNamesOrIds) => {
 
                     if (!resourceNamesOrIds){
                         throw new Error(`Resource names or IDs are not defined.`)

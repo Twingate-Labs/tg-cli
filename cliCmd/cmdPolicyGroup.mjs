@@ -70,7 +70,7 @@ export function AddGroupToPolicyCommands(name) {
                 .arguments("<securityPolicyNameOrId:string> [groupNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add groups to a security policy. Note: The security policy already assigned to the groups will be replaced`)
-                .action(async (options, policyNameOrId, groupNamesOrIds) => {
+                .action(async (options, policyNameOrId, ...groupNamesOrIds) => {
 
                     const {networkName, apiKey, client} = await loadClientForCLI(options);
                     options.apiKey = apiKey;

@@ -23,7 +23,7 @@ export function getCreateCommand(name) {
                 .option("-r, --protocol-restrictions [string]", "Protocol Restrictions")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
-                .action(async (options, remoteNetworkNameOrId, resourceName, resourceAddress, groupNameOrIds) => {
+                .action(async (options, remoteNetworkNameOrId, resourceName, resourceAddress, ...groupNameOrIds) => {
 
                     const {networkName, apiKey, client} = await loadClientForCLI(options);
                     options.apiKey = apiKey;
@@ -154,7 +154,7 @@ export function getCreateCommand(name) {
                 .arguments("<name:string> [UserIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
-                .action(async (options, groupName, userIds) => {
+                .action(async (options, groupName, ...userIds) => {
                     const {networkName, apiKey, client} = await loadClientForCLI(options);
                     options.apiKey = apiKey;
                     options.accountName = networkName;
@@ -207,7 +207,7 @@ export function getCreateCommand(name) {
                 .arguments("<name:string> [resourceNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Create a ${name}`)
-                .action(async (options, serviceAccountName, resourceNamesOrIds) => {
+                .action(async (options, serviceAccountName, ...resourceNamesOrIds) => {
                     const {networkName, apiKey, client} = await loadClientForCLI(options);
                     options.apiKey = apiKey;
                     options.accountName = networkName;

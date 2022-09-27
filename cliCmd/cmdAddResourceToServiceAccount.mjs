@@ -20,7 +20,7 @@ export function getAddResourceToSericeAccountCommands(name) {
                 .arguments("<serviceAccountId:string> [resourceNamesOrIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add resources to a service`)
-                .action(async (options, serviceAccountId, resourceNamesOrIds) => {
+                .action(async (options, serviceAccountId, ...resourceNamesOrIds) => {
 
                     if (!resourceNamesOrIds){
                         throw new Error(`Resource names or IDs are not defined.`)

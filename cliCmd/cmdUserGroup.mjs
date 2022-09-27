@@ -20,7 +20,7 @@ export function getAddUserToGroupCommands(name) {
                 .arguments("<groupNameOrId:string> [userIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Add users to a group`)
-                .action(async (options, groupNameOrId, userIds) => {
+                .action(async (options, groupNameOrId, ...userIds) => {
 
                     if (!userIds){
                         throw new Error(`User IDs are not defined.`)
@@ -74,7 +74,7 @@ export function getRemoveUserFromGroupCommands(name) {
                 .arguments("<groupNameOrId:string> [userIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Remove users to a group`)
-                .action(async (options, groupNameOrId, userIds) => {
+                .action(async (options, groupNameOrId, ...userIds) => {
 
                     if (!userIds){
                         throw new Error(`User IDs are not defined.`)

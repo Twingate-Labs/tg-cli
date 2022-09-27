@@ -20,7 +20,7 @@ export function getRemoveBulkCommands(name) {
                 .arguments("[groupIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Remove ${name}s bulk`)
-                .action(async (options, groupIds) => {
+                .action(async (options, ...groupIds) => {
                     const {networkName, apiKey, client} = await loadClientForCLI(options);
                     options.apiKey = apiKey;
                     options.accountName = networkName;
@@ -46,7 +46,7 @@ export function getRemoveBulkCommands(name) {
                 .arguments("[resourceIds...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
                 .description(`Remove ${name}s bulk`)
-                .action(async (options, resourceIds) => {
+                .action(async (options, ...resourceIds) => {
                     const {networkName, apiKey, client} = await loadClientForCLI(options);
                     options.apiKey = apiKey;
                     options.accountName = networkName;

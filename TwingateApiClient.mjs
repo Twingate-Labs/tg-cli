@@ -1,5 +1,3 @@
-import {Log} from "./utils/log.js";
-
 const _capitalise = (s) => `${s[0].toUpperCase()}${s.slice(1)}`;
 const delay = async (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -23,8 +21,9 @@ export class TwingateApiClient {
         RemoteNetwork: "UmVtb3RlTmV0d29yazo",// btoa("RemoteNetwork:").replace(/=$/, ""),
         Group: "R3JvdXA6", // btoa("Group:").replace(/=$/, "")
         Resource: "UmVzb3Vy",
-        User: "VXNlcjox",
-        SecurityPolicy: "U2VjdXJp"
+        User: "VXNlcjo",
+        SecurityPolicy: "U2VjdXJp",
+        Device: "RGV2aWNlO"
     }
 
     static Schema = {
@@ -785,9 +784,17 @@ export class TwingateApiClient {
         return result.edges[0].node.id;
     }
 
+    async lookupDeviceBySerial(serialNumber) {
+        const query = "query DeviceBySerial($serialNumber:String){devices(filter:{serialNumber:{eq:$serialNumber}}){edges{node{id}}}}";
+        let response = await this.exec(query, {serialNumber: ""+serialNumber.trim()});
+        let result = response.devices;
+        if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
+        return result.edges[0].node.id;
+    }
+
 
     async setDeviceTrust(id, isTrusted) {
-        const setDeviceTrustQuery = "mutation SetDeviceTrust($id:ID!,$isTrusted:Boolean!){result:deviceUpdate(id:$id,isTrusted:$isTrusted){ok error entity{id isTrusted}}}";
+        const setDeviceTrustQuery = "mutation SetDeviceTrust($id:ID!,$isTrusted:Boolean!){result:deviceUpdate(id:$id,isTrusted:$isTrusted){ok error entity{id name serialNumber isTrusted}}}";
         let deviceTrustResponse = await this.exec(setDeviceTrustQuery, {id, isTrusted} );
         if ( deviceTrustResponse.result.error !== null ) throw new Error(`Error setting device trust: '${deviceTrustResponse.result.error}'`)
         return deviceTrustResponse.result.entity;

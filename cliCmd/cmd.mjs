@@ -12,6 +12,7 @@ import {getRemoveCommands} from "./removeCmd.mjs";
 import {getAddUserToGroupCommands, getRemoveUserFromGroupCommands} from "./cmdUserGroup.mjs";
 import {getAddResourceToSericeAccountCommands} from "./cmdAddResourceToServiceAccount.mjs";
 import {getRemoveBulkCommands} from "./removeBulkCmd.mjs";
+import {deviceUntrustCommands, deviceTrustCommands} from "./deviceTrustCmd.mjs";
 import {
     getAddGroupToResourceCommands,
     getAddResourceToGroupCommands,
@@ -88,6 +89,12 @@ export function getTopLevelCommand(name) {
 
     let AddGroupToPolicy = AddGroupToPolicyCommands(name)
     if ( AddGroupToPolicy !== null ) cmd = cmd.command("add_group", AddGroupToPolicy)
+
+    let deviceTrust = deviceTrustCommands(name)
+    if ( deviceTrust !== null ) cmd = cmd.command("trust", deviceTrust)
+
+    let deviceUntrust = deviceUntrustCommands(name)
+    if ( deviceUntrust !== null ) cmd = cmd.command("untrust", deviceUntrust)
 
 
 

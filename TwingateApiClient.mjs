@@ -168,7 +168,7 @@ export class TwingateApiClient {
         },
         "SecurityPolicy": {
             isNode: true,
-            queryNodeField: "securityPolicies",
+            queryNodeField: "securityPolicy",
             queryConnectionField: "securityPolicies",
             fields: [
                 {name: "name", type: "string", isLabel: true},

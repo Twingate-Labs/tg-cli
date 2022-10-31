@@ -37,7 +37,11 @@ Mac
 Compiling from source
 ===========================
 * Ensure [deno](https://deno.land/#installation) is installed  
-* Execute `deno compile --allow-all --unstable --import-map ./import_map.json --output ./tg ./tg.js`
+* Execute the commands below
+```
+deno bundle --unstable --import-map ./import_map.json ./tg.js ./tg.bundle.js
+deno compile --allow-all --unstable --target x86_64-unknown-linux-gnu --output ./tg ./tg.bundle.js &
+```
 
 Example Commands
 ===========================

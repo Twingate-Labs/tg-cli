@@ -7,6 +7,7 @@ import {deployDoCommand} from "./digitalocean.mjs";
 import {deployOciCommand} from "./oci.mjs";
 import {deployHetznerCommand} from "./hetzner.mjs";
 import {deployLinodeCommand} from "./linode.mjs";
+import {deployK8sCommand} from "./k8s.mjs";
 
 export const deployCmd = new Command()
     .option("-y, --assume-yes [boolean]", "Automatic yes to prompts; assume 'yes' as answer to all prompts", {global: true})
@@ -15,6 +16,7 @@ export const deployCmd = new Command()
     .command("aws", deployAwsCommand)
     .command("az", deployAzCommand)
     .command("gcloud", deployGcpCommand)
+    .command("k8s", deployK8sCommand)
     .command("oci", deployOciCommand)
     .command("do", deployDoCommand)
     .command("hetzner", deployHetznerCommand)

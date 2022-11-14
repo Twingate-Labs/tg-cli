@@ -53,7 +53,16 @@ export class BaseDeployer {
         return code === 0;
     }
 
-    async selectRemoteNetwork() {
+    async createRemoteNetwork(name=undefined, hint=undefined) {
+        const remoteNetworkName = await Input.prompt({
+            message: "Remote Network name",
+            default: name,
+            hint
+        });
+        return await this.client.createRemoteNetwork(remoteNetworkName);
+    }
+
+    async selectRemoteNetwork(defaultNewName=undefined) {
         const client = this.client;
         let remoteNetworks = await client.fetchAllPages(client.getTopLevelKVQuery("RemoteNetworksKV", "remoteNetworks", "name", "id", "result", 0, "name", "id"))
 
@@ -67,10 +76,13 @@ export class BaseDeployer {
         } else {
             const remoteNetworkId = await Select.prompt({
                 message: "Choose Remote Network",
-                options: sortByTextField(remoteNetworks, "name").map(rn => ({name: rn.name, value: rn.id})),
+                options: [{name: Colors.italic("Create new.."), value: "NEW"},...sortByTextField(remoteNetworks, "name").map(rn => ({name: rn.name, value: rn.id}))],
                 search: true
             });
-            remoteNetwork = remoteNetworks.find(remoteNetwork => remoteNetwork.id === remoteNetworkId);
+            if ( remoteNetworkId === "NEW")
+                remoteNetwork = await this.createRemoteNetwork(defaultNewName);
+            else
+                remoteNetwork = remoteNetworks.find(remoteNetwork => remoteNetwork.id === remoteNetworkId);
         }
         return remoteNetwork;
     }

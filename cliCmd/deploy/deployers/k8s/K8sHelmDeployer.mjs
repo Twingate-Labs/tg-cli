@@ -1,9 +1,9 @@
 import {BaseDeployer} from "../BaseDeployer.mjs";
 import {Select} from "https://deno.land/x/cliffy/prompt/mod.ts";
+import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
-import {execCmd, execCmd2, sortByTextField, tablifyOptions} from "../../../../utils/smallUtilFuncs.mjs";
+import {execCmd, execCmd2, tablifyOptions} from "../../../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../../../utils/log.js";
-import {ConnectorCloudInit} from "../../ConnectorCloudInit.js";
 
 export class K8sHelmDeployer extends BaseDeployer {
 
@@ -19,44 +19,34 @@ export class K8sHelmDeployer extends BaseDeployer {
     async checkAvailable(cmd = [this.cliCommand, "--version"]) {
         await super.checkAvailable([this.cliCommand, "version"]);
         await super.checkAvailable([this.kubectlCommand, "version"]);
-        // del command
-        // helm del $(helm ls --short -n twingate) -n twingate
     }
 
     getKubeCommand(command, subCommand = null, options = {}) {
         const cliOptions = this.cliOptions;
         let cmd = [this.kubectlCommand, command];
 
-        if (typeof subCommand === "string") {
-            cmd.push(subCommand);
-        } else if (Array.isArray(subCommand)) {
-            cmd.push(...subCommand);
-        }
+        if (typeof subCommand === "string") cmd.push(subCommand);
+        else if (Array.isArray(subCommand)) cmd.push(...subCommand);
 
-        if (cliOptions.context != null) {
-            cmd.push("--context", cliOptions.context);
-        }
-        if (!options.noFormat) {
-            cmd.push("-o", options.format || "json");
-        }
+        let context = options.context || cliOptions.context;
+        if ( typeof context === "object") context = context.name;
+        if (!options.noContext && context != null) cmd.push("--context", context);
+        if (!options.noFormat) cmd.push("-o", options.format || "json");
         return cmd;
     }
 
     getHelmCommand(command, subCommand = null, options = {}) {
         let cmd = [this.cliCommand, command];
-        if (typeof subCommand === "string") {
-            cmd.push(subCommand);
-        } else if (Array.isArray(subCommand)) {
-            cmd.push(...subCommand);
-        }
-        if (!options.noFormat) {
-            cmd.push("-o", options.format || "json");
-        }
+
+        if (typeof subCommand === "string") cmd.push(subCommand);
+        else if (Array.isArray(subCommand)) cmd.push(...subCommand);
+
+        if (!options.noFormat) cmd.push("-o", options.format || "json");
         return cmd;
     }
 
     async getKubeContexts() {
-        const cmd = this.getKubeCommand("config", ["get-contexts", "--no-headers"], {noFormat: true}),
+        const cmd = this.getKubeCommand("config", ["get-contexts", "--no-headers"], {noFormat: true, noContext: true}),
             output = await execCmd(cmd),
             contexts = output
                 .split("\n")
@@ -69,7 +59,6 @@ export class K8sHelmDeployer extends BaseDeployer {
                         cluster: fields[2].trim(),
                         authInfo: fields[3].trim(),
                         namespace: fields[4].trim(),
-
                     }
                 })
 
@@ -77,14 +66,33 @@ export class K8sHelmDeployer extends BaseDeployer {
         return contexts;
     }
 
-    async getKubeClusterDomain() {
+    async getKubeClusterEndpoint(clusterName, context) {
+        const getEndpointCmd = this.getKubeCommand("config", "view", {format: `jsonpath='{.clusters[?(@.name=="${clusterName}")].cluster.server}'`, context})
+        const [code, output, error] = await execCmd2(getEndpointCmd);
+        if (code !== 0) {
+            throw new Error(`CLI output for 'getKubeClusterEndpoint' returned non-zero status ${code}: ${output}`);
+        }
+        const url = new URL(output.slice(1, -1));
+        let port = url.port === "" ? 443 : parseInt(url.port, 10);
+        return {host: url.hostname, port};
+    }
+    async getKubeClusterDomain(context=null) {
         const subCommand = ["configmaps", "cluster-dns", "--namespace", "kube-system"];
-        const getClusterDomainCmd = this.getKubeCommand("get", subCommand, {format: "jsonpath={.data.clusterDomain}"});
+        const getClusterDomainCmd = this.getKubeCommand("get", subCommand, {format: "jsonpath={.data.clusterDomain}", context});
         const [code, output, error] = await execCmd2(getClusterDomainCmd);
+        if (code !== 0) {
+            throw new Error(`CLI output for 'getKubeClusterDomain' returned non-zero status ${code}: ${output}`);
+        }
+        return output;
+    }
+
+    async getKubeNamespaces(context=null) {
+        const getNamespacesCmd = this.getKubeCommand("get", "namespaces", {format: "jsonpath={.items[*].metadata.name}", context});
+        const [code, output, error] = await execCmd2(getNamespacesCmd);
         if (code !== 0) {
             throw new Error(`CLI output returned non-zero status ${code}: ${output}`);
         }
-        return output;
+        return output.trim().split(/\s+/);
     }
 
     async addHelmRepo() {
@@ -102,7 +110,7 @@ export class K8sHelmDeployer extends BaseDeployer {
         const releaseName = `tg-${connector.name}`;
         Log.info(`Installing helm release '${releaseName}'...`);
         const subCommand = [releaseName, "twingate/connector", "--install"];
-        subCommand.push("--kube-context", context);
+        subCommand.push("--kube-context", context.name);
         if (this.namespace) {
             subCommand.push("-n", this.namespace, "--create-namespace");
         }
@@ -191,8 +199,67 @@ export class K8sHelmDeployer extends BaseDeployer {
         return releases;
     }
 
-    async doInitialSetup(remoteNetwork) {
-
+    async doInitialSetup(remoteNetwork, context, confirm=true) {
+        const clusterDomain = await this.getKubeClusterDomain(),
+              namespaces = await this.getKubeNamespaces(),
+              endpoint = await this.getKubeClusterEndpoint(context.cluster, context),
+              resources = []
+        ;
+        resources.push({
+            name: `${context.cluster} API`,
+            address: endpoint.host,
+            protocols: {
+                    allowIcmp: false,
+                    tcp: {policy: "RESTRICTED", ports: [{start: endpoint.port, end: endpoint.port}]},
+                    udp: {policy: "RESTRICTED", ports: []}
+            },
+            group: `${context.cluster} - API Users`
+        });
+        resources.push({
+            name: `${context.cluster} - All`,
+            address: `*.${clusterDomain}`,
+            group: `${context.cluster} - All`,
+            protocols: null
+        });
+        namespaces.forEach(namespace => resources.push({
+            name: `${context.cluster} - ns ${namespace}`,
+            address: `*.${namespace}.${clusterDomain}`,
+            group: `${context.cluster} - ns ${namespace}`,
+            protocols: null
+        }));
+        const table = new Table()
+            .header(["Resource Name", "Address", "Group Name"])
+            .body(resources.map(r => [r.name, r.address, r.group]))
+            .render()
+        ;
+        if ( confirm ) {
+            const options = [
+                {value: "yes", name: "Yes, create Groups and Resources"},
+                {value: "resources_only", name: "Yes, create Resources only"},
+                {value: "no", name: "No"}
+            ];
+            let creationOption = await Select.prompt({message: `Would you like to create the Groups and/or Resources above?`, options});
+            switch (creationOption) {
+                case "yes":
+                    for (const resource of resources ) {
+                        if ( !resource.group ) resource.groupId=[];
+                        Log.info(`Creating group: ${resource.group}...`);
+                        resource.groupIds = [(await this.client.createGroup(resource.group)).id];
+                    }
+                    // Fall through intentional
+                case "resources_only":
+                    for (const resource of resources ) {
+                        Log.info(`Creating resource: ${resource.name}...`);
+                        resource.tg_resource = await this.client.createResource(resource.name, resource.address, remoteNetwork.id, resource.protocols, resource.groupIds);
+                    }
+                    break;
+                case "no":
+                    // NoOp
+                default:
+                    break;
+            }
+            return resources;
+        }
     }
 
     async deploy() {
@@ -202,11 +269,11 @@ export class K8sHelmDeployer extends BaseDeployer {
             context = await this.selectKubeContext(),
             repoAddStatus = await this.addHelmRepo(),
             remoteNetwork = await this.selectRemoteNetwork(context.name),
-            connectors = await this.deployConnectors(remoteNetwork, context)
+            connectors = await this.deployConnectors(remoteNetwork, context),
+            initialSetup = await this.doInitialSetup(remoteNetwork, context)
         ;
         Log.info(`Connectors deployed, note to uninstall releases you can run the following from a *nix shell:`);
-        Log.info(Colors.italic(`helm del $(helm ls --short -n ${this.namespace}) -n ${this.namespace}`));
+        Log.info(Colors.italic(`${this.cliCommand} del $(helm ls --short -n ${this.namespace}) -n ${this.namespace}`));
 
-        let a = 1;
     }
 }

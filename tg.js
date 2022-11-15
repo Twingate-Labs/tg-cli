@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-all --unstable
+#!/usr/bin/env -S deno run --allow-all --unstable --import-map ./import_map.json
 
 import {Command, EnumType} from "https://deno.land/x/cliffy/command/mod.ts";
 import {TwingateApiClient} from "./TwingateApiClient.mjs";

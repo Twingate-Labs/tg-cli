@@ -1,7 +1,6 @@
 import {BaseDeployer} from "../BaseDeployer.mjs";
 import {execCmd, execCmd2, tablifyOptions} from "../../../../utils/smallUtilFuncs.mjs";
 import {Log} from "../../../../utils/log.js";
-import {ConnectorCloudInit} from "../../ConnectorCloudInit.js";
 
 export class LocalContainerDeployer extends BaseDeployer {
 

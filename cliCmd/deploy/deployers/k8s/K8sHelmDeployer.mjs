@@ -222,7 +222,7 @@ export class K8sHelmDeployer extends BaseDeployer {
             protocols: {
                     allowIcmp: false,
                     tcp: {policy: "RESTRICTED", ports: [{start: endpoint.port, end: endpoint.port}]},
-                    udp: {policy: "RESTRICTED", ports: []}
+                    udp: {policy: "RESTRICTED", ports: [{start: endpoint.port, end: endpoint.port}]}
             },
             group: `${context.cluster} - API Users`
         });

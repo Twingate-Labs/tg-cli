@@ -9,6 +9,7 @@ import {deployHetznerCommand} from "./hetzner.mjs";
 import {deployLinodeCommand} from "./linode.mjs";
 import {deployK8sCommand} from "./k8s.mjs";
 import {deployAptibleCommand} from "./aptible.mjs";
+import {deployCivoCommand} from "./civo.mjs";
 
 export const deployCmd = new Command()
     .option("-y, --assume-yes [boolean]", "Automatic yes to prompts; assume 'yes' as answer to all prompts", {global: true})
@@ -22,6 +23,7 @@ export const deployCmd = new Command()
     .command("do", deployDoCommand)
     .command("hetzner", deployHetznerCommand)
     .command("linode", deployLinodeCommand)
+    .command("civo", deployCivoCommand)
     .command("aptible", deployAptibleCommand)
     .command("local", deployLocalCommand)
 ;

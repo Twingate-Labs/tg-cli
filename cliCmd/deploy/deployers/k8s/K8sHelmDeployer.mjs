@@ -14,11 +14,20 @@ export class K8sHelmDeployer extends BaseDeployer {
         this.numConnectors = cliOptions.numConnectors || 2;
         this.cliCommand = "helm";
         this.kubectlCommand = "kubectl";
+        this.kubeConfigContent = null;
+        this.tempKubeConfigFile = null;
+        this.resources = [];
+        this.deployed = false;
     }
 
     async checkAvailable(cmd = [this.cliCommand, "--version"]) {
-        await super.checkAvailable([this.cliCommand, "version"]);
-        await super.checkAvailable([this.kubectlCommand, "version"]);
+        if ( cmd === null ) {
+            await super.checkAvailable([this.cliCommand, "version"]);
+            await super.checkAvailable([this.kubectlCommand, "version"]);
+        }
+        else {
+            await super.checkAvailable(cmd);
+        }
     }
 
     getKubeCommand(command, subCommand = null, options = {}) {
@@ -32,6 +41,7 @@ export class K8sHelmDeployer extends BaseDeployer {
         if ( typeof context === "object") context = context.name;
         if (!options.noContext && context != null) cmd.push("--context", context);
         if (!options.noFormat) cmd.push("-o", options.format || "json");
+        if (this.tempKubeConfigFile) cmd.push("--kubeconfig", this.tempKubeConfigFile);
         return cmd;
     }
 
@@ -42,6 +52,7 @@ export class K8sHelmDeployer extends BaseDeployer {
         else if (Array.isArray(subCommand)) cmd.push(...subCommand);
 
         if (!options.noFormat) cmd.push("-o", options.format || "json");
+        if (this.tempKubeConfigFile) cmd.push("--kubeconfig", this.tempKubeConfigFile);
         return cmd;
     }
 
@@ -203,7 +214,7 @@ export class K8sHelmDeployer extends BaseDeployer {
         const clusterDomain = await this.getKubeClusterDomain(),
               namespaces = await this.getKubeNamespaces(),
               endpoint = await this.getKubeClusterEndpoint(context.cluster, context),
-              resources = []
+              resources = this.resources
         ;
         resources.push({
             name: `${context.cluster} API`,
@@ -239,12 +250,21 @@ export class K8sHelmDeployer extends BaseDeployer {
                 {value: "no", name: "No"}
             ];
             let creationOption = await Select.prompt({message: `Would you like to create the Groups and/or Resources above?`, options});
+            const userIds = await this.inputUserEmails();
+            let groupNameIdMap = {};
             switch (creationOption) {
                 case "yes":
                     for (const resource of resources ) {
                         if ( !resource.group ) resource.groupId=[];
-                        Log.info(`Creating group: ${resource.group}...`);
-                        resource.groupIds = [(await this.client.createGroup(resource.group)).id];
+                        if ( groupNameIdMap[resource.group] ) {
+                            resource.groupIds = [groupNameIdMap[resource.group]];
+                        }
+                        else {
+                            Log.info(`Creating group: ${resource.group}...`);
+                            const group = await this.client.createGroup(resource.group, [], userIds);
+                            resource.groupIds = [group.id];
+                            groupNameIdMap[resource.group] = group.id;
+                        }
                     }
                     // Fall through intentional
                 case "resources_only":
@@ -265,15 +285,30 @@ export class K8sHelmDeployer extends BaseDeployer {
     async deploy() {
         await super.deploy();
         await this.checkAvailable();
-        const
-            context = await this.selectKubeContext(),
-            repoAddStatus = await this.addHelmRepo(),
-            remoteNetwork = await this.selectRemoteNetwork(context.name),
-            connectors = await this.deployConnectors(remoteNetwork, context),
-            initialSetup = await this.doInitialSetup(remoteNetwork, context)
-        ;
-        Log.info(`Connectors deployed, note to uninstall releases you can run the following from a *nix shell:`);
-        Log.info(Colors.italic(`${this.cliCommand} del $(helm ls --short -n ${this.namespace}) -n ${this.namespace}`));
-
+        if ( this.kubeConfigContent ) {
+            this.tempKubeConfigFile = await Deno.makeTempFile({suffix: "kubeconfig"});
+            await Deno.writeTextFile(this.tempKubeConfigFile, this.kubeConfigContent);
+            Log.info(`Using temp file for kubeconfig: ${this.tempKubeConfigFile}`);
+        }
+        try {
+            const
+                context = await this.selectKubeContext(),
+                repoAddStatus = await this.addHelmRepo(),
+                remoteNetwork = await this.selectRemoteNetwork(context.name),
+                connectors = await this.deployConnectors(remoteNetwork, context),
+                initialSetup = await this.doInitialSetup(remoteNetwork, context)
+            ;
+            Log.info(`Connectors deployed, note to uninstall releases you can run the following from a *nix shell:`);
+            Log.info(Colors.italic(`${this.cliCommand} del $(helm ls --short -n ${this.namespace}) -n ${this.namespace}`));
+            this.deployed = true;
+        }
+        catch (e) {
+            Log.error(e);
+        }
+        finally {
+            if ( this.tempKubeConfigFile) {
+                await Deno.remove(this.tempKubeConfigFile);
+            }
+        }
     }
 }

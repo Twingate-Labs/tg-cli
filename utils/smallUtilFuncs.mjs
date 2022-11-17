@@ -9,6 +9,8 @@ import {decryptData, encryptData} from "../crypto.mjs";
 import {Log} from "./log.js";
 import {Input} from "https://deno.land/x/cliffy/prompt/input.ts";
 import {VERSION} from "../version.js";
+import { readerFromStreamReader } from "https://deno.land/std/io/mod.ts";
+
 
 
 export function genFileNameFromNetworkName(networkName, extension = "xlsx") {
@@ -291,8 +293,6 @@ export function generateRandomHexString(length) {
     return ret;
 }
 
-import { readerFromStreamReader } from "https://deno.land/std/io/mod.ts";
-
 export async function downloadFile(url, filename){
     const rsp = await fetch(url);
     const rdr=rsp.body?.getReader();
@@ -303,3 +303,5 @@ export async function downloadFile(url, filename){
         f.close();
     }
 }
+
+export const delay = async (ms) => new Promise(resolve => setTimeout(resolve, ms));

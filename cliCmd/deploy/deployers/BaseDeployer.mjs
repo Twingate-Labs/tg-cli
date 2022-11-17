@@ -117,10 +117,39 @@ export class BaseDeployer {
         return connector;
     }
 
-    async deploy() {
+    async inputUserEmails(message=null, hint=null) {
+        message = message || `Enter any email addresses that should be members of these groups (${Colors.italic('optional')})`;
+        hint = hint || "Separate multiple addresses with a comma (','). Email addresses must exist in your Twingate account. Press return to skip.";
+        let complete = false,
+            userIds = []
+        ;
+        while ( !complete ) {
+            userIds = [];
+            let emails = await Input.prompt({message, hint});
+            emails = emails.trim().split(",").filter(e => e.length > 0);
+            complete = true;
+            for ( const email of emails ) {
+                const userId = await this.client.lookupUserByEmail(email);
+                if ( userId === null ) {
+                    Log.warn(`Email invalid or not found. If this is a new user please add them to your Twingate account: ${email}`);
+                    complete = false;
+                }
+                else {
+                    userIds.push(userId);
+                }
+            }
+        }
+        return userIds;
+    }
+
+    async loadClient() {
+        if ( this.client ) return;
         const {networkName, apiKey, client} = await loadClientForCLI(this.cliOptions);
         this.cliOptions.apiKey = apiKey;
         this.cliOptions.accountName = networkName;
         this.client = client;
+    }
+    async deploy() {
+        await this.loadClient();
     }
 }

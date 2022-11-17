@@ -223,6 +223,10 @@ export class TwingateApiClient {
         this.onApiError = onApiError;
         this.logger = logger;
         this.silenceApiErrorsWithResults = silenceApiErrorsWithResults;
+        this.opCounters = {
+            "query": 0,
+            "mutation": 0
+        }
     }
 
     /**
@@ -255,9 +259,13 @@ export class TwingateApiClient {
      */
     async exec(query, variables = {}) {
         const url = `https://${this.networkName}.${this.domain}/${this.endpoint}`,
-              body = JSON.stringify({query, variables});
+              body = JSON.stringify({query, variables}),
+            opType = query.split(" ")[0]
+        ;
+        if ( typeof this.opCounters[opType] !== "number" ) this.opCounters[opType] = 0;
         let doFetch = true, res = null;
         while ( doFetch ) {
+            this.opCounters[opType]++;
             res = await fetch(url, {
                 ...this.defaultRequestOptions,
                 headers: {
@@ -269,7 +277,7 @@ export class TwingateApiClient {
 
             if ( res.status === 429 ) {
                 let retryAfterSecs = parseInt(res.headers.get("retry-after")) || 60;
-                this.logger.warn(`Request is throttled (429), retrying in: ${retryAfterSecs} seconds. Query: ${body}`);
+                this.logger.warn(`Request is throttled (429), retrying in: ${retryAfterSecs} seconds - please wait. Op type: '${opType}', Calls: ${this.opCounters[opType]}`);
                 await delay(retryAfterSecs*1000);
             }
             else if ( res.status < 200 || res.status > 299 ) {

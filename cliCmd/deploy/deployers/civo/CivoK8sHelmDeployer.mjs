@@ -197,6 +197,6 @@ export class CivoK8sHelmDeployer extends K8sHelmDeployer {
         if ( this.deployed ) {
             await this.lockDownFirewall(civoCluster, region);
         }
-        Log.success(`Twingate deployed to Civo cluster ${civoCluster.name} and firewall rules locked down`);
+        Log.success(`Twingate deployed to Civo cluster '${Colors.italic(civoCluster.name)}' and firewall rules locked down.`);
     }
 }

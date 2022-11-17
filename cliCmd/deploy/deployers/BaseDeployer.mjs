@@ -12,7 +12,7 @@ export class BaseDeployer {
     }
 
     async checkAvailable(cmd = [this.cliCommand, "--version"]) {
-        if (typeof this.cliCommand !== "string") {
+        if (typeof cmd[0] !== "string") {
             return null;
         }
         try {
@@ -21,7 +21,7 @@ export class BaseDeployer {
                 throw new Error("CLI output returned: " + output);
             }
         } catch (e) {
-            const errorMsg = `'${this.cliCommand}' CLI not detected on path. Please check that it is installed.`;
+            const errorMsg = `'${cmd[0]}' CLI not detected on path. Please check that it is installed.`;
             Log.error(errorMsg);
             throw new Error(errorMsg);
 

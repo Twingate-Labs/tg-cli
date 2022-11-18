@@ -166,6 +166,7 @@ export class CivoK8sHelmDeployer extends K8sHelmDeployer {
     }
 
     async deploy() {
+        await this.loadClient();
         await this.checkAvailable();
         const
             region = await this.selectCivoRegion(),

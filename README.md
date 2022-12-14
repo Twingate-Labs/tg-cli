@@ -5,7 +5,7 @@ This is a command line application demonstrating various usages of the Twingate 
 
 Setup
 ===========================
-* Download the lastest release cli-{version}-{os}-{cpu architecture}.zip from https://github.com/Twingate-Labs/tg-cli/releases/latest<br />
+* Download the lastest [release](https://github.com/Twingate-Labs/tg-cli/releases/latest) cli-{version}-{os}-{cpu architecture}.zip 
 * Unzip the downloaded zip file
 
 

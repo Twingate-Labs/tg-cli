@@ -270,9 +270,11 @@ export function tryProcessPortRestrictionString(restrictions) {
         if ( ports.length > 2 ) throw new Error(`Invalid port restriction: ${restriction}`);
         let start = validatePortNumber(ports[0]);
         let end = ports.length === 2 ? validatePortNumber(ports[1]) : start;
+
         if ( start > end ) throw new Error(`Invalid port restriction - end greater than start: ${restriction}`);
         return {start,end};
     };
+    restrictions =  restrictions !== undefined ? ""+restrictions : undefined;
     if ( typeof restrictions !== "string" || restrictions.trim() === "") {
         return [];
     }

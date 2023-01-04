@@ -181,6 +181,7 @@ export const importCmd = new Command()
 
         // Pre-process users
         for ( let node of allNodes.User) {
+            if (node.email == null) continue;
             nodeLabelIdMap.User[node.email.toLowerCase()] = node.id;
         }
 

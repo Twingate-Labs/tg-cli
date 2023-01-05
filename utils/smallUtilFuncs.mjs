@@ -306,4 +306,11 @@ export async function downloadFile(url, filename){
     }
 }
 
+export function findDuplicates(array) {
+    let seen = new Set(),
+        duplicates = [];
+    array.forEach( item => seen.has(item) ? duplicates.push(item) : seen.add(item) );
+    return duplicates;
+}
+
 export const delay = async (ms) => new Promise(resolve => setTimeout(resolve, ms));

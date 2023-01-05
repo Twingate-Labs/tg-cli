@@ -1,4 +1,4 @@
-import {genFileNameFromNetworkName, loadNetworkAndApiKey, AFFIRMATIVES, tryProcessPortRestrictionString, loadClientForCLI} from "../utils/smallUtilFuncs.mjs";
+import {genFileNameFromNetworkName, loadNetworkAndApiKey, AFFIRMATIVES, tryProcessPortRestrictionString, loadClientForCLI, findDuplicates} from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
 import XLSX from "https://cdn.esm.sh/v58/xlsx@0.17.4/deno/xlsx.js";
@@ -201,8 +201,9 @@ export const importCmd = new Command()
             if ( options.resources ) {
                 node.resourceNames = node.resources.map(resourceId => nodeIdMap[resourceId].name);
                 node.resources = node.resources.map(resourceId => nodeIdMap[resourceId]);
-                if (node.resourceNames.length !== (new Set(node.resourceNames)).size) {
-                    throw new Error(`Remote network '${node.name}' contains resources with duplicate names`);
+                let duplicateResourceNames = findDuplicates(node.resourceNames);
+                if ( duplicateResourceNames.length > 0 ) {
+                    throw new Error(`Remote network '${node.name}' contains resources with duplicate names:\n${duplicateResourceNames.join('\n')}`);
                 }
             }
             nodeLabelIdMap.RemoteNetwork[node.name] = node.id;

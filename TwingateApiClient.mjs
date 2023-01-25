@@ -800,6 +800,14 @@ export class TwingateApiClient {
         return result.edges[0].node.id;
     }
 
+    async lookupDevicesBySerial(serialNumber) {
+        const query = "query DeviceBySerial($serialNumber:String){devices(filter:{serialNumber:{eq:$serialNumber}}){edges{node{id}}}}";
+        let response = await this.exec(query, {serialNumber: ""+serialNumber.trim()});
+        let result = response.devices;
+        if ( result == null || result.edges == null || result.edges.length < 1 ) return null;
+        return result.edges.map(edge => edge.node.id);
+    }
+
 
     async setDeviceTrust(id, isTrusted) {
         const setDeviceTrustQuery = "mutation SetDeviceTrust($id:ID!,$isTrusted:Boolean!){result:deviceUpdate(id:$id,isTrusted:$isTrusted){ok error entity{id name serialNumber isTrusted}}}";

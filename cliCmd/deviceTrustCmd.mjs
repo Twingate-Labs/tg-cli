@@ -30,7 +30,7 @@ export function deviceTrustCommands(name) {
                         for ( let x = 0; x < deviceIds.length; x++ ) {
                             let deviceId = deviceIds[x]
                             if (!deviceId.startsWith(TwingateApiClient.IdPrefixes.Device)) {
-                                deviceId = await client.lookupDeviceBySerial(deviceId);
+                                deviceId = await client.lookupDevicesBySerial(deviceId);
                                 if (deviceId == null) {
                                     throw new Error(`Could not find device: '${deviceIds[x]}'`)
                                 } else {
@@ -39,6 +39,7 @@ export function deviceTrustCommands(name) {
                             }
                         }
                     }
+                    deviceIds = deviceIds.flatMap(deviceId => deviceId)
 
                     for (const deviceId of deviceIds){
                         let res = await client.setDeviceTrust(deviceId, true);
@@ -78,7 +79,7 @@ export function deviceUntrustCommands(name) {
                         for ( let x = 0; x < deviceIds.length; x++ ) {
                             let deviceId = deviceIds[x]
                             if (!deviceId.startsWith(TwingateApiClient.IdPrefixes.Device)) {
-                                deviceId = await client.lookupDeviceBySerial(deviceId);
+                                deviceId = await client.lookupDevicesBySerial(deviceId);
                                 if (deviceId == null) {
                                     throw new Error(`Could not find device: '${deviceIds[x]}'`)
                                 } else {
@@ -87,6 +88,7 @@ export function deviceUntrustCommands(name) {
                             }
                         }
                     }
+                    deviceIds = deviceIds.flatMap(deviceId => deviceId)
 
                     for (const deviceId of deviceIds){
                         let res = await client.setDeviceTrust(deviceId, false);

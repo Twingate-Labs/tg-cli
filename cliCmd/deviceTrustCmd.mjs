@@ -17,33 +17,42 @@ export function deviceTrustCommands(name) {
     switch (name) {
         case "device":
             cmd = new Command()
-                .arguments("<deviceIdOrSerial:string>")
+                .arguments("[deviceIdsOrSerials...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
-                .description(`Trust a device`)
-                .action(async (options, deviceIdOrSerial) => {
+                .description(`Trust devices`)
+                .action(async (options, ...deviceIdsOrSerials) => {
                     const {networkName, apiKey, client} = await loadClientForCLI(options);
                     options.apiKey = apiKey;
                     options.accountName = networkName;
 
-                    let deviceId = deviceIdOrSerial
-                    if (!deviceId.startsWith(TwingateApiClient.IdPrefixes.Device)) {
-                        deviceId = await client.lookupDeviceBySerial(deviceId);
-                        if (deviceId == null) {
-                            throw new Error(`Could not find device serial: '${deviceIdOrSerial}'`)
+                    let deviceIds = deviceIdsOrSerials
+                    if (deviceIds){
+                        for ( let x = 0; x < deviceIds.length; x++ ) {
+                            let deviceId = deviceIds[x]
+                            if (!deviceId.startsWith(TwingateApiClient.IdPrefixes.Device)) {
+                                deviceId = await client.lookupDeviceBySerial(deviceId);
+                                if (deviceId == null) {
+                                    throw new Error(`Could not find device: '${deviceIds[x]}'`)
+                                } else {
+                                    deviceIds[x] = deviceId
+                                }
+                            }
                         }
                     }
 
-                    let res = await client.setDeviceTrust(deviceId, true);
+                    for (const deviceId of deviceIds){
+                        let res = await client.setDeviceTrust(deviceId, true);
 
-                    switch (options.outputFormat) {
-                        case OutputFormat.JSON:
-                            //console.dir(res, {'maxArrayLength': null});
-                            console.log(JSON.stringify(res));
-                            break;
-                        default:
-                            let msg = `Device '${deviceId}' with serial '${res.serialNumber}' is trusted.`
-                            Log.success(msg);
-                            break;
+                        switch (options.outputFormat) {
+                            case OutputFormat.JSON:
+                                //console.dir(res, {'maxArrayLength': null});
+                                console.log(JSON.stringify(res));
+                                break;
+                            default:
+                                let msg = `Device '${deviceId}' with serial '${res.serialNumber}' is trusted.`
+                                Log.success(msg);
+                                break;
+                        }
                     }
                 });
             break;
@@ -56,33 +65,42 @@ export function deviceUntrustCommands(name) {
     switch (name) {
         case "device":
             cmd = new Command()
-                .arguments("<deviceIdOrSerial:string>")
+                .arguments("[deviceIdsOrSerials...:string]")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
-                .description(`Untrust a device`)
-                .action(async (options, deviceIdOrSerial) => {
+                .description(`Untrust devices`)
+                .action(async (options, ...deviceIdsOrSerials) => {
                     const {networkName, apiKey, client} = await loadClientForCLI(options);
                     options.apiKey = apiKey;
                     options.accountName = networkName;
 
-                    let deviceId = deviceIdOrSerial
-                    if (!deviceId.startsWith(TwingateApiClient.IdPrefixes.Device)) {
-                        deviceId = await client.lookupDeviceBySerial(deviceId);
-                        if (deviceId == null) {
-                            throw new Error(`Could not find device serial: '${deviceIdOrSerial}'`)
+                    let deviceIds = deviceIdsOrSerials
+                    if (deviceIds){
+                        for ( let x = 0; x < deviceIds.length; x++ ) {
+                            let deviceId = deviceIds[x]
+                            if (!deviceId.startsWith(TwingateApiClient.IdPrefixes.Device)) {
+                                deviceId = await client.lookupDeviceBySerial(deviceId);
+                                if (deviceId == null) {
+                                    throw new Error(`Could not find device: '${deviceIds[x]}'`)
+                                } else {
+                                    deviceIds[x] = deviceId
+                                }
+                            }
                         }
                     }
 
-                    let res = await client.setDeviceTrust(deviceId, false);
+                    for (const deviceId of deviceIds){
+                        let res = await client.setDeviceTrust(deviceId, false);
 
-                    switch (options.outputFormat) {
-                        case OutputFormat.JSON:
-                            //console.dir(res, {'maxArrayLength': null});
-                            console.log(JSON.stringify(res));
-                            break;
-                        default:
-                            let msg = `Device '${deviceId}' with serial '${res.serialNumber}' is untrusted.`
-                            Log.success(msg);
-                            break;
+                        switch (options.outputFormat) {
+                            case OutputFormat.JSON:
+                                //console.dir(res, {'maxArrayLength': null});
+                                console.log(JSON.stringify(res));
+                                break;
+                            default:
+                                let msg = `Device '${deviceId}' with serial '${res.serialNumber}' is untrusted.`
+                                Log.success(msg);
+                                break;
+                        }
                     }
                 });
             break;

@@ -93,7 +93,7 @@ export function getCreateCommand(name) {
         case "connector":
             cmd = new Command()
                 .type("format", OutputFormat)
-                .arguments("<remoteNetworkNameOrId:string> <name:string>")
+                .arguments("<remoteNetworkNameOrId:string> [name:string]")
                 .option("-t, --generate-tokens [boolean]", "Generate tokens", {
                     default: true
                 })

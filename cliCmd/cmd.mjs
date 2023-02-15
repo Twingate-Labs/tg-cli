@@ -27,6 +27,7 @@ import {
     getAllUserEmailCommands,
     getAllGroupResourceCommands
 } from "./getCmd.mjs";
+import {getGenerateConnectorToken} from "./cmdConnectorToken.mjs";
 
 export function getTopLevelCommand(name) {
 
@@ -62,6 +63,9 @@ export function getTopLevelCommand(name) {
 
     let addResourceToServiceAccount = getAddResourceToSericeAccountCommands(name)
     if ( addResourceToServiceAccount !== null ) cmd = cmd.command("add_resource", addResourceToServiceAccount)
+
+    let generateConnectorTokens = getGenerateConnectorToken(name)
+    if ( generateConnectorTokens !== null ) cmd = cmd.command("generate_token", generateConnectorTokens)
 
     let getGroupFromResource = getGroupFromResourceCommands(name)
     if ( getGroupFromResource !== null ) cmd = cmd.command("get_group", getGroupFromResource)

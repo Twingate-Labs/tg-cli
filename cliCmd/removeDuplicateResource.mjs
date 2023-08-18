@@ -78,7 +78,7 @@ export const removeDuplicateResourceCmd = new Command()
         }
         for (let key in processedDict){
             processedDict[key].pop()
-            console.log(`connector hash: ${key}, connector ids: ${processedDict[key]}`)
+            console.log(`resource hash: ${key}, resource ids: ${processedDict[key]}`)
         }
         let toRemove = Object.values(processedDict).flat()
         console.log(`The ${toRemove.length} resources above will be removed.`)

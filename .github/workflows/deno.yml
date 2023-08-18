@@ -53,7 +53,7 @@ jobs:
           chmod 755 .debpkg/usr/bin/tg
       - uses: jiro4989/build-deb-action@v2
         with:
-          package: tg
+          package: tgcli
           package_root: .debpkg
           maintainer: twingate_lab
           version: ${{ github.ref }} # refs/tags/v*.*.*

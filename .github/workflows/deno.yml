@@ -48,12 +48,12 @@ jobs:
       - name: create package directory amd64
         run: |
           mkdir -p .debpkg/usr/bin
-          cp ./dist/linux/x86_64/tg .debpkg/usr/bin/tgcli
-          ls -l .debpkg/usr/bin/tgcli
-          chmod 755 .debpkg/usr/bin/tgcli
+          cp ./dist/linux/x86_64/tg .debpkg/usr/bin/tg
+          ls -l .debpkg/usr/bin/tg
+          chmod 755 .debpkg/usr/bin/tg
       - uses: jiro4989/build-deb-action@v2
         with:
-          package: tgcli
+          package: tg
           package_root: .debpkg
           maintainer: twingate_lab
           version: ${{ github.ref }} # refs/tags/v*.*.*

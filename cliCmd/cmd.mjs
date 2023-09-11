@@ -11,6 +11,7 @@ import {getListCommand} from "./listCmd.mjs";
 import {getRemoveCommands} from "./removeCmd.mjs";
 import {getAddUserToGroupCommands, getRemoveUserFromGroupCommands} from "./cmdUserGroup.mjs";
 import {getAddResourceToSericeAccountCommands} from "./cmdAddResourceToServiceAccount.mjs";
+import {getRemoveResourceFromServiceAccountCommands} from "./cmdRemoveResourceFromServiceAccount.mjs";
 import {getRemoveBulkCommands} from "./removeBulkCmd.mjs";
 import {deviceUntrustCommands, deviceTrustCommands} from "./deviceTrustCmd.mjs";
 import {
@@ -63,6 +64,9 @@ export function getTopLevelCommand(name) {
 
     let addResourceToServiceAccount = getAddResourceToSericeAccountCommands(name)
     if ( addResourceToServiceAccount !== null ) cmd = cmd.command("add_resource", addResourceToServiceAccount)
+
+    let removeResourceFromServiceAccount = getRemoveResourceFromServiceAccountCommands(name)
+    if ( removeResourceFromServiceAccount !== null ) cmd = cmd.command("remove_resource", removeResourceFromServiceAccount)
 
     let generateConnectorTokens = getGenerateConnectorToken(name)
     if ( generateConnectorTokens !== null ) cmd = cmd.command("generate_token", generateConnectorTokens)

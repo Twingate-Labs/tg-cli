@@ -24,7 +24,7 @@ export function genFileNameFromNetworkName(networkName, extension = "xlsx") {
 export async function loadClientForCLI(options) {
     const {networkName, apiKey} = await loadNetworkAndApiKey(options.accountName);
     const app = Deno.env.get("TG_APPLICATION") || 'tg-cli';
-    const applicationName = `${app}/${VERSION}`
+    const applicationName = `Twingate-${app}/${VERSION}`
     const client = new TwingateApiClient(networkName, apiKey, {
         logger: Log,
         applicationName

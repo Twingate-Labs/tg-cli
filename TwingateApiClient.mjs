@@ -203,7 +203,7 @@ export class TwingateApiClient {
             logger: console,
             silenceApiErrorsWithResults: false,
             defaultPageSize: 0,
-            applicationName: `TwingateApiClient/${TwingateApiClient.VERSION}`
+            applicationName: `Twingate-tg-cli/${TwingateApiClient.VERSION}`
         };
 
         const {domain, endpoint, defaultRequestOptions, defaultRequestHeaders, onApiError, logger,

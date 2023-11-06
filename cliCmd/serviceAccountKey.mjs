@@ -54,7 +54,7 @@ export function getServiceAccountKeyDeleteCommands(name) {
             cmd = new Command()
                 .arguments("<serviceAccountKeyId:string>")
                 .option("-o, --output-format <format:format>", "Output format", {default: "text"})
-                .description(`Revoke a service account key`)
+                .description(`Revoke and delete a service account key`)
                 .action(async (options, serviceAccountKeyId) => {
                     const {networkName, apiKey, client} = await loadClientForCLI(options);
                     options.apiKey = apiKey;

@@ -896,6 +896,17 @@ export class TwingateApiClient {
         return response.result;
     }
 
+    async serviceAccountKeyDelete(serviceAccountKeyId) {
+        const revokeQuery = "mutation RevokeKey($serviceAccountKeyId:ID!){result:serviceAccountKeyRevoke(id:$serviceAccountKeyId){error entity{id name serviceAccount{id name}}}}";
+        const deleteQuery = "mutation DeleteKey($serviceAccountKeyId:ID!){result:serviceAccountKeyDelete(id:$serviceAccountKeyId){error ok}}"
+        let revokeResponse = await this.exec(revokeQuery, {serviceAccountKeyId} );
+        if ( revokeResponse.result.error !== null ) throw new Error(`Error Revoking service account key: '${revokeResponse.result.error}'`)
+        let deleteResponse = await this.exec(deleteQuery, {serviceAccountKeyId} );
+        if ( deleteResponse.result.error !== null ) throw new Error(`Error Deleting service account key: '${deleteResponse.result.error}'`)
+        return revokeResponse.result;
+    }
+
+
     async createResource(name, address, remoteNetworkId, protocols = null, groupIds = []) {
         const createResourceQuery = "mutation CreateResource($name:String!,$address:String!,$remoteNetworkId:ID!,$protocols:ProtocolsInput,$groupIds:[ID]){result:resourceCreate(address:$address,groupIds:$groupIds,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId){error entity{id name address{value} remoteNetwork{name} groups{edges{node{id name}}}}}}";
         let createResourceResponse = await this.exec(createResourceQuery, {name, address, remoteNetworkId, protocols, groupIds} );

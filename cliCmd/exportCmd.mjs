@@ -139,14 +139,18 @@ async function outputDot(client, options) {
 async function exportDot(client, options) {
     let dot = await outputDot(client, options);
     options.outputFile = options.outputFile || genFileNameFromNetworkName(options.accountName, options.format);
-    return await Deno.writeTextFile(`./${options.outputFile}`, dot);
+    let outputDir = `./output/${options.outputFile}_export`;
+    await Deno.mkdir(outputDir, {recursive: true});
+    return await Deno.writeTextFile(`${outputDir}/${options.outputFile}_export`, dot);
 }
 
 
 async function exportImage(client, options) {
     let dot = await outputDot(client, options);
     options.outputFile = options.outputFile || genFileNameFromNetworkName(options.accountName, options.format);
-    return await renderDot(dot, `./${options.outputFile}`, {format: options.format});
+    let outputDir = `./output/${options.outputFile}_export`;
+    await Deno.mkdir(outputDir, {recursive: true});
+    return await renderDot(dot, `${outputDir}/${options.outputFile}_export`, {format: options.format});
 }
 
 
@@ -170,8 +174,10 @@ async function exportJson(client, options) {
     const allNodes = await client.fetchAll(configForExport);
 
     setLastConnectedOnUser(allNodes);
-    options.outputFile = options.outputFile || genFileNameFromNetworkName(options.accountName, "json");
-    await Deno.writeTextFile(`./${options.outputFile}`, JSON.stringify(allNodes));
+    options.outputFile = options.outputFile || genFileNameFromNetworkName(options.accountName, options.format);
+    let outputDir = `./output/${options.outputFile}_export`;
+    await Deno.mkdir(outputDir, {recursive: true});
+    await Deno.writeTextFile(`${outputDir}/${options.outputFile}_export.${options.format}`, JSON.stringify(allNodes));
 }
 
 
@@ -203,8 +209,10 @@ async function exportExcel(client, options) {
         ws['!autofilter'] = {ref: ws["!ref"]};
         XLSX.utils.book_append_sheet(wb, ws, typeName);
     }
-    options.outputFile = options.outputFile || genFileNameFromNetworkName(options.accountName);
-    await Deno.writeFile(`./${options.outputFile}`, new Uint8Array(XLSX.write(wb, {type: "array"})));
+    options.outputFile = options.outputFile || genFileNameFromNetworkName(options.accountName, "xlsx");
+    let outputDir = `./output/${options.outputFile}_export`;
+    await Deno.mkdir(outputDir, {recursive: true});
+    await Deno.writeFile(`${outputDir}/${options.outputFile}_export.${options.format}`, new Uint8Array(XLSX.write(wb, {type: "array"})));
 }
 
 

@@ -9,8 +9,8 @@ import {decryptData, encryptData} from "../crypto.mjs";
 import {Log} from "./log.js";
 import {Input} from "https://deno.land/x/cliffy/prompt/input.ts";
 import {VERSION} from "../version.js";
-import { readerFromStreamReader } from "https://deno.land/std/io/mod.ts";
-
+//import { readerFromStreamReader } from "https://deno.land/std/io/mod.ts";
+import { readerFromStreamReader } from "https://deno.land/std@0.201.0/streams/mod.ts";
 
 
 export function genFileNameFromNetworkName(networkName, extension = "xlsx") {
@@ -18,7 +18,7 @@ export function genFileNameFromNetworkName(networkName, extension = "xlsx") {
         d = new Date(),
         date = d.toISOString().split('T')[0],
         time = (d.toTimeString().split(' ')[0]).replaceAll(":", "-");
-    return `${networkName}-${date}_${time}.${extension}`;
+    return `${date}_${time}_${networkName}`;
 }
 
 export async function loadClientForCLI(options) {

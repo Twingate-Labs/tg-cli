@@ -11,7 +11,8 @@ const optionToSheetMap = {
     groups: "Group",
     remoteNetworks: "RemoteNetwork",
     resources: "Resource",
-    devices: "Device"
+    devices: "Device",
+    securityPolicies: "SecurityPolicy"
 }
 
 const ImportAction = {
@@ -81,6 +82,7 @@ async function fetchDataForImport(client, options, wb) {
     allNodes.Group = allNodes.Group || [];
     allNodes.Device = allNodes.Device || [];
     allNodes.User = allNodes.User || [];
+    allNodes.SecurityPolicy = allNodes.SecurityPolicy || [];
 
     return {typesToFetch, allNodes};
 }
@@ -105,14 +107,16 @@ function tryResourceRowToProtocols(resourceRow) {
         return null;
     }
 
+    let resourceAllowIcmp = (resourceRow.protocolsAllowIcmp === "true" || resourceRow.protocolsAllowIcmp === "TRUE" || resourceRow.protocolsAllowIcmp == undefined || resourceRow.protocolsAllowIcmp === true);
+
     let protocols = {
-        allowIcmp: resourceRow.protocolsAllowIcmp,
+        allowIcmp: resourceAllowIcmp,
         tcp: {
-            policy: resourceRow.protocolsTcpPolicy,
+            policy: resourceRow.protocolsTcpPolicy == undefined ? "ALLOW_ALL" : resourceRow.protocolsTcpPolicy,
             ports: tryProcessPortRestrictionString(resourceRow.protocolsTcpPorts)
         },
         udp: {
-            policy: resourceRow.protocolsUdpPolicy,
+            policy: resourceRow.protocolsUdpPolicy == undefined ? "ALLOW_ALL" : resourceRow.protocolsUdpPolicy,
             ports: tryProcessPortRestrictionString(resourceRow.protocolsUdpPorts)
         }
     }
@@ -125,12 +129,15 @@ let nodeLabelIdMap = {
     Resource: {},
     Group: {},
     Device: {},
-    User: {}
+    User: {},
+    SecurityPolicy: {}
 }
 
 const groupIdByName = (name) => nodeLabelIdMap.Group[name];
 const userIdByEmail = (email) => nodeLabelIdMap.User[email];
 const resourceIdByName = (resourceName) => nodeLabelIdMap.Resource[resourceName];
+const remoteNetworkIdByName = (remoteNetworkName) => nodeLabelIdMap.RemoteNetwork[remoteNetworkName];
+const securityPolicyIdByName = (securityPolicyLabel) => nodeLabelIdMap.SecurityPolicy[securityPolicyLabel];
 
 export const importCmd = new Command()
     .option("-f, --file <string>", "Path to Excel file to import from", {
@@ -168,7 +175,8 @@ export const importCmd = new Command()
             Resource: {},
             Group: {},
             Device: {},
-            User: {}
+            User: {},
+            SecurityPolicy: {}
         };
 
         let nodeIdMap = Object.fromEntries([
@@ -176,7 +184,8 @@ export const importCmd = new Command()
             ...allNodes.Resource,
             ...allNodes.Group,
             ...allNodes.Device,
-            ...allNodes.User
+            ...allNodes.User,
+            ...allNodes.SecurityPolicy
         ].map(n => [n.id, n]));
 
         // Pre-process users
@@ -231,6 +240,14 @@ export const importCmd = new Command()
                 }
                 nodeLabelIdMap.Device[node.serialNumber] = node.id;
             }
+        }
+
+        // Pre-process security policies
+        for ( let node of allNodes.SecurityPolicy) {
+            if ( securityPolicyIdByName(node.name) != null ) {
+                throw new Error(`Security policy with duplicate name found: '${node.name}' - Ids: ['${securityPolicyIdByName(node.name)}', '${node.id}']`);
+            }
+            nodeLabelIdMap.SecurityPolicy[node.name] = node.id;
         }
 
         // Map of old id to new id
@@ -343,25 +360,112 @@ export const importCmd = new Command()
                     }
                     break;
                 case "Resource":
+                    let duplicateResourceTracker = [];
                     for ( let resourceRow of sheetData ) {
-                        let existingRemoteNetwork = nodeIdMap[nodeLabelIdMap.RemoteNetwork[resourceRow.remoteNetworkLabel]];
-                        if ( existingRemoteNetwork != null && existingRemoteNetwork.resourceNames.includes(resourceRow.name) ) {
-                            Log.info(`Resource with same name exists, will skip: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}'`);
-                            resourceRow["importAction"] = ImportAction.IGNORE;
-                            resourceRow["importId"] = existingRemoteNetwork.resources.filter(r => r.name === resourceRow.name)[0];
-                            continue;
+                        // ID cell is not empty AND matches an existing resource AND name/address/remotenetwork are provided => UPDATE
+                        // ID cell is empty AND name/address/remotenetwork are provided => CREATE
+                        // else => IGNORE
+
+                        // A - check if ID was provided AND if it matches an existing resource ID AND there are no duplicates
+                        let existingResourceId = null;
+
+                        // A1 - check if ID was provided
+                        if (resourceRow.id != null && resourceRow.id != "" && resourceRow.id != undefined){
+
+                            // A2 - check if ID matches an existing resource
+                            if ( Object.values(nodeLabelIdMap.Resource).includes(resourceRow.id) ) {
+                                existingResourceId = resourceRow.id;
+
+                                // A3 - check for duplicates before proceeding
+                                let existingFound = false;
+                                for (let i = 0; i < duplicateResourceTracker.length; i++){
+                                    if (existingResourceId == duplicateResourceTracker[i]){
+                                        existingFound = true;
+                                        break;
+                                    }
+                                }
+                                if (existingFound){
+                                    Log.error(`Resource will be skipped: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}' - duplicate Id exists.`);
+                                    resourceRow["importAction"] = ImportAction.IGNORE;
+                                    resourceRow["importId"] = null;
+
+                                    resourceRow["_protocol"] = tryResourceRowToProtocols(resourceRow);
+                                    importCount++;
+                                    continue;
+                                } else {
+                                    duplicateResourceTracker.push(existingResourceId);
+                                }
+                            }
                         }
-                        if ( typeof resourceRow["addressValue"] !== "string" || resourceRow["addressValue"].length > 255 ) {
-                            Log.error(`Resource will be skipped: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}' - Invalid address`);
+
+                        // B - ensure resource CREATE/UPDATE requirements are met (name/addressValue/remoteNetworkLabel)
+                        // name
+                        if (resourceRow.name == null || resourceRow.name == "" || resourceRow.name == undefined){
+                            Log.error(`Resource will be skipped: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}' - name is required.`);
                             resourceRow["importAction"] = ImportAction.IGNORE;
                             resourceRow["importId"] = null;
-                        }
-                        resourceRow["_protocol"] = tryResourceRowToProtocols(resourceRow);
 
-                        Log.info(`Resource will be created: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}'`);
-                        resourceRow["importAction"] = ImportAction.CREATE;
-                        resourceRow["importId"] = null;
-                        importCount++;
+                            resourceRow["_protocol"] = tryResourceRowToProtocols(resourceRow);
+                            importCount++;
+                            continue;
+                            //break;
+                        }
+                        // addressValue
+                        if (resourceRow.addressValue == null || resourceRow.addressValue == "" || resourceRow.addressValue == undefined){
+                            Log.error(`Resource will be skipped: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}' - addressValue is required.`);
+                            resourceRow["importAction"] = ImportAction.IGNORE;
+                            resourceRow["importId"] = null;
+
+                            resourceRow["_protocol"] = tryResourceRowToProtocols(resourceRow);
+                            importCount++;
+                            continue;
+                            //break;
+                        }
+                        // remoteNetworkLabel
+                        if (resourceRow.remoteNetworkLabel == null || resourceRow.remoteNetworkLabel == "" || resourceRow.remoteNetworkLabel == undefined){
+                            Log.error(`Resource will be skipped: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}' - remoteNetworkLabel is required.`);
+                            resourceRow["importAction"] = ImportAction.IGNORE;
+                            resourceRow["importId"] = null;
+
+                            resourceRow["_protocol"] = tryResourceRowToProtocols(resourceRow);
+                            importCount++;
+                            continue;
+                            //break;
+                        }
+
+                        // 1 - if resourceRow.id is not empty AND matches an existing resource id (A) AND name/addressValue/remoteNetworkLabel are provided (B) => UPDATE
+                        if (existingResourceId != null){
+                            Log.info(`Resource will be updated: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}'.`);
+                            resourceRow["importAction"] = ImportAction.UPDATE;
+                            resourceRow["importId"] = existingResourceId;
+
+                            resourceRow["_protocol"] = tryResourceRowToProtocols(resourceRow);
+                            importCount++;
+                            continue;
+                            //break;
+
+                        // 2 - if resourceRow.id is empty (A) AND name/addressValue/remoteNetworkLabel are provided (B) => CREATE
+                        } else if (existingResourceId == null){
+                            Log.info(`Resource will be created: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}'.`);
+                            resourceRow["importAction"] = ImportAction.CREATE;
+                            resourceRow["importId"] = null;
+
+                            resourceRow["_protocol"] = tryResourceRowToProtocols(resourceRow);
+                            importCount++;
+                            continue;
+                            //break;
+
+                        // 3 - ELSE => IGNORE
+                        } else {
+                            Log.error(`Resource will be skipped: '${resourceRow.name}' in Remote Network '${resourceRow.remoteNetworkLabel}' - default ignore.`);
+                            resourceRow["importAction"] = ImportAction.IGNORE;
+                            resourceRow["importId"] = null;
+
+                            resourceRow["_protocol"] = tryResourceRowToProtocols(resourceRow);
+                            importCount++;
+                            continue;
+                            //break;
+                        }
                     }
                     break;
                 case "Device":
@@ -441,29 +545,86 @@ export const importCmd = new Command()
                     break;
                 case "Resource":
                     for ( let resourceRow of recordsToImport ) {
-                        let remoteNetwork = nodeIdMap[nodeLabelIdMap.RemoteNetwork[resourceRow.remoteNetworkLabel]];
-                        if ( remoteNetwork == null ) {
-                            // TODO
-                            Log.warn(`Remote network not matched '${resourceRow.remoteNetworkLabel}' in resource '${resourceRow.name}' not matched, will skip.`);
-                            continue;
-                        }
-                        let groups = resourceRow.groups || "";
-                        let groupIds = groups
-                            .split(",")
-                            .map(r => r.trim())
-                            .map(groupName => {
-                                let groupId = groupIdByName(groupName);
-                                if ( groupId == null ) {
-                                    Log.warn(`Group with name '${groupName}' in resource '${resourceRow.name}' not matched, will skip.`);
+                        switch ( resourceRow.importAction ) {
+                            case ImportAction.CREATE:
+                                let remoteNetwork = nodeIdMap[nodeLabelIdMap.RemoteNetwork[resourceRow.remoteNetworkLabel]];
+                                if ( remoteNetwork == null ) {
+                                    // TODO
+                                    Log.warn(`Remote network not matched '${resourceRow.remoteNetworkLabel}' in resource '${resourceRow.name}' not matched, will skip.`);
+                                    continue;
                                 }
-                                return groupId;
-                            })
-                            .filter(groupId => groupId != null)
-                        let newResource = await client.createResource(resourceRow.name, resourceRow.addressValue, remoteNetwork.id, resourceRow._protocol, groupIds);
-                        resourceRow.importId = newResource.id;
-                        delete resourceRow._protocol;
-                        remoteNetwork.resourceNames.push(resourceRow.name);
-                        remoteNetwork.resources.push({name: resourceRow.name, _imported: true});
+                                let groups = resourceRow.groups || "";
+                                let groupIds = groups
+                                    .split(",")
+                                    .map(r => r.trim())
+                                    .map(groupName => {
+                                        let groupId = groupIdByName(groupName);
+                                        if ( groupId == null ) {
+                                            Log.warn(`Group with name '${groupName}' in resource '${resourceRow.name}' not matched. Resource will be created without a group assignment.`);
+                                        }
+                                        return groupId;
+                                    })
+                                    .filter(groupId => groupId != null)
+
+                                // NEEDS FR:
+                                //isActive (Boolean)
+                                //serviceAccounts ([])
+                                
+                                let remoteNetworkId = remoteNetworkIdByName(resourceRow.remoteNetworkLabel);
+                                let securityPolicyId = securityPolicyIdByName(resourceRow.securityPolicyLabel);
+                                let isVisible = (resourceRow.isVisible === "true" || resourceRow.isVisible === "TRUE" || resourceRow.isVisible == undefined || resourceRow.isVisible === true);
+                                let isBrowserShortcutEnabled = (resourceRow.isBrowserShortcutEnabled === "true" || resourceRow.isBrowserShortcutEnabled === "TRUE" || resourceRow.isBrowserShortcutEnabled == undefined || resourceRow.isBrowserShortcutEnabled === true);
+                                let newResource = await client.createResource(resourceRow.addressValue, resourceRow.alias, groupIds, isBrowserShortcutEnabled, isVisible, resourceRow.name, resourceRow._protocol, remoteNetworkId, securityPolicyId);
+                                
+                                resourceRow.importId = newResource.id;
+                                delete resourceRow._protocol;
+                                remoteNetwork.resourceNames.push(resourceRow.name);
+                                remoteNetwork.resources.push({name: resourceRow.name, _imported: true});
+                                break;
+                            case ImportAction.UPDATE:
+                                // FUTURE
+                                let r_addedGroupIds = [];
+                                let r_removedGroupIds = [];
+                                // ServiceAccounts ([])
+
+                                //groupIds
+                                let groups2 = resourceRow.groups || "";
+                                let groupIds2 = groups2
+                                    .split(",")
+                                    .map(r => r.trim())
+                                    .map(groupName => {
+                                        let groupId = groupIdByName(groupName);
+                                        if ( groupId == null ) {
+                                            Log.warn(`Group with name '${groupName}' in resource '${resourceRow.name}' not matched, will skip.`);
+                                        }
+                                        return groupId;
+                                    })
+                                    .filter(groupId => groupId != null)
+                                let r_groupIds = groupIds2;
+
+                                // All other
+                                let r_address = resourceRow.addressValue;
+                                let r_alias = resourceRow.alias;
+                                let r_id = resourceRow.id;
+                                let r_isActive = resourceRow.isActive;
+                                let r_isBrowserShortcutEnabled = (resourceRow.isBrowserShortcutEnabled === "true" || resourceRow.isBrowserShortcutEnabled === "TRUE" || resourceRow.isBrowserShortcutEnabled == undefined || resourceRow.isBrowserShortcutEnabled === true);
+                                let r_isVisible = (resourceRow.isVisible === "true" || resourceRow.isVisible === "TRUE" || resourceRow.isVisible == undefined || resourceRow.isVisible === true);
+                                let r_name = resourceRow.name;
+                                let r_protocols = resourceRow._protocol;
+                                let r_remoteNetworkId = remoteNetworkIdByName(resourceRow.remoteNetworkLabel);
+                                let r_securityPolicyId = securityPolicyIdByName(resourceRow.securityPolicyLabel);
+
+                                // Send to client
+                                let result = await client.updateResource(r_addedGroupIds, r_address, r_alias, r_groupIds, r_id, r_isActive, r_isBrowserShortcutEnabled, r_isVisible, r_name, r_protocols, r_remoteNetworkId, r_removedGroupIds, r_securityPolicyId);
+                                if ( result.ok !== true || result.error != null ) {
+                                    Log.error(`Error syncing resource: '${resourceRow.name}'(${resourceRow.importId}): ${result.error}`);
+                                }
+                                delete resourceRow._protocol;
+                                break;
+                            default:
+                                // NoOp
+                                break;
+                        }
                     }
                     break;
                 case "Device":
@@ -495,9 +656,10 @@ export const importCmd = new Command()
             }
         }
         // Write results
-        let outputFilename = `importResults-${genFileNameFromNetworkName(options.accountName)}`;
-        await writeImportResults(mergeMap, outputFilename);
-        // Log completion
-        Log.success(`Import to '${networkName}' completed. Results written to: '${outputFilename}'.`);
+        options.outputFile = options.outputFile || genFileNameFromNetworkName(options.accountName);
+        let outputDir = `./output/${options.outputFile}_import`;
+        await Deno.mkdir(outputDir, {recursive: true});
+        await writeImportResults(mergeMap, `${outputDir}/${options.outputFile}_import.xlsx`);
+        Log.success(`Import to '${networkName}' completed. Results written to: '${outputDir}/${options.outputFile}_import.xlsx'.`)
         return;
     });

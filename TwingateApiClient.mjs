@@ -99,14 +99,20 @@ export class TwingateApiClient {
             isNode: true,
             canCreate: true,
             fields: [
-                {name: "name", type: "string", isLabel: true, canQuery: true},
                 {name: "createdAt", type: "datetime"},
                 {name: "updatedAt", type: "datetime"},
-                {name: "isActive", type: "boolean"},
+                {name: "name", type: "string", isLabel: true, canQuery: true},
                 {name: "address", type: "Object", typeName: "ResourceAddress"},
+                {name: "alias", type: "string"},
                 {name: "protocols", type: "Object", typeName: "ResourceProtocols"},
+                {name: "isActive", type: "boolean"},
                 {name: "remoteNetwork", type: "Node", typeName: "RemoteNetwork"},
-                {name: "groups", type: "Connection", typeName: "Group"}
+                {name: "groups", type: "Connection", typeName: "Group"},                      // deprecated
+                {name: "serviceAccounts", type: "Connection", typeName: "ServiceAccount"},    // deprecated
+                //{name: "access", type: "Connection", typeName: "AccessConnection"},         // future to replace groups & serviceAccounts
+                {name: "isVisible", type: "boolean"},
+                {name: "isBrowserShortcutEnabled", type: "boolean"},
+                {name: "securityPolicy", type: "Node", typeName: "SecurityPolicy"}
             ]
         },
         "RemoteNetwork": {
@@ -907,11 +913,18 @@ export class TwingateApiClient {
     }
 
 
-    async createResource(name, address, remoteNetworkId, protocols = null, groupIds = []) {
-        const createResourceQuery = "mutation CreateResource($name:String!,$address:String!,$remoteNetworkId:ID!,$protocols:ProtocolsInput,$groupIds:[ID]){result:resourceCreate(address:$address,groupIds:$groupIds,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId){error entity{id name address{value} remoteNetwork{name} groups{edges{node{id name}}}}}}";
-        let createResourceResponse = await this.exec(createResourceQuery, {name, address, remoteNetworkId, protocols, groupIds} );
+    async createResource(address, alias = null, groupIds = [], isBrowserShortcutEnabled = null, isVisible = null, name, protocols = null, remoteNetworkId, securityPolicyId = null) {
+        const createResourceQuery = "mutation CreateResource($address:String!,$alias:String,$groupIds:[ID],$isBrowserShortcutEnabled:Boolean,$isVisible:Boolean,$name:String!,$protocols:ProtocolsInput,$remoteNetworkId:ID!,$securityPolicyId:ID){result:resourceCreate(address:$address,alias:$alias,groupIds:$groupIds,isBrowserShortcutEnabled:$isBrowserShortcutEnabled,isVisible:$isVisible,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId,securityPolicyId:$securityPolicyId){ok error entity{id name address{value} remoteNetwork{name} groups{edges{node{id name}}}}}}";
+        let createResourceResponse = await this.exec(createResourceQuery, {address, alias, groupIds, isBrowserShortcutEnabled, isVisible, name, protocols, remoteNetworkId, securityPolicyId});
         if ( createResourceResponse.result.error !== null ) throw new Error(`Error creating resource: '${createResourceResponse.result.error}'`)
         return createResourceResponse.result.entity;
+    }
+
+    async updateResource(addedGroupIds = [], address, alias = null, groupIds = [], id, isActive, isBrowserShortcutEnabled = null, isVisible = null, name, protocols = null, remoteNetworkId, removedGroupIds = [], securityPolicyId = null) {
+        const updateResourceQuery = "mutation UpdateResource($addedGroupIds:[ID],$address:String,$alias:String,$groupIds:[ID],$id:ID!,$isActive:Boolean,$isBrowserShortcutEnabled:Boolean,$isVisible:Boolean,$name:String,$protocols:ProtocolsInput,$remoteNetworkId:ID,$removedGroupIds:[ID],$securityPolicyId:ID){result:resourceUpdate(addedGroupIds:$addedGroupIds,address:$address,alias:$alias,groupIds:$groupIds,id:$id,isActive:$isActive,isBrowserShortcutEnabled:$isBrowserShortcutEnabled,isVisible:$isVisible,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId,removedGroupIds:$removedGroupIds,securityPolicyId:$securityPolicyId){ok error entity{id name address{value} remoteNetwork{name} groups{edges{node{id name}}}}}}";
+        let updateResourceResponse = await this.exec(updateResourceQuery, {addedGroupIds, address, alias, groupIds, id, isActive, isBrowserShortcutEnabled, isVisible, name, protocols, remoteNetworkId, removedGroupIds, securityPolicyId} );
+        if ( updateResourceResponse.result.error !== null ) throw new Error(`Error updating resource: '${updateResourceResponse.result.error}'`);
+        return updateResourceResponse.result;
     }
 
     async removeGroup(id) {

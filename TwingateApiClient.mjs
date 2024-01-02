@@ -913,7 +913,7 @@ export class TwingateApiClient {
     }
 
 
-    async createResource(address, alias = null, groupIds = [], isBrowserShortcutEnabled = null, isVisible = null, name, protocols = null, remoteNetworkId, securityPolicyId = null) {
+    async createResource(name, address, remoteNetworkId, protocols = null, groupIds = [], alias = null, isBrowserShortcutEnabled = null, isVisible = null, securityPolicyId = null) {
         const createResourceQuery = "mutation CreateResource($address:String!,$alias:String,$groupIds:[ID],$isBrowserShortcutEnabled:Boolean,$isVisible:Boolean,$name:String!,$protocols:ProtocolsInput,$remoteNetworkId:ID!,$securityPolicyId:ID){result:resourceCreate(address:$address,alias:$alias,groupIds:$groupIds,isBrowserShortcutEnabled:$isBrowserShortcutEnabled,isVisible:$isVisible,name:$name,protocols:$protocols,remoteNetworkId:$remoteNetworkId,securityPolicyId:$securityPolicyId){ok error entity{id name address{value} remoteNetwork{name} groups{edges{node{id name}}}}}}";
         let createResourceResponse = await this.exec(createResourceQuery, {address, alias, groupIds, isBrowserShortcutEnabled, isVisible, name, protocols, remoteNetworkId, securityPolicyId});
         if ( createResourceResponse.result.error !== null ) throw new Error(`Error creating resource: '${createResourceResponse.result.error}'`)

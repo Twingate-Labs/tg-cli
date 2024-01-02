@@ -574,7 +574,7 @@ export const importCmd = new Command()
                                 let securityPolicyId = securityPolicyIdByName(resourceRow.securityPolicyLabel);
                                 let isVisible = (resourceRow.isVisible === "true" || resourceRow.isVisible === "TRUE" || resourceRow.isVisible == undefined || resourceRow.isVisible === true);
                                 let isBrowserShortcutEnabled = (resourceRow.isBrowserShortcutEnabled === "true" || resourceRow.isBrowserShortcutEnabled === "TRUE" || resourceRow.isBrowserShortcutEnabled == undefined || resourceRow.isBrowserShortcutEnabled === true);
-                                let newResource = await client.createResource(resourceRow.addressValue, resourceRow.alias, groupIds, isBrowserShortcutEnabled, isVisible, resourceRow.name, resourceRow._protocol, remoteNetworkId, securityPolicyId);
+                                let newResource = await client.createResource(resourceRow.name, resourceRow.addressValue, remoteNetworkId, resourceRow._protocol, groupIds, resourceRow.alias, isBrowserShortcutEnabled, isVisible, securityPolicyId);
                                 
                                 resourceRow.importId = newResource.id;
                                 delete resourceRow._protocol;

@@ -64,11 +64,13 @@ async function fetchDataForImport(client, options, wb) {
         // If we're importing resources we prob need Groups and Remote Networks too
         if ( !typesToFetch.includes("Group") ) typesToFetch.push("Group");
         if ( !typesToFetch.includes("RemoteNetwork") ) typesToFetch.push("RemoteNetwork");
+        if ( !typesToFetch.includes("SecurityPolicy") ) typesToFetch.push("SecurityPolicy");
     }
     else if ( typesToFetch.includes("Group") ) { // note 'else' is intentional
         // If we're importing groups we prob need Resources and Users too
         if ( !typesToFetch.includes("Resource") ) typesToFetch.push("Resource");
         if ( !typesToFetch.includes("User") ) typesToFetch.push("User");
+        if ( !typesToFetch.includes("SecurityPolicy") ) typesToFetch.push("SecurityPolicy");
     }
 
     const allNodes = await client.fetchAll({
@@ -148,6 +150,7 @@ export const importCmd = new Command()
     .option("-g, --groups [boolean]", "Include Groups")
     //.option("-u, --users [boolean]", "Include Users")
     .option("-d, --devices [boolean]", "Include Devices (trust)")
+    .option("-p, --security-policies [boolean]", "Include Security Policies")
     .option("-s, --sync [boolean]", "Attempt to synchronise entities with the same natural identifier")
     .option("-y, --assume-yes [boolean]", "Automatic yes to prompts; assume 'yes' as answer to all prompts")
     .description("Import from excel file to a Twingate account")
@@ -491,6 +494,23 @@ export const importCmd = new Command()
                         if ( deviceRow.id == null ) deviceRow.id = existingDevice.id;
                         deviceRow["importAction"] = ImportAction.UPDATE_TRUST;
                         deviceRow["importId"] = existingDevice.id;
+                        importCount++;
+                    }
+                    break;
+                case "SecurityPolicy":
+                    for ( let securityPolicyRow of sheetData) {
+                        // 1. Check if network exists
+                        let existingId = nodeLabelIdMap.SecurityPolicy[securityPolicyRow.name];
+                        if ( existingId != null ) {
+                            Log.info(`Security Policy with same name already exists, will skip: '${securityPolicyRow.name}'`);
+                            securityPolicyRow["importAction"] = ImportAction.IGNORE;
+                            securityPolicyRow["importId"] = existingId;
+                            continue;
+                        }
+
+                        Log.info(`Remote Network will be created: '${securityPolicyRow.name}'`);
+                        securityPolicyRow["importAction"] = ImportAction.CREATE;
+                        securityPolicyRow["importId"] = null;
                         importCount++;
                     }
                     break;

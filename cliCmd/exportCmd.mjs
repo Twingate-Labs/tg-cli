@@ -231,6 +231,7 @@ export const exportCmd = new Command()
     .option("-n, --remote-networks [boolean]", "Include Remote Networks")
     .option("-r, --resources [boolean]", "Include Resources")
     .option("-g, --groups [boolean]", "Include Groups")
+    .option("-p, --security-policies [boolean]", "Include Security Policies")
     .option("-u, --users [boolean]", "Include Users")
     .option("-d, --devices [boolean]", "Include Devices (trust)")
     .description("Export from account to various formats")
@@ -244,6 +245,7 @@ export const exportCmd = new Command()
         if ( options.groups === true ) options.typesToFetch.push("Group")
         if ( options.users === true ) options.typesToFetch.push("User")
         if ( options.devices === true ) options.typesToFetch.push("Device")
+        if ( options.securityPolicies === true ) options.typesToFetch.push("SecurityPolicy")
 
         let outputFn = outputFnMap[options.format];
         if (outputFn == null) {

@@ -6,7 +6,7 @@ import {
 } from "../utils/smallUtilFuncs.mjs";
 import {TwingateApiClient} from "../TwingateApiClient.mjs";
 import {Log} from "../utils/log.js";
-import * as base64 from "https://deno.land/std@0.202.0/encoding/base64.ts";
+import { encodeBase64 } from "https://deno.land/std/encoding/base64.ts";
 
 
 const OutputFormat = new EnumType(["text", "json"]);
@@ -61,7 +61,7 @@ export function getServiceAccountKeyDeleteCommands(name) {
                     options.accountName = networkName;
 
                     if (!serviceAccountKeyId.startsWith("U2Vydmlj")) {
-                        serviceAccountKeyId = base64.encode(`ServiceAccountKey:${serviceAccountKeyId}`)
+                        serviceAccountKeyId = encodeBase64(`ServiceAccountKey:${serviceAccountKeyId}`)
                     }
 
                     let res = await client.serviceAccountKeyDelete(serviceAccountKeyId);

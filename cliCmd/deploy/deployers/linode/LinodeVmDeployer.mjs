@@ -5,7 +5,7 @@ import {execCmd, execCmd2, formatBinary, sortByTextField, tablifyOptions, genera
 import {Log} from "../../../../utils/log.js";
 import {ConnectorCloudInit} from "../../ConnectorCloudInit.js";
 import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
-import { encode as b64encode } from "https://deno.land/std/encoding/base64.ts";
+import { encodeBase64 } from "https://deno.land/std/encoding/base64.ts";
 import * as Path from "https://deno.land/std/path/mod.ts";
 
 
@@ -337,7 +337,7 @@ cloud-init modules --mode=final
             cmd.push("--authorized_keys", authorized_key.key)
         }
         cmd.push("--stackscript_id", stackscript)
-        cmd.push("--stackscript_data", JSON.stringify({user_data: b64encode(cloudConfig)}))
+        cmd.push("--stackscript_data", JSON.stringify({user_data: encodeBase64(cloudConfig)}))
         if (vpcs.vlanAvailable === true){
             cmd.push("--interfaces.purpose", "public" )
             cmd.push("--interfaces.label", "")

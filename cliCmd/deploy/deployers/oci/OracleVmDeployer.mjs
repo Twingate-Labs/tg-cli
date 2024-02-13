@@ -6,7 +6,7 @@ import {Table} from "https://deno.land/x/cliffy/table/mod.ts";
 import {ConnectorCloudInit} from "../../ConnectorCloudInit.js";
 import {OracleBaseDeployer} from "./OracleBaseDeployer.mjs";
 import * as Path from "https://deno.land/std/path/mod.ts";
-import { encode as b64encode } from "https://deno.land/std/encoding/base64.ts";
+import { encodeBase64 } from "https://deno.land/std/encoding/base64.ts";
 
 export class OracleVmDeployer extends OracleBaseDeployer {
 
@@ -122,7 +122,7 @@ export class OracleVmDeployer extends OracleBaseDeployer {
         cmd.push("--hostname-label", name);
         cmd.push("--image-id", imageId);
         cmd.push("--availability-domain", availabilityDomainName);
-        const metadata = {user_data: b64encode(cloudConfig)};
+        const metadata = {user_data: encodeBase64(cloudConfig)};
         cmd.push("--metadata", JSON.stringify(metadata));
         cmd.push("--wait-for-state", "RUNNING");
         const output = await execCmd(cmd);

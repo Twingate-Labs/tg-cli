@@ -157,7 +157,8 @@ export class TwingateApiClient {
                 {name: "hostname", type: "string"},
                 {name: "username", type: "string"},
                 {name: "serialNumber", type: "string"},
-                {name: "manufacturerName", type: "string"}
+                {name: "manufacturerName", type: "string"},
+                {name: "activeState", typeName: "DeviceActiveState", valueMap: {"ACTIVE": "Active", "ARCHIVED": "Archived", "BLOCKED": "Blocked"}}
             ]
         },
         "ServiceAccount": {

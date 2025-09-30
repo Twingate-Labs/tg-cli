@@ -1,3 +1,5 @@
+## NOTE: This tool is no longer supported. Please use our other CLI instead: https://github.com/Twingate-Labs/Twingate-CLI
+
 Twingate CLI Tool
 ===========================
 This is a command line application demonstrating various usages of the Twingate API.

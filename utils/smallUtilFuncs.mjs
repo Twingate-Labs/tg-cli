@@ -39,8 +39,9 @@ export async function loadNetworkAndApiKey(networkName = null) {
         availableNetworks = [];
     const
         confirmMultipleNetworks = networkName == null,
+        keyBasePath = Deno.env.get("TG_API_KEY_PATH") || ".",
         keyFile = ".tgkeys",
-        keyFilePath = `./${keyFile}`,
+        keyFilePath = `${keyBasePath}/${keyFile}`,
         networkNamePrompt = {
             name: "networkName", message: `Enter Twingate account:`,
             hint: `For example, '${Colors.red("acme")}' for '${Colors.red("acme")}.twingate.com'`, type: InputPrompt,
@@ -114,8 +115,9 @@ export async function loadExternalKey(type, env = null) {
         return [key, false];
     }
     const
+        keyBasePath = Deno.env.get("TG_API_KEY_PATH") || ".",
         keyFile = ".tgkeys",
-        keyFilePath = `./${keyFile}`
+        keyFilePath = `${keyBasePath}/${keyFile}`
     ;
 
     if (false === await fileExists(keyFilePath)) return [null, false];
